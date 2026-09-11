@@ -17,7 +17,14 @@ pub fn find_engine() -> Option<PathBuf> {
     if let Some(path) = env::var_os("OMARCHY_CHESS_ENGINE") {
         return find_executable(Path::new(&path));
     }
-    find_executable(Path::new("stockfish"))
+    env::current_exe()
+        .ok()
+        .and_then(|p| {
+            p.parent()
+                .map(|d| d.join("../libexec/omarchy-retro-arcade/stockfish"))
+        })
+        .and_then(|p| find_executable(&p))
+        .or_else(|| find_executable(Path::new("stockfish")))
         .or_else(|| find_executable(Path::new("/usr/games/stockfish")))
         .or_else(|| find_executable(Path::new("/usr/lib/omarchy-chess/stockfish")))
 }

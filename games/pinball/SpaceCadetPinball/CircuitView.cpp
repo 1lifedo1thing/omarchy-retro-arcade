@@ -71,7 +71,7 @@ void updateTexture(){
 }
 bool Init(SDL_Renderer* r){
  renderer=r;char* base=SDL_GetBasePath();
- std::vector<std::string> dirs={CIRCUIT_INSTALL_DIR,std::string(base?base:"")+"../../share/omarchy-spacecadet/circuit",CIRCUIT_SOURCE_DIR};SDL_free(base);
+ std::vector<std::string> dirs={CIRCUIT_INSTALL_DIR,std::string(base?base:"")+"../../share/omarchy-retro-arcade/circuit",CIRCUIT_SOURCE_DIR};SDL_free(base);
  if(const char* dir=getenv("OMARCHY_CIRCUIT_ASSETS"))dirs.insert(dirs.begin(),dir);
  for(const auto& dir:dirs){original=IMG_Load((dir+"/table.png").c_str());if(original)break;}
  if(!original){SDL_Log("Cannot load Circuit artwork: %s",IMG_GetError());return false;}

@@ -1,6 +1,6 @@
 [package]
 name = "omarchy-chess"
-version = "0.2.0"
+version.workspace = true
 edition = "2021"
 rust-version = "1.98"
 license = "GPL-3.0-or-later"
@@ -23,7 +23,3 @@ rustix = { version = "1", features = ["fs"] }
 
 [features]
 screenshot = ["eframe/__screenshot"]
-
-[profile.release]
-lto = false
-strip = true

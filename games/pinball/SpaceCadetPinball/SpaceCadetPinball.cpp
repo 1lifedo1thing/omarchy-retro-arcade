@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "winmain.h"
+#include "ArcadeBridge.h"
 
 int main(int argc, char* argv[])
 {
@@ -9,6 +10,7 @@ int main(int argc, char* argv[])
             std::puts("Omarchy Space Cadet\nUse omarchy-spacecadet --data-dir PATH to choose game resources.\nOptions: -sw (software renderer), -noaudio, --version"); return 0;
         }
     }
+    for(int i=1;i<argc;++i)if(std::strcmp(argv[i],"--arcade-bridge")==0)ArcadeBridge::Init();
     std::string cmdLine;
 	for (int i = 1; i < argc; i++)
 	{

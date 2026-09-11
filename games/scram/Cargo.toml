@@ -1,6 +1,6 @@
 [package]
 name = "omarchy-scram"
-version = "0.2.1"
+version.workspace = true
 edition = "2021"
 rust-version = "1.98"
 license = "MIT"
@@ -15,6 +15,3 @@ serde_json = "1"
 toml = "0.8"
 fs2 = "0.4"
 tempfile = "3"
-
-[profile.release]
-strip = true

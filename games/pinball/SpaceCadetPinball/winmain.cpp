@@ -1,3 +1,4 @@
+#include "ArcadeBridge.h"
 #include "pch.h"
 #include "winmain.h"
 
@@ -266,12 +267,13 @@ int winmain::WinMain(LPCSTR lpCmdLine)
 			Options.FullScreen = true;
 		}
 
-		if (!Options.FullScreen)
+		if(ArcadeBridge::Enabled()) Options.FullScreen=false;
+        if (!Options.FullScreen)
 		{
 			auto resInfo = &fullscrn::resolution_array[fullscrn::GetResolution()];
 			SDL_SetWindowSize(MainWindow, OmarchyTable::Enabled?(getenv("OMARCHY_TEST_COMPACT")?900:1152):resInfo->TableWidth, OmarchyTable::Enabled?(getenv("OMARCHY_TEST_COMPACT")?622:790):resInfo->TableHeight);
 		}
-		SDL_ShowWindow(window);
+		if(!ArcadeBridge::Enabled()) SDL_ShowWindow(window);
 		fullscrn::set_screen_mode(Options.FullScreen);
 
 		if (strstr(lpCmdLine, "-demo"))
@@ -370,6 +372,8 @@ void winmain::MainLoop()
 			}
 		}
 
+		ArcadeBridge::Pump();
+        if(ArcadeBridge::Enabled()) has_focus=true;
 		if (!ProcessWindowMessages() || bQuit)
 			break;
 
@@ -429,7 +433,8 @@ void winmain::MainLoop()
 				if (Options.HideCursor && CursorIdleCounter <= 0)
 					ImGui::SetMouseCursor(ImGuiMouseCursor_None);
 				OmarchyTheme::Update();
-				ImGui_ImplSDL2_NewFrame();
+				if(!ArcadeBridge::Enabled()) ImGui_ImplSDL2_NewFrame();
+                else { ImIO->DisplaySize=ImVec2(1152,790);ImIO->DeltaTime=1.f/60; }
 				ImGui_Render_NewFrame();
 				ImGui::NewFrame();
 				RenderUi();
@@ -443,7 +448,8 @@ void winmain::MainLoop()
 				ImGui::Render();
 				ImGui_Render_RenderDrawData(ImGui::GetDrawData());
 
-				SDL_RenderPresent(Renderer);
+				ArcadeBridge::Present(Renderer);
+                SDL_RenderPresent(Renderer);
 				frameCounter++;
 				UpdateToFrameCounter -= UpdateToFrameRatio;
 			}
@@ -571,7 +577,7 @@ void winmain::RenderUi()
 		{
 			OmarchyTheme::Menu();
 			ImGuiMenuItemWShortcut(GameBindings::ToggleMenuDisplay, Options.ShowMenu);
-			ImGuiMenuItemWShortcut(GameBindings::ToggleFullScreen, Options.FullScreen);
+			if(!ArcadeBridge::Enabled()) ImGuiMenuItemWShortcut(GameBindings::ToggleFullScreen, Options.FullScreen);
 			if (ImGui::BeginMenu(pb::get_rc_string(Msg::Menu1_Select_Players), !OmarchyTable::Enabled))
 			{
 				if (ImGui::MenuItem(pb::get_rc_string(Msg::Menu1_1Player), nullptr, Options.Players == 1))
@@ -1174,10 +1180,10 @@ void winmain::a_dialog()
 		{
 			if (ImGui::BeginTabItem("Omarchy Space Cadet"))
 			{
-				ImGui::TextUnformatted("Omarchy Space Cadet 0.5.0");
+				ImGui::TextUnformatted("Omarchy Arcade - Circuit Pinball");
 				ImGui::TextUnformatted("Omarchy Arcade");
                 if(OmarchyTable::Enabled)ImGui::TextWrapped("Omarchy Circuit: an original illustrated orbital table, powered by the SpaceCadetPinball engine. Artwork developed with OpenAI Image Generation.");
-				if(ImGui::SmallButton("Project and support")) SDL_OpenURL("https://github.com/tcballard/omarchy-spacecadet");
+				if(ImGui::SmallButton("Project and support")) SDL_OpenURL("https://github.com/tcballard/omarchy-retro-arcade");
 				ImGui::TextWrapped("Source port and app: MIT. Dear ImGui: MIT. SDL: zlib. Original game resources retain their separate rights.");
 				ImGui::TextWrapped("Official Omarchy artwork: omarchy.org/brand. Brand rights remain with its owner. Independent community application.");
 				ImGui::TextUnformatted("Independent community app. Based on SpaceCadetPinball.");
