@@ -1,8 +1,8 @@
 # Omarchy Arcade
 
-Five games. One native app. One more go.
+Six games. One native app. One more go.
 
-**Circuit Pinball · Solitaire · Scram · Invaders · Chess**
+**Circuit Pinball · Solitaire · Scram · Invaders · Chess · Stack**
 
 ![The native Omarchy Arcade app](docs/screenshots/shelf.png)
 
@@ -10,7 +10,7 @@ Open Arcade, choose a game and play in the same window. `Ctrl+H` returns to the 
 
 ## Install
 
-Download the verified [Arch package](https://github.com/tcballard/omarchy-retro-arcade/actions/runs/34657618469/artifacts/10286164667), extract the archive, then install the `.pkg.tar.zst` file:
+Download the Arch package artifact from a successful [Stack PR build](https://github.com/tcballard/omarchy-retro-arcade/pull/1/checks), extract the archive, then install the `.pkg.tar.zst` file. Stack is in review; the earlier five-game package does not contain it:
 
 ```sh
 sudo pacman -U ./omarchy-retro-arcade-*.pkg.tar.zst
@@ -40,12 +40,16 @@ The package builder requires a clean committed checkout and does not install any
 ## Source layout
 
 - `arcade/`: the Rust app, collection shelf and local Pinball transport.
-- `games/`: five ordinary source directories with their full imported Git history.
+- `games/`: six ordinary game directories, preserving all imported Git history.
 - `packaging/`: one Arch package, icon and desktop entry.
 - `scripts/`: shared build, staging and verification entry points.
+- `shared/leaderboard/`: optional background HTTP transport.
+- `services/leaderboard/`: separately deployable replay-validation service; no public endpoint is bundled.
 
-Four Rust games draw directly into the shared window. Pinball retains the upstream C++ physics engine in a private worker whose rendering appears in that same window, including on Wayland. No browser, X11 child-window embedding or separate game launcher is used.
+Five Rust games draw directly into the shared window. Pinball retains the upstream C++ physics engine in a private worker whose rendering appears in that same window, including on Wayland. No browser, X11 child-window embedding or separate game launcher is used.
 
 Existing save paths remain authoritative. Pinball preserves high scores and settings, but does not resume unfinished tables. The other games save when returning to Arcade.
 
 See [migration provenance](docs/MIGRATION.md), [integration decisions](DECISIONS.md), and each game's licence and artwork notices. The combined application is distributed under GPL-3.0-or-later; permissively licensed components retain their notices. This is a community project.
+
+Stack includes offline Marathon and 40-line Sprint, local records and exact resumable runs. See [Stack rules](games/stack/docs/RULES.md), [verification](games/stack/docs/VERIFICATION.md) and the [leaderboard hosting proposal](services/leaderboard/HOSTING.md). Public sharing awaits deployment approval.
