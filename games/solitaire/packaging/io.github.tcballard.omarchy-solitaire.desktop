@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Omarchy Solitaire
+GenericName=Solitaire
+Comment=A native Klondike card table that follows your Omarchy theme
+Exec=omarchy-solitaire
+Icon=io.github.tcballard.omarchy-solitaire
+Terminal=false
+Categories=Game;CardGame;
+Keywords=Klondike;Cards;Patience;
+StartupNotify=true
+StartupWMClass=io.github.tcballard.omarchy-solitaire
