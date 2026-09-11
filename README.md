@@ -15,7 +15,7 @@ A native Linux chess app written in Rust, for offline games against Stockfish or
 - Atomic autosave, single-instance protection, archived games and PGN import/export.
 - Live Omarchy colours with a built-in fallback palette.
 
-No Python runtime, account, telemetry, online service or runtime downloads. Stockfish is installed separately.
+No Python runtime, account, telemetry, online service or runtime downloads. The Arch package installs Stockfish as a dependency.
 
 ## Run from source
 
@@ -28,13 +28,13 @@ cargo build --release --locked
 ./target/release/omarchy-chess
 ```
 
-Install Stockfish using your distribution, or obtain an executable from [Stockfish's official downloads](https://stockfishchess.org/download/). The app checks PATH and `/usr/games/stockfish`. To choose a specific executable:
+Install Stockfish using your distribution, or obtain an executable from [Stockfish's official downloads](https://stockfishchess.org/download/). The app checks PATH and `/usr/games/stockfish`; Settings also has an executable picker. To choose a specific executable:
 
 ```bash
 OMARCHY_CHESS_ENGINE=/absolute/path/to/stockfish ./target/release/omarchy-chess
 ```
 
-The variable is one executable path, never a shell command. Without an engine, choose **New game → Friend**. Local play works independently; failed computer requests expose **Retry engine**.
+The variable is one executable path, never a shell command. A fresh source build without an engine opens directly in local play. Local play works independently; failed computer requests expose **Retry engine**.
 
 ## Arch / Omarchy
 
@@ -44,7 +44,7 @@ CI builds development packages. Download `rust-arch-preview` from a passing [Act
 sudo pacman -U ./omarchy-chess-*.pkg.tar.zst
 ```
 
-Stockfish remains optional for local play. These are development artifacts, not a signed release channel. No AUR submission is required.
+The package resolves Stockfish and sound playback dependencies automatically. These are development artifacts, not a signed release channel. No AUR submission is required.
 
 To build locally, install `base-devel`, `git`, `rust`, `pkgconf` and the dependencies in `packaging/PKGBUILD`. From a clean committed checkout:
 
@@ -65,15 +65,21 @@ The script snapshots and checksums the exact source commit, then builds without 
 | Import / export PGN | Ctrl+O / Ctrl+S |
 | Take back / hint | Ctrl+Z / Ctrl+H |
 | Flip / return live | Ctrl+F / Ctrl+L |
+| Settings / sound | Ctrl+, / Ctrl+M |
 | Help / quit | F1 / Ctrl+Q |
 
 Computer takeback returns to your previous turn; local takeback undoes one ply. Threefold/fifty-move draws require a claim, including when available through an intended legal move. Fivefold repetition and the seventy-five-move rule end games automatically.
 
+## Arcade consistency
+
+Game, Settings and Help follow the [shared Arcade standard](docs/ARCADE_STANDARD.md). Sound defaults off and is remembered; Follow Omarchy can be disabled for the fallback palette. Finished games offer Play Again. Dragged pieces follow the pointer. The About screen shares the launcher icon, collection name and version.
+
 ## Files and compatibility
 
 - Session: `${XDG_STATE_HOME:-~/.local/state}/omarchy-chess/session.json`.
+- Settings: `settings.json` beside the session, preserved through package updates.
 - Previous games: `archive/` in that directory, saved before replacement.
-- Theme: `${XDG_CONFIG_HOME:-~/.config}/omarchy/current/theme/colors.toml`, checked every two seconds.
+- Theme: `${XDG_STATE_HOME:-~/.local/state}/omarchy/current/theme/colors.toml`, checked every two seconds.
 - Legacy Python-preview saves are imported and backed up before the first Rust write. Close the old app before launching Rust. An existing legacy `session.lock` prevents startup; remove a stale legacy lock only after verifying the old process is no longer running.
 - Corrupt saves stay untouched until replacement archives a recovery copy. Write failures are shown in the app; export PGN to keep another copy.
 - PGN imports accept one standard-chess game up to 1 MB and 2,048 plies, including custom starting FENs. Comments and variations are not retained; original files stay intact. Unfinished imports continue in local mode.
@@ -93,3 +99,5 @@ See [DECISIONS.md](DECISIONS.md) for judgement calls, [verification](docs/VERIFI
 ## License
 
 GPL-3.0-or-later. See [LICENSE](LICENSE) and [THIRD_PARTY.md](THIRD_PARTY.md). Powered by shakmaty, egui and the separately installed Stockfish engine.
+
+Desktop acceptance: [short test script](docs/DESKTOP_ACCEPTANCE.md).

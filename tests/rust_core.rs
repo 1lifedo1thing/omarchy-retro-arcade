@@ -314,3 +314,53 @@ fn real_stockfish_move() {
     let text = engine::search(&path, &g, Difficulty::Gentle, &AtomicBool::new(false)).unwrap();
     assert!(g.parse_move(&text).is_ok());
 }
+
+#[test]
+fn preferences_survive_updates_and_bad_settings_are_preserved() {
+    use omarchy_chess::preferences::Preferences;
+    let dir = tempfile::tempdir().unwrap();
+    let p = Preferences {
+        sound: true,
+        follow_omarchy: false,
+        ..Default::default()
+    };
+    p.save(dir.path()).unwrap();
+    assert_eq!(Preferences::load(dir.path()).unwrap(), p);
+    std::fs::write(dir.path().join("settings.json"), b"broken").unwrap();
+    assert!(Preferences::load(dir.path()).is_err());
+    assert_eq!(
+        std::fs::read(dir.path().join("settings.json")).unwrap(),
+        b"broken"
+    );
+}
+#[test]
+fn current_theme_precedes_legacy_and_survives_replacement() {
+    use omarchy_chess::theme::Theme;
+    let dir = tempfile::tempdir().unwrap();
+    let current = dir.path().join("current.toml");
+    let legacy = dir.path().join("legacy.toml");
+    std::fs::write(&legacy, "background='#000000'\nforeground='#ffffff'").unwrap();
+    let paths = [current.clone(), legacy];
+    assert!(!Theme::load_from(&paths).unwrap().light());
+    std::fs::write(
+        &current,
+        "background='#ffffff'\nforeground='#101010'\naccent='#002255'",
+    )
+    .unwrap();
+    let theme = Theme::load_from(&paths).unwrap();
+    assert!(theme.light());
+    assert_eq!(theme.accent_text(), eframe::egui::Color32::WHITE);
+    std::fs::write(&current, "invalid").unwrap();
+    assert!(!Theme::load_from(&paths).unwrap().light());
+}
+#[test]
+fn original_sound_cues_are_valid_bounded_pcm() {
+    for finished in [false, true] {
+        let wav = omarchy_chess::sound::cue(finished);
+        assert_eq!(&wav[..4], b"RIFF");
+        assert_eq!(&wav[8..12], b"WAVE");
+        let len = u32::from_le_bytes(wav[40..44].try_into().unwrap()) as usize;
+        assert_eq!(len + 44, wav.len());
+        assert!(len < 16000);
+    }
+}

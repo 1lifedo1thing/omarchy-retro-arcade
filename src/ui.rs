@@ -1,6 +1,8 @@
 use crate::{
     engine::{Answer, Engine},
     game::{Difficulty, Game, Mode},
+    preferences::Preferences,
+    sound::Sound,
     storage,
     theme::Theme,
 };
@@ -37,6 +39,10 @@ pub struct ChessApp {
     resign_dialog: bool,
     help: bool,
     drag_source: Option<Square>,
+    pub preferences: Preferences,
+    settings: bool,
+    sound: Sound,
+    settings_blocked: bool,
 }
 impl ChessApp {
     pub fn new(state_dir: PathBuf) -> Self {
@@ -66,6 +72,10 @@ impl ChessApp {
             resign_dialog: false,
             help: false,
             drag_source: None,
+            preferences: Preferences::default(),
+            settings: false,
+            sound: Sound::default(),
+            settings_blocked: false,
         };
         if app.state_dir.join("session.json").exists() {
             match storage::load(&app.state_dir) {
@@ -80,8 +90,59 @@ impl ChessApp {
                 }
             }
         }
+        match Preferences::load(&app.state_dir) {
+            Ok(p) => app.preferences = p,
+            Err(e) => {
+                app.message =
+                    format!("Settings could not be read: {e}. Original settings preserved.");
+                app.settings_blocked = true;
+            }
+        }
+        if !app.state_dir.join("session.json").exists() && app.engine_path().is_none() {
+            app.game.mode = Mode::Local;
+            app.new_mode = Mode::Local;
+            app.message =
+                "Local game ready. Set up Stockfish in Settings for computer play.".into();
+        }
+        app.theme = if app.preferences.follow_omarchy {
+            Theme::load()
+        } else {
+            Theme::default()
+        };
         app
     }
+    fn engine_path(&self) -> Option<PathBuf> {
+        self.preferences
+            .engine_path
+            .clone()
+            .or_else(crate::engine::find_engine)
+    }
+    pub fn save_preferences(&mut self) {
+        if self.settings_blocked {
+            self.message = "Existing settings need recovery before changes can be saved.".into();
+            return;
+        }
+        if let Err(e) = self.preferences.save(&self.state_dir) {
+            self.message = format!("Could not save settings: {e}");
+        }
+    }
+    pub fn rematch(&mut self) {
+        let game = Game {
+            mode: self.game.mode,
+            human_white: self.game.human_white,
+            difficulty: self.game.difficulty,
+            ..Game::default()
+        };
+        if let Err(e) = self.replace_game(game) {
+            self.message = e;
+        }
+    }
+    fn move_sound(&self) {
+        if self.preferences.sound {
+            self.sound.play(self.game.finished());
+        }
+    }
+
     fn persist(&mut self) {
         if !self.save_blocked {
             if let Err(e) = storage::save(&self.state_dir, &self.game, self.flipped, self.guides) {
@@ -96,6 +157,7 @@ impl ChessApp {
         self.hint = None;
         self.selected = None;
         self.preview = None;
+        self.drag_source = None;
         self.promotion.clear();
     }
     fn status_message(&mut self) {
@@ -116,7 +178,8 @@ impl ChessApp {
             && !self.game.finished()
             && !self.game.human_turn()
         {
-            self.engine.start(&self.game, self.revision, false);
+            self.engine
+                .start_with_path(&self.game, self.revision, false, self.engine_path());
             if !self.save_blocked {
                 self.message = "Stockfish is thinking…".into();
             }
@@ -136,6 +199,7 @@ impl ChessApp {
                 self.engine_error = false;
                 self.move_text.clear();
                 self.status_message();
+                self.move_sound();
                 self.persist();
                 self.maybe_engine();
             }
@@ -163,6 +227,7 @@ impl ChessApp {
                             self.revision = self.revision.wrapping_add(1);
                             self.preview = None;
                             self.status_message();
+                            self.move_sound();
                             self.persist();
                         }
                         Err(e) => self.message = e,
@@ -187,7 +252,8 @@ impl ChessApp {
     }
     fn request_hint(&mut self) {
         if self.game.human_turn() && self.preview.is_none() && !self.engine.busy {
-            self.engine.start(&self.game, self.revision, true);
+            self.engine
+                .start_with_path(&self.game, self.revision, true, self.engine_path());
             self.message = "Finding a hint…".into();
         }
     }
@@ -238,18 +304,31 @@ impl ChessApp {
         self.persist();
     }
     fn apply_style(&self, ctx: &egui::Context) {
-        let mut v = egui::Visuals::dark();
+        let mut v = if self.theme.light() {
+            egui::Visuals::light()
+        } else {
+            egui::Visuals::dark()
+        };
         v.panel_fill = self.theme.background;
         v.window_fill = self.theme.background;
         v.override_text_color = Some(self.theme.foreground);
         v.selection.bg_fill = self.theme.accent;
-        v.selection.stroke = Stroke::new(1_f32, self.theme.background);
+        v.selection.stroke = Stroke::new(1_f32, self.theme.accent_text());
         v.widgets.active.bg_fill = self.theme.accent;
-        v.widgets.active.fg_stroke = Stroke::new(1_f32, self.theme.background);
+        v.widgets.active.fg_stroke = Stroke::new(1_f32, self.theme.accent_text());
         ctx.set_visuals(v);
+        ctx.style_mut(|style| {
+            style.spacing.item_spacing = Vec2::new(10., 10.);
+            style.spacing.button_padding = Vec2::new(10., 6.);
+        });
     }
     fn shortcuts(&mut self, ctx: &egui::Context) {
-        if self.new_dialog || self.help || self.resign_dialog || !self.promotion.is_empty() {
+        if self.new_dialog
+            || self.help
+            || self.settings
+            || self.resign_dialog
+            || !self.promotion.is_empty()
+        {
             return;
         }
         let action = ctx.input_mut(|i| {
@@ -262,6 +341,8 @@ impl ChessApp {
                 (Key::F, 5),
                 (Key::L, 6),
                 (Key::Q, 7),
+                (Key::Comma, 8),
+                (Key::M, 9),
             ]
             .into_iter()
             .find_map(|(k, a)| i.consume_key(egui::Modifiers::CTRL, k).then_some(a))
@@ -275,6 +356,11 @@ impl ChessApp {
             Some(5) => self.flip(),
             Some(6) => self.preview = None,
             Some(7) => ctx.send_viewport_cmd(egui::ViewportCommand::Close),
+            Some(8) => self.settings = true,
+            Some(9) => {
+                self.preferences.sound = !self.preferences.sound;
+                self.save_preferences();
+            }
             _ => (),
         }
         if ctx.input(|i| i.key_pressed(Key::F1)) {
@@ -287,7 +373,11 @@ impl ChessApp {
         }
         self.maybe_engine();
         if self.theme_checked.elapsed() >= Duration::from_secs(2) {
-            self.theme = Theme::load();
+            self.theme = if self.preferences.follow_omarchy {
+                Theme::load()
+            } else {
+                Theme::default()
+            };
             self.theme_checked = Instant::now();
         }
         self.apply_style(ctx);
@@ -298,11 +388,15 @@ impl ChessApp {
             Duration::from_secs(2)
         });
         egui::TopBottomPanel::top("header")
-            .frame(egui::Frame::new().inner_margin(18))
+            .frame(
+                egui::Frame::new()
+                    .fill(self.theme.background)
+                    .inner_margin(12),
+            )
             .show(ctx, |ui| {
                 ui.horizontal(|ui| {
                     ui.label(
-                        RichText::new("OMARCHY / CHESS")
+                        RichText::new("ARCADE / CHESS")
                             .color(self.theme.accent)
                             .size(13.),
                     );
@@ -311,6 +405,14 @@ impl ChessApp {
                         self.new_dialog = true;
                     }
                     ui.menu_button("Game", |ui| {
+                        if ui.button("New game…   Ctrl+N").clicked() {
+                            self.new_dialog = true;
+                            ui.close_menu();
+                        }
+                        if ui.button("Rematch").clicked() {
+                            self.rematch();
+                            ui.close_menu();
+                        }
                         if ui.button("Import PGN…   Ctrl+O").clicked() {
                             ui.close_menu();
                             self.import_pgn();
@@ -330,23 +432,49 @@ impl ChessApp {
                             ctx.send_viewport_cmd(egui::ViewportCommand::Close);
                         }
                     });
-                    if ui.button("Help / About").clicked() {
-                        self.help = true;
+                    if ui.button("Settings").clicked() {
+                        self.settings = true;
                     }
+                    ui.menu_button("Help", |ui| {
+                        if ui.button("How to play / About   F1").clicked() {
+                            self.help = true;
+                            ui.close_menu();
+                        }
+                    });
                 });
             });
         egui::TopBottomPanel::bottom("message")
-            .frame(egui::Frame::new().inner_margin(16))
+            .frame(
+                egui::Frame::new()
+                    .fill(self.theme.background)
+                    .inner_margin(10),
+            )
             .show(ctx, |ui| {
-                ui.label(&self.message);
+                let status = ui.label(&self.message);
+                ctx.accesskit_node_builder(status.id, |node| {
+                    node.set_live(egui::accesskit::Live::Polite)
+                });
             });
         egui::SidePanel::right("controls")
             .exact_width(260.)
             .resizable(false)
-            .frame(egui::Frame::new().inner_margin(20))
+            .frame(
+                egui::Frame::new()
+                    .fill(self.theme.background)
+                    .inner_margin(16),
+            )
             .show(ctx, |ui| {
                 ui.add_space(12.);
                 ui.heading(self.game.status());
+                if self.engine.busy {
+                    ui.horizontal(|ui| {
+                        ui.spinner();
+                        ui.label("Thinking…");
+                    });
+                }
+                if self.game.finished() && ui.button("Play again").clicked() {
+                    self.rematch();
+                }
                 ui.add_space(10.);
                 ui.label(if self.game.mode == Mode::Computer {
                     format!(
@@ -369,7 +497,7 @@ impl ChessApp {
                 );
                 egui::ScrollArea::vertical()
                     .id_salt("history")
-                    .max_height((ui.available_height() - 245.).max(60.))
+                    .max_height((ui.available_height() - 300.).max(45.))
                     .auto_shrink([false, false])
                     .stick_to_bottom(true)
                     .show(ui, |ui| {
@@ -381,7 +509,16 @@ impl ChessApp {
                                 self.game.notation[i - 1].clone()
                             };
                             if ui
-                                .selectable_label(self.preview.unwrap_or(live) == i, label)
+                                .selectable_label(
+                                    self.preview.unwrap_or(live) == i,
+                                    RichText::new(label).color(
+                                        if self.preview.unwrap_or(live) == i {
+                                            self.theme.accent_text()
+                                        } else {
+                                            self.theme.foreground
+                                        },
+                                    ),
+                                )
                                 .clicked()
                             {
                                 self.preview = if i == live { None } else { Some(i) };
@@ -447,9 +584,16 @@ impl ChessApp {
                 if ui.checkbox(&mut self.guides, "Show legal moves").changed() {
                     self.persist();
                 }
+                if ui.checkbox(&mut self.preferences.sound, "Sound").changed() {
+                    self.save_preferences();
+                }
             });
         egui::CentralPanel::default()
-            .frame(egui::Frame::new().inner_margin(20))
+            .frame(
+                egui::Frame::new()
+                    .fill(self.theme.background)
+                    .inner_margin(16),
+            )
             .show(ctx, |ui| self.draw_board(ui));
         self.dialogs(ctx);
     }
@@ -526,7 +670,7 @@ impl ChessApp {
         } else {
             Color::Black
         }));
-        let side = (ui.available_width().min(ui.available_height() - 50.) - 36.).max(160.);
+        let side = (ui.available_width().min(ui.available_height() - 50.) - 24.).max(160.);
         let (_, outer) = ui.allocate_space(Vec2::new(ui.available_width(), side + 40.));
         let rect = Rect::from_min_size(
             Pos2::new(outer.center().x - side / 2., outer.min.y + 16.),
@@ -560,6 +704,34 @@ impl ChessApp {
         };
         for square in Square::ALL {
             let cell = square_rect(rect, square, self.flipped);
+            let id = ui.id().with(("square", square as u8));
+            let square_response = ui.interact(cell, id, Sense::hover());
+            let description = position.board().piece_at(square).map_or_else(
+                || format!("{square}, empty"),
+                |p| {
+                    format!(
+                        "{square}, {} {}",
+                        if p.color == Color::White {
+                            "white"
+                        } else {
+                            "black"
+                        },
+                        role_name(p.role)
+                    )
+                },
+            );
+            square_response.widget_info(|| {
+                egui::WidgetInfo::labeled(
+                    egui::WidgetType::Button,
+                    self.game.human_turn(),
+                    &description,
+                )
+            });
+            ui.ctx().accesskit_node_builder(id, |node| {
+                node.add_action(egui::accesskit::Action::Click);
+            });
+            if ui.input(|i| i.events.iter().any(|event| matches!(event, egui::Event::AccessKitActionRequest(request) if request.target == egui::accesskit::NodeId(id.value()) && request.action == egui::accesskit::Action::Click))) { self.activate(square); }
+
             let dark = (square.file() as u8 + square.rank() as u8).is_multiple_of(2);
             ui.painter().rect_filled(cell, 0., self.theme.square(dark));
             if last.is_some_and(|(a, b)| a == square || b == square) {
@@ -583,7 +755,11 @@ impl ChessApp {
                     Color32::from_rgba_unmultiplied(220, 72, 60, 150),
                 );
             }
-            if let Some(piece) = position.board().piece_at(square) {
+            if let Some(piece) = position
+                .board()
+                .piece_at(square)
+                .filter(|_| self.drag_source != Some(square))
+            {
                 egui::Image::new(piece_image(piece.color, piece.role))
                     .paint_at(ui, cell.shrink(cell.width() * 0.1));
             }
@@ -600,6 +776,16 @@ impl ChessApp {
                     0.,
                     Stroke::new(2_f32, Color32::from_rgb(20, 30, 20)),
                     egui::StrokeKind::Inside,
+                );
+            }
+        }
+        if let (Some(from), Some(pointer)) =
+            (self.drag_source, ui.input(|i| i.pointer.interact_pos()))
+        {
+            if let Some(piece) = position.board().piece_at(from) {
+                egui::Image::new(piece_image(piece.color, piece.role)).paint_at(
+                    ui,
+                    Rect::from_center_size(pointer, Vec2::splat(side / 8. * 0.85)),
                 );
             }
         }
@@ -635,7 +821,14 @@ impl ChessApp {
         }
         if response.drag_started() {
             if let Some(pos) = ui.input(|i| i.pointer.press_origin()) {
-                self.drag_source = square_at(rect, pos, self.flipped);
+                self.drag_source = square_at(rect, pos, self.flipped).filter(|sq| {
+                    self.game.human_turn()
+                        && self.preview.is_none()
+                        && position
+                            .board()
+                            .piece_at(*sq)
+                            .is_some_and(|p| p.color == position.turn())
+                });
                 self.selected = self.drag_source;
             }
         }
@@ -678,6 +871,7 @@ impl ChessApp {
         if response.has_focus()
             && !self.new_dialog
             && !self.help
+            && !self.settings
             && !self.resign_dialog
             && self.promotion.is_empty()
         {
@@ -723,6 +917,35 @@ impl ChessApp {
         }));
     }
     fn dialogs(&mut self, ctx: &egui::Context) {
+        if self.settings {
+            let modal = egui::Modal::new(egui::Id::new("Settings")).show(ctx, |ui| {
+                ui.set_min_width(330.);
+                ui.heading("Settings");
+                ui.label("Omarchy Arcade · Chess");
+                if ui.checkbox(&mut self.preferences.follow_omarchy, "Follow Omarchy colours").changed() {
+                    self.theme = if self.preferences.follow_omarchy { Theme::load() } else { Theme::default() };
+                    self.save_preferences();
+                }
+                if ui.checkbox(&mut self.preferences.sound, "Sound effects").changed() { self.save_preferences(); }
+                if self.preferences.sound && !Sound::available() { ui.label("Sound needs paplay (libpulse package). Games remain playable without audio."); }
+                ui.separator(); ui.strong("Computer opponent");
+                ui.label(if self.engine_path().is_some() { "Stockfish configured" } else { "Stockfish not installed" });
+                ui.label("Install with: sudo pacman -S stockfish");
+                if ui.button("Copy install command").clicked() { ctx.copy_text("sudo pacman -S stockfish".into()); }
+                if ui.button("Choose Stockfish executable…").clicked() {
+                    if let Some(path) = rfd::FileDialog::new().set_title("Choose Stockfish").pick_file() {
+                        self.invalidate(); self.preferences.engine_path = Some(path); self.engine_error = false; self.save_preferences();
+                    }
+                }
+                if self.preferences.engine_path.is_some() && ui.button("Use system Stockfish").clicked() { self.invalidate(); self.preferences.engine_path = None; self.engine_error = false; self.save_preferences(); }
+                ui.label("Games and settings stay on this computer. Package updates preserve them.");
+                if ui.button("Close").clicked() { self.settings = false; }
+            });
+            if modal.should_close() {
+                self.settings = false;
+            }
+        }
+
         if self.new_dialog {
             egui::Modal::new(egui::Id::new("New game")).show(ctx, |ui| {
                 ui.heading("New game");
@@ -798,8 +1021,9 @@ impl ChessApp {
         }
         if self.help {
             egui::Modal::new(egui::Id::new("Help / About")).show(ctx,|ui|{
-            ui.heading("Omarchy Chess · Rust preview");ui.label("Powered by Stockfish, shakmaty and egui. GPL-3.0-or-later.");
-            ui.label("Board: click or drag; arrow keys, Enter/Space to select, Escape to clear.\nMove field: e4, Nf3, O-O, e2e4 or e7e8n.\nCtrl+N New · Ctrl+O Import · Ctrl+S Export\nCtrl+Z Takeback · Ctrl+H Hint · Ctrl+F Flip · Ctrl+L Live · Ctrl+Q Quit");
+            ui.add(egui::Image::new(egui::include_image!("../packaging/omarchy-chess.svg")).max_size(Vec2::splat(64.)));
+            ui.heading("Chess"); ui.label(format!("Omarchy Arcade · Version {}", env!("CARGO_PKG_VERSION"))); ui.label("Powered by Stockfish, shakmaty and egui. GPL-3.0-or-later.");
+            ui.label("Board: click or drag; arrow keys, Enter/Space to select, Escape to clear.\nMove field: e4, Nf3, O-O, e2e4 or e7e8n.\nCtrl+, Settings · Ctrl+M Sound · Ctrl+N New · Ctrl+O Import · Ctrl+S Export\nCtrl+Z Takeback · Ctrl+H Hint · Ctrl+F Flip · Ctrl+L Live · Ctrl+Q Quit");
             ui.label("Independent community app. No accounts or network services.\nPieces: Cburnett, adapted by python-chess; GPL artwork, embedded SVGs.");
             if ui.button("Close").clicked(){self.help=false;}
         });

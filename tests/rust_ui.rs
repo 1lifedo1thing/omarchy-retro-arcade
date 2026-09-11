@@ -212,3 +212,62 @@ fn focused_board_keyboard_can_complete_move() {
     }
     assert_eq!(app.game.notation, vec!["1.  e4"]);
 }
+
+#[test]
+fn rematch_preserves_choices_and_archives_game() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut app = ChessApp::new(dir.path().into());
+    app.game.mode = Mode::Local;
+    app.game.difficulty = omarchy_chess::game::Difficulty::Strong;
+    let m = app.game.parse_move("e4").unwrap();
+    app.accept_move(m);
+    app.rematch();
+    assert!(app.game.moves.is_empty());
+    assert_eq!(app.game.mode, Mode::Local);
+    assert_eq!(app.game.difficulty, omarchy_chess::game::Difficulty::Strong);
+    assert_eq!(
+        std::fs::read_dir(dir.path().join("archive"))
+            .unwrap()
+            .count(),
+        1
+    );
+}
+
+#[test]
+fn accesskit_exposes_all_squares_with_piece_names() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut app = ChessApp::new(dir.path().into());
+    app.game.mode = Mode::Local;
+    let ctx = egui::Context::default();
+    ctx.enable_accesskit();
+    egui_extras::install_image_loaders(&ctx);
+    frame(&mut app, &ctx, vec![]);
+    let out = frame(&mut app, &ctx, vec![]);
+    let tree = out.platform_output.accesskit_update.unwrap();
+    let squares = tree
+        .nodes
+        .iter()
+        .filter(|(_, n)| {
+            n.label()
+                .is_some_and(|label| label.as_bytes().get(2) == Some(&b','))
+        })
+        .count();
+    assert_eq!(squares, 64);
+    let (id, _) = tree
+        .nodes
+        .iter()
+        .find(|(_, n)| n.label() == Some("e2, white Pawn"))
+        .unwrap();
+    frame(
+        &mut app,
+        &ctx,
+        vec![Event::AccessKitActionRequest(
+            egui::accesskit::ActionRequest {
+                action: egui::accesskit::Action::Click,
+                target: *id,
+                data: None,
+            },
+        )],
+    );
+    assert_eq!(app.selected, Some(Square::E2));
+}

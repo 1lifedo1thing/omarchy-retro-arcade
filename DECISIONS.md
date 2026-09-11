@@ -54,3 +54,15 @@ These choices are now the agreed baseline. The approval does not establish compl
 3. Should the next milestone prioritise a one-step Stockfish installation, beginner-friendly opponents, clocks, or accessibility?
 
 None of these questions blocked the implementation. They identify the choices worth revisiting after playing it.
+
+## Arcade polish milestone
+
+Tom requested delivery of the polish milestone and supplied the shared four-point Arcade standard. The implementation contract is in docs/ARCADE_STANDARD.md. These follow-up implementation details remain logged for review:
+
+- P01: Keep direct-to-board launch. Arch now depends on Stockfish; a source build without it starts a local game. This updates the earlier optional package dependency choice. No automatic privileged installation from inside the app.
+- P02: Game/Settings/Help, Ctrl+, settings, Ctrl+M sound, shared icon tile and Arcade About identity. The other repositories still need to adopt the same contract; this change does not silently modify them.
+- P03: Original short PCM sound cues through paplay, off by default. Arch depends on libpulse. Audio failures do not block play; actual desktop audibility needs acceptance.
+- P04: Local versioned settings independent of game saves; malformed settings preserved. Updates keep state and executable identity.
+- P05: Correct theme lookup to the released v4 state path with legacy fallback. Light/dark widget styling and explicit panel fills fix the preview's dark-only controls.
+- P06: Drag ghost, rematch, named accessible square actions and polite status announcements. Accessibility tree tests establish the exposed data/actions, not complete Orca compatibility.
+- P07: Version 0.2.0 development package. No stable-release claim before the documented desktop acceptance pass.

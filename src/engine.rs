@@ -59,6 +59,15 @@ pub struct Engine {
 }
 impl Engine {
     pub fn start(&mut self, game: &Game, revision: u64, hint: bool) {
+        self.start_with_path(game, revision, hint, find_engine());
+    }
+    pub fn start_with_path(
+        &mut self,
+        game: &Game,
+        revision: u64,
+        hint: bool,
+        path: Option<PathBuf>,
+    ) {
         self.cancel();
         if self.tx.is_none() {
             let (tx, rx) = mpsc::channel();
@@ -71,7 +80,7 @@ impl Engine {
         let worker_cancel = cancel.clone();
         self.busy = true;
         let thread = thread::spawn(move || {
-            let result=find_engine().ok_or_else(||"Stockfish not found. Install it or set OMARCHY_CHESS_ENGINE to its executable; local play still works.".to_string())
+            let result=path.ok_or_else(||"Stockfish not found. Install it or set OMARCHY_CHESS_ENGINE to its executable; local play still works.".to_string())
                 .and_then(|path|search(&path,&game,if hint{Difficulty::Strong}else{game.difficulty},&worker_cancel));
             if !worker_cancel.load(Ordering::Relaxed) {
                 let _ = tx.send(Answer {

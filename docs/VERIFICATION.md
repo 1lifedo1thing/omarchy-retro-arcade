@@ -5,7 +5,7 @@
 The Python preview and its test evidence are superseded by this Rust implementation.
 
 - Rust 1.98.1, locked dependencies. Release executable built locally and `--version` passed. Formatting and Clippy with warnings denied pass.
-- 35 Rust tests passed locally: 28 rules/storage/theme/UCI tests and 7 headless egui tests.
+- 40 Rust tests passed locally: 31 rules/storage/theme/UCI/preferences/audio tests and 9 headless egui tests.
 - Rules include castling, en passant, promotions, automatic and claimable draws, repetition after resume, PGN rejection and custom-FEN round trips.
 - Persistence tests cover exclusive locking, legacy-lock protection, Python-session migration/backup and preservation of corrupt bytes.
 - UCI tests include silent-engine timeout, cancellation, illegal engine replies and a real Stockfish move. Stockfish was compiled from upstream for testing and is not bundled.
@@ -21,7 +21,11 @@ This environment is not Tom's Dell and has no Omarchy/Hyprland session. Before a
 - Test drag/drop, keyboard focus, modal dialogs and PGN file portals.
 - Switch actual Omarchy themes, including dark and light palettes.
 - Test Wayland, monitor scaling, resizing and resume after reboot.
-- Check screen-reader access; the custom board does not yet expose 64 individually accessible squares.
+- Check screen-reader access; all 64 squares expose names and activation actions; real Orca interaction remains unverified.
 - Check battery/CPU use, perceived difficulty and Stockfish installation usability.
 
 No stable release, AUR submission or marketplace listing has been published.
+
+## Arcade polish evidence
+
+Local formatting, Clippy, 40 tests with required Stockfish and the 0.2.0 release build pass. Added coverage checks persistent preferences, current/legacy theme precedence, generated PCM structure, rematch archival and the 64-square AccessKit tree plus activation. CI captures normal and compact light windows and verifies the Arch package including its new Stockfish/audio dependencies. See the current PR run for CI results.

@@ -39,16 +39,44 @@ impl Theme {
         theme
     }
     pub fn load() -> Self {
+        let home = PathBuf::from(env::var_os("HOME").unwrap_or_default());
+        let state = env::var_os("XDG_STATE_HOME")
+            .map(PathBuf::from)
+            .unwrap_or_else(|| home.join(".local/state"));
         let config = env::var_os("XDG_CONFIG_HOME")
             .map(PathBuf::from)
-            .unwrap_or_else(|| {
-                PathBuf::from(env::var_os("HOME").unwrap_or_default()).join(".config")
-            });
-        let path = config.join("omarchy/current/theme/colors.toml");
-        crate::storage::read_bounded(&path, 65536)
-            .ok()
-            .and_then(|b| String::from_utf8(b).ok())
-            .map_or_else(Self::default, |s| Self::parse(&s))
+            .unwrap_or_else(|| home.join(".config"));
+        Self::load_from(&[
+            state.join("omarchy/current/theme/colors.toml"),
+            home.join(".local/state/omarchy/current/theme/colors.toml"),
+            config.join("omarchy/current/theme/colors.toml"),
+        ])
+        .unwrap_or_default()
+    }
+    pub fn load_from(paths: &[PathBuf]) -> Option<Self> {
+        paths.iter().find_map(|path| {
+            let bytes = crate::storage::read_bounded(path, 65536).ok()?;
+            let text = String::from_utf8(bytes).ok()?;
+            let table = text.parse::<toml::Table>().ok()?;
+            for key in ["background", "foreground"] {
+                parse_color(table.get(key)?.as_str()?)?;
+            }
+            Some(Self::parse(&text))
+        })
+    }
+    pub fn light(&self) -> bool {
+        self.background.r() as u32 + self.background.g() as u32 + self.background.b() as u32 > 420
+    }
+    pub fn accent_text(&self) -> Color32 {
+        if self.accent.r() as u32 * 299
+            + self.accent.g() as u32 * 587
+            + self.accent.b() as u32 * 114
+            > 140000
+        {
+            Color32::BLACK
+        } else {
+            Color32::WHITE
+        }
     }
     pub fn square(&self, dark: bool) -> Color32 {
         let (scale, base) = if dark { (0.35, 45.) } else { (0.12, 195.) };

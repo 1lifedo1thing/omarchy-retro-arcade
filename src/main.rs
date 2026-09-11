@@ -19,9 +19,15 @@ fn main() -> eframe::Result<()> {
             return Ok(());
         }
     };
+    let mut size = [1060., 780.];
+    if cfg!(feature = "screenshot")
+        && std::env::var("OMARCHY_CHESS_PREVIEW_SIZE").as_deref() == Ok("compact")
+    {
+        size = [740., 560.];
+    }
     let options = eframe::NativeOptions {
         viewport: eframe::egui::ViewportBuilder::default()
-            .with_inner_size([1060., 780.])
+            .with_inner_size(size)
             .with_min_inner_size([740., 560.])
             .with_app_id("omarchy-chess"),
         ..Default::default()

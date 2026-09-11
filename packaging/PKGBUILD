@@ -1,13 +1,13 @@
 # Build from a clean checkout with packaging/build-arch.sh.
 pkgname=omarchy-chess
-pkgver=0.1.0
+pkgver=0.2.0
 pkgrel=1
 pkgdesc='Native offline chess for Omarchy, written in Rust'
 arch=('x86_64' 'aarch64')
 url='https://github.com/tcballard/omarchy-chess'
 license=('GPL-3.0-or-later')
-depends=('gcc-libs' 'glibc' 'libxcb' 'libxkbcommon' 'libxkbcommon-x11' 'libglvnd' 'wayland' 'xdg-desktop-portal')
-optdepends=('stockfish: computer opponent and hints' 'xdg-desktop-portal-gtk: file chooser fallback')
+depends=('gcc-libs' 'glibc' 'libxcb' 'libxkbcommon' 'libxkbcommon-x11' 'libglvnd' 'wayland' 'xdg-desktop-portal' 'stockfish' 'libpulse')
+optdepends=('xdg-desktop-portal-gtk: file chooser fallback')
 makedepends=('rust>=1.98' 'pkgconf')
 source=('omarchy-chess-source.tar.gz')
 # Replaced by build-arch.sh with the checksum of its exact source snapshot.
