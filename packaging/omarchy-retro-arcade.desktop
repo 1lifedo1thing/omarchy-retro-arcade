@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Omarchy Arcade
+Comment=Chess, Solitaire, Scram, Invaders and Circuit Pinball
+Exec=omarchy-retro-arcade
+Icon=omarchy-retro-arcade
+Terminal=false
+Categories=Game;
+Keywords=Arcade;Chess;Solitaire;Pinball;Scram;Invaders;
+StartupWMClass=io.github.tcballard.omarchy-retro-arcade
