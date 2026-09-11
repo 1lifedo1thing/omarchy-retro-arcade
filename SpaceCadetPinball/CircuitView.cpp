@@ -89,8 +89,8 @@ void Draw(){
  scale=std::min(size.x/1536.f,(size.y-menu)/1024.f);ox=(size.x-1536*scale)/2;oy=menu+(size.y-menu-1024*scale)/2;
  draw->AddRectFilled({0,menu},size,rgba(5,8,8));draw->AddImage((ImTextureID)board,p(0,0),p(1536,1024));
  // Exact official wordmark geometry, proportionally placed after material tinting.
- const float wordScale=180.f/4131.f,wordX=562-90,wordY=520-950*wordScale/2;
- draw->AddImage((ImTextureID)wordmark,p(wordX,wordY),p(wordX+180,wordY+950*wordScale));
+ const float wordScale=144.f/4131.f,wordX=562-72,wordY=520-950*wordScale/2;
+ draw->AddImage((ImTextureID)wordmark,p(wordX,wordY),p(wordX+144,wordY+950*wordScale));
  auto t=pb::MainTable;
  const float lamps[12][2]={{562,422},{626,438},{664,478},{674,525},{659,565},{618,599},{562,617},{507,599},{464,565},{450,526},{458,479},{498,439}};
  for(unsigned i=0;i<12;i++)lamp(lamps[i][0],lamps[i][1],i<OmarchyTable::Progress());
