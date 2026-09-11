@@ -3,6 +3,7 @@
 
 
 #include "control.h"
+#include "OmarchyTable.h"
 #include "fullscrn.h"
 #include "high_score.h"
 #include "proj.h"
@@ -49,11 +50,11 @@ int pb::init()
 	if (DatFileName.empty())
 		return 1;
 	auto dataFilePath = make_path_name(DatFileName);
-	record_table = partman::load_records(dataFilePath.c_str(), FullTiltMode);
+	record_table = OmarchyTable::Enabled ? OmarchyTable::Build() : partman::load_records(dataFilePath.c_str(), FullTiltMode);
 
 	auto useBmpFont = 0;
 	get_rc_int(Msg::TextBoxUseBitmapFont, &useBmpFont);
-	if (useBmpFont)
+	if (useBmpFont && !OmarchyTable::Enabled)
 		score::load_msg_font("pbmsg_ft");
 
 	if (!record_table)
@@ -357,7 +358,7 @@ void pb::timed_frame(float timeDelta)
 				ball->StuckCounter = 0;
 			else
 				ball->StuckCounter++;
-			control::UnstuckBall(*ball, time_ticks - ball->LastActiveTime);
+			if(!OmarchyTable::Enabled) control::UnstuckBall(*ball, time_ticks - ball->LastActiveTime);
 		}
 	}
 
@@ -584,7 +585,7 @@ void pb::InputDown(GameInput input)
 	IdleTimerMs = 0;
 
 	if (input.Type == InputTypes::Keyboard)
-		control::pbctrl_bdoor_controller(static_cast<char>(input.Value));
+		if(!OmarchyTable::Enabled) control::pbctrl_bdoor_controller(static_cast<char>(input.Value));
 
 	for (const auto binding : bindings)
 	{
@@ -634,7 +635,7 @@ void pb::InputDown(GameInput input)
 				break;
 			}
 		case 'r':
-			control::cheat_bump_rank();
+			if(!OmarchyTable::Enabled) control::cheat_bump_rank();
 			break;
 		case 's':
 			MainTable->AddScore(static_cast<int>(RandFloat() * 1000000.0f));
@@ -748,7 +749,7 @@ bool pb::chk_highscore()
 void pb::PushCheat(const std::string& cheat)
 {
 	for (auto ch : cheat)
-		control::pbctrl_bdoor_controller(ch);
+		if(!OmarchyTable::Enabled) control::pbctrl_bdoor_controller(ch);
 }
 
 LPCSTR pb::get_rc_string(Msg uID)

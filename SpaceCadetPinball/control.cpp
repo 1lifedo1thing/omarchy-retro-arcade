@@ -1,4 +1,5 @@
 #include "pch.h"
+#include "OmarchyTable.h"
 #include "control.h"
 
 #include "midi.h"
@@ -846,6 +847,7 @@ std::reference_wrapper<TLight*> control::WormholeLightArray2[3] =
 void control::make_links(TPinballTable* table)
 {
 	TableG = table;
+	if(OmarchyTable::Enabled) return;
 
 	for (auto& score_component : score_components)
 	{
@@ -891,6 +893,7 @@ TPinballComponent* control::make_component_link(component_tag_base& tag)
 
 void control::handler(MessageCode code, TPinballComponent* cmp)
 {
+	if(OmarchyTable::Enabled){OmarchyTable::ComponentEvent(code,cmp);return;}
 	component_control* control = cmp->Control;
 	
 	if (control)
@@ -2901,6 +2904,7 @@ void control::BallDrainControl(MessageCode code, TPinballComponent* caller)
 
 void control::table_control_handler(MessageCode code)
 {
+	if(OmarchyTable::Enabled){OmarchyTable::TableEvent(code);return;}
 	if (code == MessageCode::SetTiltLock)
 	{
 		table_unlimited_balls = false;

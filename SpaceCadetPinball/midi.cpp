@@ -3,6 +3,7 @@
 
 
 #include "pb.h"
+#include "options.h"
 
 
 std::vector<Mix_Music*> midi::LoadedTracks{};
@@ -33,6 +34,7 @@ int ToVariableLen(uint32_t value, uint32_t& dst)
 
 void midi::music_play()
 {
+	if (!options::Options.Sounds) return;
 	if (!IsPlaying)
 	{
 		IsPlaying = true;

@@ -2,6 +2,9 @@
 #include "winmain.h"
 
 #include "control.h"
+#include "TPinballTable.h"
+#include "TBall.h"
+#include "../native/BrandLogo.h"
 #include "EmbeddedData.h"
 #include "fullscrn.h"
 #include "midi.h"
@@ -11,8 +14,13 @@
 #include "Sound.h"
 #include "translations.h"
 #include "font_selection.h"
+#include "OmarchyTheme.h"
+#include "OmarchyTable.h"
+#include "CircuitView.h"
+#include "../native/ArcadeIcon.h"
 
 constexpr const char* winmain::Version;
+
 
 SDL_Window* winmain::MainWindow = nullptr;
 SDL_Renderer* winmain::Renderer = nullptr;
@@ -36,6 +44,7 @@ std::vector<float> winmain::gfrDisplay{};
 unsigned winmain::gfrOffset = 0;
 float winmain::gfrWindow = 5.0f;
 bool winmain::ShowAboutDialog = false;
+static bool showCircuitHelp=false;
 bool winmain::ShowImGuiDemo = false;
 bool winmain::ShowSpriteViewer = false;
 bool winmain::ShowExitPopup = false;
@@ -62,6 +71,8 @@ int winmain::WinMain(LPCSTR lpCmdLine)
 	printf(" SDL_mixer %d.%d.%d;", SDL_MIXER_MAJOR_VERSION, SDL_MIXER_MINOR_VERSION, SDL_MIXER_PATCHLEVEL);
 	printf(" ImGui %s %s\n", IMGUI_VERSION, ImGuiRender);
 
+	SDL_SetHint("SDL_VIDEO_X11_WMCLASS", "omarchy-spacecadet");
+	SDL_SetHint("SDL_APP_ID", "omarchy-spacecadet");
 	// SDL init
 	SDL_SetMainReady();
 	if (SDL_Init(SDL_INIT_TIMER | SDL_INIT_AUDIO | SDL_INIT_VIDEO |
@@ -76,7 +87,7 @@ int winmain::WinMain(LPCSTR lpCmdLine)
 	// SDL window
 	SDL_Window* window = SDL_CreateWindow
 	(
-		pb::get_rc_string(Msg::STRING139),
+		"Omarchy Space Cadet",
 		SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
 		800, 556,
 		SDL_WINDOW_HIDDEN | SDL_WINDOW_RESIZABLE
@@ -87,6 +98,9 @@ int winmain::WinMain(LPCSTR lpCmdLine)
 		pb::ShowMessageBox(SDL_MESSAGEBOX_ERROR, "Could not create window", SDL_GetError());
 		return 1;
 	}
+
+	auto icon = SDL_CreateRGBSurfaceWithFormatFrom((void*)ArcadeIcon,128,128,32,128*4,SDL_PIXELFORMAT_RGBA32);
+	if(icon){SDL_SetWindowIcon(window,icon);SDL_FreeSurface(icon);}
 
 	// If HW fails, fallback to SW SDL renderer.
 	SDL_Renderer* renderer = nullptr;
@@ -111,7 +125,7 @@ int winmain::WinMain(LPCSTR lpCmdLine)
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
 
-	auto prefPath = SDL_GetPrefPath("", "SpaceCadetPinball");
+	auto prefPath = SDL_GetPrefPath("", strstr(lpCmdLine,"--omarchy-table") ? "omarchy-spacecadet/circuit" : "omarchy-spacecadet");
 	auto basePath = SDL_GetBasePath();
 
 	// SDL mixer init
@@ -198,7 +212,7 @@ int winmain::WinMain(LPCSTR lpCmdLine)
 			io.Fonts->Build();
 		}
 		ImGui_Render_Init(renderer);
-		ImGui::StyleColorsDark();
+		OmarchyTheme::Init(prefPath);
 
 		ImGui_ImplSDL2_InitForSDLRenderer(window, Renderer);
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_NavEnableGamepad;
@@ -213,7 +227,8 @@ int winmain::WinMain(LPCSTR lpCmdLine)
 			}
 		};
 		searchPaths.insert(searchPaths.end(), std::begin(PlatformDataPaths), std::end(PlatformDataPaths));
-		pb::SelectDatFile(searchPaths);
+		OmarchyTable::Enabled = strstr(lpCmdLine,"--omarchy-table") != nullptr;
+		if(OmarchyTable::Enabled){pb::DatFileName="OMARCHY";pb::FullTiltMode=false;pb::FullTiltDemoMode=false;}else pb::SelectDatFile(searchPaths);
 
 		// Second step: run updates that depend on .DAT file selection
 		options::InitSecondary();
@@ -240,6 +255,7 @@ int winmain::WinMain(LPCSTR lpCmdLine)
 			return 1;
 		}
 
+		if(OmarchyTable::Enabled&&!CircuitView::Init(renderer)){pb::ShowMessageBox(SDL_MESSAGEBOX_ERROR,"Missing Circuit artwork","Reinstall the game package to restore its artwork.");return 1;}
 		fullscrn::init();
 
 		pb::reset_table();
@@ -253,7 +269,7 @@ int winmain::WinMain(LPCSTR lpCmdLine)
 		if (!Options.FullScreen)
 		{
 			auto resInfo = &fullscrn::resolution_array[fullscrn::GetResolution()];
-			SDL_SetWindowSize(MainWindow, resInfo->TableWidth, resInfo->TableHeight);
+			SDL_SetWindowSize(MainWindow, OmarchyTable::Enabled?(getenv("OMARCHY_TEST_COMPACT")?900:1152):resInfo->TableWidth, OmarchyTable::Enabled?(getenv("OMARCHY_TEST_COMPACT")?622:790):resInfo->TableHeight);
 		}
 		SDL_ShowWindow(window);
 		fullscrn::set_screen_mode(Options.FullScreen);
@@ -261,12 +277,17 @@ int winmain::WinMain(LPCSTR lpCmdLine)
 		if (strstr(lpCmdLine, "-demo"))
 			pb::toggle_demo();
 		else
+		{
+            if(OmarchyTable::Enabled) Options.Players=1;
 			pb::replay_level(false);
+        }
 
 		MainLoop();
 
 		options::uninit();
 		midi::music_shutdown();
+		CircuitView::Shutdown();
+		OmarchyTable::Shutdown();
 		Sound::Close();
 		pb::uninit();
 
@@ -300,9 +321,39 @@ void winmain::MainLoop()
 	double UpdateToFrameCounter = 0;
 	DurationMs sleepRemainder(0), frameDuration(TargetFrameTime);
 	auto prevTime = frameStart;
+	const int probeLimit=OmarchyTable::Enabled && getenv("OMARCHY_TEST_TICKS") ? atoi(getenv("OMARCHY_TEST_TICKS")) : 0;
+	int probeTick=0;
+	if(probeLimit)std::srand(1);
 
 	while (true)
 	{
+        if(probeLimit){
+            if(probeTick>=probeLimit){
+                if(const char* path=getenv("OMARCHY_TEST_SCREENSHOT")){
+                    int w,h;SDL_GetRendererOutputSize(Renderer,&w,&h);auto image=SDL_CreateRGBSurfaceWithFormat(0,w,h,32,SDL_PIXELFORMAT_ARGB8888);
+                    SDL_RenderReadPixels(Renderer,nullptr,image->format->format,image->pixels,image->pitch);SDL_SaveBMP(image,path);SDL_FreeSurface(image);
+                }
+                printf("UPSTREAM_TABLE ticks=%d score=%d balls=%d ramps=%u orbits=%u targets=%u\n",probeTick,pb::MainTable->CurScore,pb::MainTable->BallCount,OmarchyTable::Ramps(),OmarchyTable::Orbits(),OmarchyTable::Targets());
+                break;
+            }
+            if(!getenv("OMARCHY_TEST_SHOT") && probeTick%240==30)pb::InputDown({InputTypes::Keyboard,SDLK_SPACE});
+            if(!getenv("OMARCHY_TEST_SHOT") && probeTick%240==150)pb::InputUp({InputTypes::Keyboard,SDLK_SPACE});
+            if(probeTick%90==0)pb::InputDown({InputTypes::Keyboard,SDLK_a});
+            if(probeTick%90==40)pb::InputUp({InputTypes::Keyboard,SDLK_a});
+            if(probeTick%110==0)pb::InputDown({InputTypes::Keyboard,SDLK_d});
+            if(probeTick%110==50)pb::InputUp({InputTypes::Keyboard,SDLK_d});
+            if(getenv("OMARCHY_TRACE")&&probeTick%120==0) for(auto b:pb::MainTable->BallList) if(b->ActiveFlag) printf("TRACE %d %.2f %.2f %.2f %.2f %.2f mask%d\n",probeTick,b->Position.X,b->Position.Y,b->Direction.X,b->Direction.Y,b->Speed,b->CollisionMask);
+            if(probeTick==180 && getenv("OMARCHY_TEST_SHOT")){
+                auto b=pb::MainTable->BallList.front();b->ActiveFlag=1;b->CollisionFlag=0;b->CollisionMask=1;b->EdgeCollisionCount=0;b->CollisionDisabledFlag=false;
+                std::string shot=getenv("OMARCHY_TEST_SHOT");float x=372,y=455,dx=0,dy=-1,speed=55;
+                if(shot=="bumper"){x=470;y=330;speed=20;}
+                if(shot=="target"){x=505;y=190;speed=15;}
+                if(shot=="orbit"){x=780;y=175;dx=0;dy=-1;speed=15;}
+                if(shot=="drain"){x=540;y=985;dy=1;speed=15;}
+                b->Position={(x-540)/25,(y-500)/25,b->Radius};b->Direction={dx,dy,0};b->Speed=speed;
+            }
+            ++probeTick;has_focus=true;
+        }
 		if (DispFrameRate)
 		{
 			auto curTime = Clock::now();
@@ -353,8 +404,11 @@ void winmain::MainLoop()
 			}
 			if (!single_step && !no_time_loss)
 			{
-				auto dt = static_cast<float>(frameDuration.count());
+				auto dt = probeLimit ? 1000.f/120 : static_cast<float>(frameDuration.count());
 				pb::frame(dt);
+                if(probeLimit)for(auto ball:pb::MainTable->BallList){
+                    if(!std::isfinite(ball->Position.X)||!std::isfinite(ball->Position.Y)||!std::isfinite(ball->Position.Z)||!std::isfinite(ball->Speed)||(ball->ActiveFlag&&(fabs(ball->Position.X)>22||ball->Position.Y < -22 ||ball->Position.Y>24))){return_value=2;return;}
+                }
 				if (DispGRhistory)
 				{
 					auto targetSize = static_cast<unsigned>(static_cast<float>(Options.UpdatesPerSecond) * gfrWindow);
@@ -370,10 +424,11 @@ void winmain::MainLoop()
 			}
 			no_time_loss = false;
 
-			if (UpdateToFrameCounter >= UpdateToFrameRatio)
+			if (UpdateToFrameCounter >= UpdateToFrameRatio && (!probeLimit || probeTick%30==0 || probeTick==probeLimit))
 			{
 				if (Options.HideCursor && CursorIdleCounter <= 0)
 					ImGui::SetMouseCursor(ImGuiMouseCursor_None);
+				OmarchyTheme::Update();
 				ImGui_ImplSDL2_NewFrame();
 				ImGui_Render_NewFrame();
 				ImGui::NewFrame();
@@ -383,7 +438,7 @@ void winmain::MainLoop()
 				// Alternative clear hack, clear might fail on some systems
 				// Todo: remove original clear, if save for all platforms
 				SDL_RenderFillRect(Renderer, nullptr);
-				render::PresentVScreen();
+				if(!OmarchyTable::Enabled) render::PresentVScreen();
 
 				ImGui::Render();
 				ImGui_Render_RenderDrawData(ImGui::GetDrawData());
@@ -422,7 +477,7 @@ void winmain::MainLoop()
 			auto targetTimeDelta = TargetFrameTime - DurationMs(updateEnd - frameStart) - sleepRemainder;
 
 			TimePoint frameEnd;
-			if (targetTimeDelta > DurationMs::zero() && !Options.UncappedUpdatesPerSecond)
+			if (!probeLimit && targetTimeDelta > DurationMs::zero() && !Options.UncappedUpdatesPerSecond)
 			{
 				if (Options.HybridSleep)
 					HybridSleep(targetTimeDelta);
@@ -502,7 +557,7 @@ void winmain::RenderUi()
 				pause(false);
 				pb::high_scores();
 			}
-			if (ImGui::MenuItem(pb::get_rc_string(Msg::Menu1_Demo), nullptr, DemoActive))
+			if (ImGui::MenuItem(pb::get_rc_string(Msg::Menu1_Demo), nullptr, DemoActive, !OmarchyTable::Enabled))
 			{
 				end_pause();
 				pb::toggle_demo();
@@ -511,11 +566,13 @@ void winmain::RenderUi()
 			ImGui::EndMenu();
 		}
 
-		if (ImGui::BeginMenu(pb::get_rc_string(Msg::Menu1_Options)))
+
+		if (ImGui::BeginMenu("Settings"))
 		{
+			OmarchyTheme::Menu();
 			ImGuiMenuItemWShortcut(GameBindings::ToggleMenuDisplay, Options.ShowMenu);
 			ImGuiMenuItemWShortcut(GameBindings::ToggleFullScreen, Options.FullScreen);
-			if (ImGui::BeginMenu(pb::get_rc_string(Msg::Menu1_Select_Players)))
+			if (ImGui::BeginMenu(pb::get_rc_string(Msg::Menu1_Select_Players), !OmarchyTable::Enabled))
 			{
 				if (ImGui::MenuItem(pb::get_rc_string(Msg::Menu1_1Player), nullptr, Options.Players == 1))
 				{
@@ -558,9 +615,9 @@ void winmain::RenderUi()
 			}
 			ImGui::Separator();
 
-			if (ImGui::BeginMenu("Audio"))
+			if (ImGui::BeginMenu("Sound"))
 			{
-				ImGuiMenuItemWShortcut(GameBindings::ToggleSounds, Options.Sounds);
+				if(ImGui::MenuItem("Mute", nullptr, !Options.Sounds)) options::toggle(Menu1::Sounds);
 				if (ImGui::MenuItem("Stereo Sound Effects", nullptr, Options.SoundStereo))
 				{
 					options::toggle(Menu1::SoundStereo);
@@ -580,7 +637,7 @@ void winmain::RenderUi()
 				}
 				ImGui::Separator();
 
-				ImGuiMenuItemWShortcut(GameBindings::ToggleMusic, Options.Music);
+				if(ImGui::MenuItem("Music", nullptr, Options.Music, !OmarchyTable::Enabled)) options::toggle(Menu1::Music);
 				ImGui::TextUnformatted("Music Volume");
 				if (ImGui::SliderInt("##Music Volume", &Options.MusicVolume.V, options::MinVolume, options::MaxVolume,
 				                     "%d",
@@ -662,7 +719,7 @@ void winmain::RenderUi()
 				ImGui::EndMenu();
 			}
 
-			if (ImGui::BeginMenu(pb::get_rc_string(Msg::Menu1_Table_Resolution)))
+			if (!OmarchyTable::Enabled && ImGui::BeginMenu(pb::get_rc_string(Msg::Menu1_Table_Resolution)))
 			{
 				char buffer[20]{};
 				auto resolutionStringId = Msg::Menu1_UseMaxResolution_640x480;
@@ -694,7 +751,7 @@ void winmain::RenderUi()
 				ImGui::EndMenu();
 			}
 
-			if (ImGui::BeginMenu("Game Data"))
+			if (!OmarchyTable::Enabled && ImGui::BeginMenu("Game Data"))
 			{
 				if (ImGui::MenuItem("Prefer 3DPB Data", nullptr, Options.Prefer3DPBGameData))
 				{
@@ -713,13 +770,14 @@ void winmain::RenderUi()
 
 		if (ImGui::BeginMenu(pb::get_rc_string(Msg::Menu1_Help)))
 		{
+if(OmarchyTable::Enabled && ImGui::MenuItem("How to play")){pause(false);showCircuitHelp=true;}
 #ifndef NDEBUG
 			if (ImGui::MenuItem("ImGui Demo", nullptr, ShowImGuiDemo))
 			{
 				ShowImGuiDemo ^= true;
 			}
 #endif
-			if (ImGui::MenuItem("Sprite Viewer", nullptr, ShowSpriteViewer))
+			if (!OmarchyTable::Enabled && ImGui::MenuItem("Sprite Viewer", nullptr, ShowSpriteViewer))
 			{
 				if (!ShowSpriteViewer)
 					pause(false);
@@ -729,7 +787,7 @@ void winmain::RenderUi()
 			{
 				DispGRhistory ^= true;
 			}
-			if (ImGui::MenuItem("Debug Overlay", nullptr, Options.DebugOverlay))
+			if (!OmarchyTable::Enabled && ImGui::MenuItem("Debug Overlay", nullptr, Options.DebugOverlay))
 			{
 				Options.DebugOverlay ^= true;
 			}
@@ -755,7 +813,7 @@ void winmain::RenderUi()
 					Options.DebugOverlayCollisionMask ^= true;
 				ImGui::EndMenu();
 			}
-			if (ImGui::BeginMenu("Cheats"))
+			if (!OmarchyTable::Enabled && ImGui::BeginMenu("Cheats"))
 			{
 				if (ImGui::MenuItem("hidden test", nullptr, pb::cheat_mode))
 					pb::PushCheat("hidden test");
@@ -831,8 +889,21 @@ void winmain::RenderUi()
 		ImGui::EndPopup();
 	}
 
-	// Print game texts on the sidebar
-	gdrv::grtext_draw_ttext_in_box();
+    if(showCircuitHelp){ImGui::OpenPopup("Omarchy Circuit - How to play");showCircuitHelp=false;}
+    if(ImGui::BeginPopupModal("Omarchy Circuit - How to play",nullptr,ImGuiWindowFlags_AlwaysAutoResize)){
+        ImGui::TextUnformatted("A / D: flippers    Hold SPACE, release: launch");
+        ImGui::TextUnformatted("P / Escape: pause    F2: new game    F11: fullscreen");
+        ImGui::Separator();
+        ImGui::TextUnformatted("Three balls. Keep the ball above the flippers.");
+        ImGui::BulletText("Bumpers: 100. Twelve hits: circuit bonus +2500.");
+        ImGui::BulletText("Targets: 250. All eight targets: system bonus +5000.");
+        ImGui::BulletText("Right orbit: 1000. Upper left ramp: 1500.");
+        ImGui::TextUnformatted("High scores persist. Unfinished games do not resume.");
+        if(ImGui::Button("Close"))ImGui::CloseCurrentPopup();
+        ImGui::EndPopup();
+    }
+    if(OmarchyTable::Enabled) CircuitView::Draw();
+    else gdrv::grtext_draw_ttext_in_box();
 }
 
 int winmain::event_handler(const SDL_Event* event)
@@ -903,6 +974,7 @@ int winmain::event_handler(const SDL_Event* event)
 		if (event->key.repeat)
 			break;
 
+		if(event->key.keysym.sym==SDLK_ESCAPE){pause(false);break;}
 		pb::InputDown({InputTypes::Keyboard, event->key.keysym.sym});
 		if (!pb::cheat_mode)
 			break;
@@ -932,7 +1004,7 @@ int winmain::event_handler(const SDL_Event* event)
 			}
 			break;
 		case SDLK_y:
-			SDL_SetWindowTitle(MainWindow, "Pinball");
+			SDL_SetWindowTitle(MainWindow, "Omarchy Space Cadet");
 			DispFrameRate ^= true;
 			break;
 		case SDLK_F1:
@@ -1077,7 +1149,9 @@ int winmain::ProcessWindowMessages()
 void winmain::memalloc_failure()
 {
 	midi::music_stop();
-	Sound::Close();
+	CircuitView::Shutdown();
+		OmarchyTable::Shutdown();
+		Sound::Close();
 	const char* caption = pb::get_rc_string(Msg::STRING270);
 	const char* text = pb::get_rc_string(Msg::STRING279);
 	pb::ShowMessageBox(SDL_MESSAGEBOX_ERROR, caption, text);
@@ -1098,14 +1172,20 @@ void winmain::a_dialog()
 	{
 		if (ImGui::BeginTabBar("AboutTabBar", ImGuiTabBarFlags_None))
 		{
-			if (ImGui::BeginTabItem("3DPB"))
+			if (ImGui::BeginTabItem("Omarchy Space Cadet"))
 			{
-				ImGui::TextUnformatted(pb::get_rc_string(Msg::STRING139));
+				ImGui::TextUnformatted("Omarchy Space Cadet 0.5.0");
+				ImGui::TextUnformatted("Omarchy Arcade");
+                if(OmarchyTable::Enabled)ImGui::TextWrapped("Omarchy Circuit: an original illustrated orbital table, powered by the SpaceCadetPinball engine. Artwork developed with OpenAI Image Generation.");
+				if(ImGui::SmallButton("Project and support")) SDL_OpenURL("https://github.com/tcballard/omarchy-spacecadet");
+				ImGui::TextWrapped("Source port and app: MIT. Dear ImGui: MIT. SDL: zlib. Original game resources retain their separate rights.");
+				ImGui::TextWrapped("Official Omarchy artwork: omarchy.org/brand. Brand rights remain with its owner. Independent community application.");
+				ImGui::TextUnformatted("Independent community app. Based on SpaceCadetPinball.");
 				ImGui::TextUnformatted("Original game by Cinematronics, Microsoft");
 				ImGui::Separator();
 
 				ImGui::TextUnformatted("Decompiled -> Ported to SDL");
-				ImGui::Text("Version %s", Version);
+				ImGui::Text("Upstream engine version %s", Version);
 				if (ImGui::SmallButton("Project home: https://github.com/k4zmu2a/SpaceCadetPinball"))
 				{
 #if SDL_VERSION_ATLEAST(2, 0, 14)

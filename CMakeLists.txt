@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0...3.5)
+cmake_minimum_required(VERSION 3.16)
 project(SpaceCadetPinball)
 
 set(CMAKE_CXX_STANDARD 11)
@@ -34,6 +34,8 @@ set(SDL2_BUILDING_LIBRARY ON)
 
 find_package(SDL2 REQUIRED)
 FIND_PACKAGE(SDL2_mixer REQUIRED)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(SDL2_IMAGE REQUIRED IMPORTED_TARGET SDL2_image)
 
 include_directories(${SDL2_INCLUDE_DIR} ${SDL2_MIXER_INCLUDE_DIR})
 get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
@@ -44,6 +46,10 @@ endforeach()
 
 
 set(SOURCE_FILES
+        SpaceCadetPinball/CircuitView.cpp
+        SpaceCadetPinball/OmarchyTable.cpp
+        SpaceCadetPinball/OmarchyTheme.cpp
+        SpaceCadetPinball/ThemePalette.cpp
         SpaceCadetPinball/control.cpp
         SpaceCadetPinball/control.h
         SpaceCadetPinball/EmbeddedData.cpp
@@ -195,6 +201,9 @@ if(WIN32)
 endif(WIN32)
 
 add_executable(SpaceCadetPinball ${SOURCE_FILES})
+if(UNIX AND NOT APPLE)
+    set_target_properties(SpaceCadetPinball PROPERTIES OUTPUT_NAME "omarchy-spacecadet-game")
+endif()
 
 # Skip pch on foreign code
 set_source_files_properties(
@@ -236,12 +245,51 @@ if(WIN32)
 endif()
 
 if(UNIX AND NOT APPLE)
-	include(GNUInstallDirs)
-	install(TARGETS "${PROJECT_NAME}" RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
-	install(FILES "${CMAKE_SOURCE_DIR}/Platform/Linux/${PROJECT_NAME}.desktop" DESTINATION "share/applications")
-	install(FILES "${CMAKE_SOURCE_DIR}/Platform/Linux/${PROJECT_NAME}.metainfo.xml" DESTINATION "share/metainfo")
-	foreach(S 16 32 48 128 192)
-		install(FILES "${CMAKE_SOURCE_DIR}/${PROJECT_NAME}/Icon_${S}x${S}.png" DESTINATION
-			"share/icons/hicolor/${S}x${S}/apps" RENAME "${PROJECT_NAME}.png")
-	endforeach(S)
+    include(GNUInstallDirs)
+    install(TARGETS SpaceCadetPinball RUNTIME DESTINATION "${CMAKE_INSTALL_LIBEXECDIR}/omarchy-spacecadet")
+    configure_file(Platform/Linux/omarchy-spacecadet.in omarchy-spacecadet @ONLY)
+    install(PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/omarchy-spacecadet" DESTINATION "${CMAKE_INSTALL_BINDIR}")
+    install(FILES Platform/Linux/omarchy-spacecadet.desktop DESTINATION "${CMAKE_INSTALL_DATADIR}/applications")
+    install(FILES LICENSE DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/omarchy-spacecadet")
 endif()
+include(CTest)
+if(BUILD_TESTING)
+    add_executable(theme-tests tests/theme_test.cpp SpaceCadetPinball/ThemePalette.cpp)
+    target_include_directories(theme-tests PRIVATE SpaceCadetPinball)
+    add_test(NAME theme-palette COMMAND theme-tests)
+endif()
+
+# Experimental standalone prototype; default play uses SpaceCadetPinball.
+add_executable(OmarchyPinball
+    native/NativeApp.cpp native/PinballModel.cpp
+    SpaceCadetPinball/ThemePalette.cpp
+    SpaceCadetPinball/imgui.cpp SpaceCadetPinball/imgui_draw.cpp
+    SpaceCadetPinball/imgui_widgets.cpp SpaceCadetPinball/imgui_tables.cpp
+    SpaceCadetPinball/imgui_impl_sdl.cpp SpaceCadetPinball/imgui_impl_sdlrenderer.cpp)
+set_target_properties(OmarchyPinball PROPERTIES OUTPUT_NAME "omarchy-pinball" CXX_STANDARD 14)
+target_include_directories(OmarchyPinball PRIVATE native SpaceCadetPinball)
+target_link_libraries(OmarchyPinball ${SDL2_LIBRARY})
+if(UNIX AND NOT APPLE)
+    install(TARGETS OmarchyPinball RUNTIME DESTINATION "${CMAKE_INSTALL_LIBEXECDIR}/omarchy-spacecadet")
+    install(FILES assets/brand/arcade-pinball.svg DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps" RENAME "omarchy-spacecadet.svg")
+    install(FILES assets/brand/README.md DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/omarchy-spacecadet" RENAME "BRAND.md")
+endif()
+if(BUILD_TESTING)
+    add_executable(pinball-tests tests/pinball_test.cpp native/PinballModel.cpp)
+    target_include_directories(pinball-tests PRIVATE native)
+    set_target_properties(pinball-tests PROPERTIES CXX_STANDARD 14)
+    add_test(NAME original-table COMMAND pinball-tests)
+endif()
+if(BUILD_TESTING)
+    add_test(NAME theme-path COMMAND python3 "${CMAKE_CURRENT_SOURCE_DIR}/tests/theme_path_test.py" $<TARGET_FILE:theme-tests>)
+endif()
+
+if(BUILD_TESTING)
+    add_test(NAME authored-upstream-table COMMAND python3 "${CMAKE_CURRENT_SOURCE_DIR}/tests/upstream_table_test.py" $<TARGET_FILE:SpaceCadetPinball>)
+endif()
+
+target_link_libraries(SpaceCadetPinball PkgConfig::SDL2_IMAGE)
+target_compile_definitions(SpaceCadetPinball PRIVATE
+ CIRCUIT_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assets/circuit"
+ CIRCUIT_INSTALL_DIR="${CMAKE_INSTALL_FULL_DATADIR}/omarchy-spacecadet/circuit")
+install(FILES assets/circuit/table.png DESTINATION "${CMAKE_INSTALL_DATADIR}/omarchy-spacecadet/circuit")
