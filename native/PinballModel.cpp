@@ -53,7 +53,7 @@ void Model::nudge(){
  else {velocity.y-=180;velocity.x+=ball.x<300?75:-75;message="Nudge carefully. Repeated nudges cause tilt.";}
 }
 void Model::step(double dt,Input input){
- events.clear();if(paused||gameOver)return;dt=std::max(0.,std::min(dt,1./30));time+=dt;
+ events.clear();if(paused||gameOver){wasPlunger=input.plunger;if(!input.plunger)charge=0;return;}dt=std::max(0.,std::min(dt,1./30));time+=dt;
  nudgeHeat=std::max(0.,nudgeHeat-dt*.35);
  for(auto& g:bumperGlow)g=std::max(0.,g-dt);for(auto& g:targetGlow)g=std::max(0.,g-dt);
  if(waiting){if(input.plunger)charge=std::min(1.,charge+dt*.9);if(wasPlunger&&!input.plunger)launch(charge);wasPlunger=input.plunger;}

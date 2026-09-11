@@ -5,6 +5,10 @@
 #include <cstdlib>
 void check(bool b,const char* name){if(!b){std::cerr<<"FAIL "<<name<<'\n';std::exit(1);}}
 int main(){
+ oma::Model pausedLaunch;
+ for(int i=0;i<60;++i)pausedLaunch.step(1./120,{false,false,true});
+ pausedLaunch.paused=true;pausedLaunch.step(1./120,{});pausedLaunch.paused=false;pausedLaunch.step(1./120,{});
+ check(pausedLaunch.waiting&&pausedLaunch.charge==0,"releasing plunger while paused does not launch on resume");
  oma::Model m;check(m.waiting&&m.balls==3&&m.score==0,"new game");
  for(int i=0;i<120;++i)m.step(1./120,{false,false,true});check(m.charge>.8&&m.waiting,"charge");m.step(1./120,{});check(!m.waiting&&m.velocity.y<0&&m.saveTime>0,"release launches");
  m.paused=true;auto before=m.ball;double time=m.time;m.step(1./120,{true,true,true});check(m.ball.x==before.x&&m.ball.y==before.y&&m.time==time,"pause freezes game");m.paused=false;
