@@ -1,1 +1,34 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 45 45"><g id="black-rook" class="black rook" fill="#000" fill-rule="evenodd" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 39h27v-3H9v3zM12.5 32l1.5-2.5h17l1.5 2.5h-20zM12 36v-4h21v4H12z" stroke-linecap="butt" /><path d="M14 29.5v-13h17v13H14z" stroke-linecap="butt" stroke-linejoin="miter" /><path d="M14 16.5L11 14h23l-3 2.5H14zM11 14V9h4v2h5V9h5v2h5V9h4v5H11z" stroke-linecap="butt" /><path d="M12 35.5h21M13 31.5h19M14 29.5h17M14 16.5h17M11 14h23" fill="none" stroke="#fff" stroke-width="1" stroke-linejoin="miter" /></g></svg>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-labelledby="title desc" data-piece="br" data-artwork-version="chisel-1.0">
+  <title id="title">Black Rook: Chisel</title>
+  <desc id="desc">Original faceted Omarchy Chess artwork based on the selected Chisel study. Separate recolourable diagonal inlay. Transparent background.</desc>
+  <defs><clipPath id="silhouette-clip"><path d="M 51.258,100.809 L 58.652,74.382 L 51.416,70.607 L 54.247,67.461 L 45.124,58.022 L 45.124,42.607 L 54.247,42.607 L 54.247,50.157 L 61.169,50.157 L 61.169,42.607 L 71.865,42.607 L 71.865,50.157 L 77.843,50.157 L 77.843,42.607 L 85.393,42.607 L 85.393,57.393 L 75.640,67.461 L 79.101,70.921 L 72.494,74.382 L 76.742,100.809 L 80.706,105.042 L 80.706,108.993 L 85.519,114.356 L 85.519,120.000 L 42.481,120.000 L 42.481,114.356 L 47.011,110.687 L 47.294,105.325 L 51.258,100.809 Z"/></clipPath></defs>
+  <path id="body" data-color-role="body" fill="#242c27" d="M 51.258,100.809 L 58.652,74.382 L 51.416,70.607 L 54.247,67.461 L 45.124,58.022 L 45.124,42.607 L 54.247,42.607 L 54.247,50.157 L 61.169,50.157 L 61.169,42.607 L 71.865,42.607 L 71.865,50.157 L 77.843,50.157 L 77.843,42.607 L 85.393,42.607 L 85.393,57.393 L 75.640,67.461 L 79.101,70.921 L 72.494,74.382 L 76.742,100.809 L 80.706,105.042 L 80.706,108.993 L 85.519,114.356 L 85.519,120.000 L 42.481,120.000 L 42.481,114.356 L 47.011,110.687 L 47.294,105.325 L 51.258,100.809 Z"/>
+  <g id="facets" clip-path="url(#silhouette-clip)">
+    <path id="facet-00" data-color-role="body-shade" fill="#171c1a" d="M 58.652,74.382 L 64.944,74.697 L 63.056,102.067 L 51.258,100.809 Z"/>
+    <path id="facet-01" data-color-role="body-mid" fill="#354138" d="M 58.652,74.382 L 64.944,74.697 L 53.933,95.146 Z"/>
+    <path id="facet-02" data-color-role="body-body" fill="#242c27" d="M 64.944,74.697 L 72.494,74.382 L 76.742,100.809 L 63.056,102.067 Z"/>
+    <path id="facet-03" data-color-role="body-mid" fill="#354138" d="M 45.124,42.607 L 51.730,42.607 L 51.730,57.393 L 45.124,58.022 Z"/>
+    <path id="facet-04" data-color-role="body-shade" fill="#171c1a" d="M 54.247,42.607 L 56.135,43.865 L 56.135,50.157 L 54.247,50.157 Z"/>
+    <path id="facet-05" data-color-role="body-mid" fill="#354138" d="M 61.169,42.607 L 64.944,42.607 L 64.944,57.393 L 51.730,57.393 L 51.730,42.607 L 54.247,42.607 L 54.247,50.157 L 61.169,50.157 Z"/>
+    <path id="facet-06" data-color-role="body-shade" fill="#171c1a" d="M 71.865,42.607 L 73.753,43.865 L 73.753,50.157 L 71.865,50.157 Z"/>
+    <path id="facet-07" data-color-role="body-light" fill="#515c53" d="M 64.944,42.607 L 71.865,42.607 L 71.865,50.157 L 77.843,50.157 L 77.843,42.607 L 85.393,42.607 L 85.393,57.393 L 64.944,57.393 Z"/>
+    <path id="facet-08" data-color-role="body-shade" fill="#171c1a" d="M 45.124,58.022 L 51.730,57.393 L 64.944,57.393 L 64.944,67.461 L 54.247,67.461 Z"/>
+    <path id="facet-09" data-color-role="body-mid" fill="#354138" d="M 64.944,57.393 L 85.393,57.393 L 75.640,67.461 L 64.944,67.461 Z"/>
+    <path id="facet-10" data-color-role="body-light" fill="#515c53" d="M 54.247,67.461 L 75.640,67.461 L 79.101,70.921 L 51.416,70.607 Z"/>
+    <path id="facet-11" data-color-role="body-mid" fill="#354138" d="M 51.416,70.607 L 64.944,71.551 L 64.944,74.697 L 58.652,74.382 Z"/>
+    <path id="facet-12" data-color-role="body-body" fill="#242c27" d="M 64.944,71.551 L 79.101,70.921 L 72.494,74.382 L 64.944,74.697 Z"/>
+    <path id="facet-13" data-color-role="body-light" fill="#515c53" d="M 51.258,100.809 L 76.742,100.809 L 80.706,105.042 L 64.000,105.889 L 47.294,105.325 Z"/>
+    <path id="facet-14" data-color-role="body-mid" fill="#354138" d="M 51.258,100.809 L 64.000,101.938 L 64.000,105.889 L 47.294,105.325 Z"/>
+    <path id="facet-15" data-color-role="body-shade" fill="#171c1a" d="M 47.294,105.325 L 64.000,105.889 L 63.434,110.969 L 47.011,110.687 Z"/>
+    <path id="facet-16" data-color-role="body-mid" fill="#354138" d="M 64.000,105.889 L 80.706,105.042 L 80.706,108.993 L 63.434,110.969 Z"/>
+    <path id="facet-17" data-color-role="body-body" fill="#242c27" d="M 47.011,110.687 L 63.434,110.969 L 80.706,108.993 L 85.519,114.356 L 64.000,114.920 L 42.481,114.356 Z"/>
+    <path id="facet-18" data-color-role="body-light" fill="#515c53" d="M 47.011,110.687 L 63.434,110.969 L 64.000,114.920 L 42.481,114.356 Z"/>
+    <path id="facet-19" data-color-role="body-mid" fill="#354138" d="M 42.481,114.356 L 64.000,114.920 L 62.867,120.000 L 42.481,120.000 Z"/>
+    <path id="facet-20" data-color-role="body-body" fill="#242c27" d="M 64.000,114.920 L 85.519,114.356 L 85.519,120.000 L 62.867,120.000 Z"/>
+  </g>
+  <g id="accent" data-color-role="accent" fill="#b3cb92" clip-path="url(#silhouette-clip)">
+    <path id="diagonal-inlay" d="M 46.728,120.000 L 50.975,120.000 L 80.706,108.993 L 80.706,107.018 Z"/>
+  </g>
+  <path id="outline" data-color-role="outline" d="M 51.258,100.809 L 58.652,74.382 L 51.416,70.607 L 54.247,67.461 L 45.124,58.022 L 45.124,42.607 L 54.247,42.607 L 54.247,50.157 L 61.169,50.157 L 61.169,42.607 L 71.865,42.607 L 71.865,50.157 L 77.843,50.157 L 77.843,42.607 L 85.393,42.607 L 85.393,57.393 L 75.640,67.461 L 79.101,70.921 L 72.494,74.382 L 76.742,100.809 L 80.706,105.042 L 80.706,108.993 L 85.519,114.356 L 85.519,120.000 L 42.481,120.000 L 42.481,114.356 L 47.011,110.687 L 47.294,105.325 L 51.258,100.809 Z" fill="none" stroke="#e4e8df" stroke-width="1.25" stroke-linejoin="round"/>
+</svg>

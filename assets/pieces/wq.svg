@@ -1,1 +1,43 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 45 45"><g id="white-queen" class="white queen" fill="#fff" fill-rule="evenodd" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12a2 2 0 1 1-4 0 2 2 0 1 1 4 0zM24.5 7.5a2 2 0 1 1-4 0 2 2 0 1 1 4 0zM41 12a2 2 0 1 1-4 0 2 2 0 1 1 4 0zM16 8.5a2 2 0 1 1-4 0 2 2 0 1 1 4 0zM33 9a2 2 0 1 1-4 0 2 2 0 1 1 4 0z" /><path d="M9 26c8.5-1.5 21-1.5 27 0l2-12-7 11V11l-5.5 13.5-3-15-3 15-5.5-14V25L7 14l2 12zM9 26c0 2 1.5 2 2.5 4 1 1.5 1 1 .5 3.5-1.5 1-1.5 2.5-1.5 2.5-1.5 1.5.5 2.5.5 2.5 6.5 1 16.5 1 23 0 0 0 1.5-1 0-2.5 0 0 .5-1.5-1-2.5-.5-2.5-.5-2 .5-3.5 1-2 2.5-2 2.5-4-8.5-1.5-18.5-1.5-27 0z" stroke-linecap="butt" /><path d="M11.5 30c3.5-1 18.5-1 22 0M12 33.5c6-1 15-1 21 0" fill="none" /></g></svg>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-labelledby="title desc" data-piece="wq" data-artwork-version="chisel-1.0">
+  <title id="title">White Queen: Chisel</title>
+  <desc id="desc">Original faceted Omarchy Chess artwork based on the selected Chisel study. Separate recolourable diagonal inlay. Transparent background.</desc>
+  <defs><clipPath id="silhouette-clip"><path d="M 50.551,99.551 L 55.663,63.056 L 48.112,56.764 L 50.944,52.674 L 49.371,50.472 L 50.629,49.213 L 37.730,30.652 L 47.169,35.685 L 47.169,30.022 L 49.371,25.618 L 54.090,28.135 L 60.382,41.978 L 58.494,27.820 L 58.809,25.303 L 64.472,18.382 L 69.506,26.876 L 67.618,41.663 L 73.596,32.539 L 74.539,28.449 L 80.202,25.933 L 82.090,31.910 L 80.831,36.000 L 90.899,29.708 L 83.978,39.461 L 77.056,49.843 L 78.629,52.045 L 76.427,53.618 L 79.888,57.079 L 70.764,63.056 L 77.449,99.551 L 81.634,104.061 L 81.634,108.272 L 86.715,113.985 L 86.715,120.000 L 41.285,120.000 L 41.285,113.985 L 46.067,110.076 L 46.366,104.362 L 50.551,99.551 Z"/></clipPath></defs>
+  <path id="body" data-color-role="body" fill="#e4e8df" d="M 50.551,99.551 L 55.663,63.056 L 48.112,56.764 L 50.944,52.674 L 49.371,50.472 L 50.629,49.213 L 37.730,30.652 L 47.169,35.685 L 47.169,30.022 L 49.371,25.618 L 54.090,28.135 L 60.382,41.978 L 58.494,27.820 L 58.809,25.303 L 64.472,18.382 L 69.506,26.876 L 67.618,41.663 L 73.596,32.539 L 74.539,28.449 L 80.202,25.933 L 82.090,31.910 L 80.831,36.000 L 90.899,29.708 L 83.978,39.461 L 77.056,49.843 L 78.629,52.045 L 76.427,53.618 L 79.888,57.079 L 70.764,63.056 L 77.449,99.551 L 81.634,104.061 L 81.634,108.272 L 86.715,113.985 L 86.715,120.000 L 41.285,120.000 L 41.285,113.985 L 46.067,110.076 L 46.366,104.362 L 50.551,99.551 Z"/>
+  <g id="facets" clip-path="url(#silhouette-clip)">
+    <path id="facet-00" data-color-role="body-shade" fill="#a7b29f" d="M 55.663,63.056 L 64.157,63.056 L 62.899,101.124 L 50.551,99.551 Z"/>
+    <path id="facet-01" data-color-role="body-mid" fill="#c9d0c1" d="M 55.663,63.056 L 64.157,64.315 L 52.831,90.742 Z"/>
+    <path id="facet-02" data-color-role="body-body" fill="#e4e8df" d="M 64.157,63.056 L 70.764,63.056 L 77.449,99.551 L 62.899,101.124 Z"/>
+    <path id="facet-03" data-color-role="body-shade" fill="#a7b29f" d="M 37.730,30.652 L 47.169,35.685 L 52.202,42.607 L 50.629,49.213 Z"/>
+    <path id="facet-04" data-color-role="body-light" fill="#f3f5ed" d="M 37.730,30.652 L 50.629,37.573 L 55.978,49.528 L 50.629,49.213 Z"/>
+    <path id="facet-05" data-color-role="body-mid" fill="#c9d0c1" d="M 47.169,30.022 L 49.371,25.618 L 50.315,32.539 L 56.607,47.326 L 53.146,48.270 Z"/>
+    <path id="facet-06" data-color-role="body-light" fill="#f3f5ed" d="M 49.371,25.618 L 54.090,28.135 L 53.775,33.483 L 60.067,47.011 L 56.607,47.326 L 50.315,32.539 Z"/>
+    <path id="facet-07" data-color-role="body-shade" fill="#a7b29f" d="M 53.775,33.483 L 54.090,28.135 L 60.382,41.978 L 61.640,49.843 L 60.067,47.011 Z"/>
+    <path id="facet-08" data-color-role="body-light" fill="#f3f5ed" d="M 64.472,18.382 L 69.506,26.876 L 64.472,30.337 Z"/>
+    <path id="facet-09" data-color-role="body-mid" fill="#c9d0c1" d="M 64.472,18.382 L 58.809,25.303 L 58.494,27.820 L 64.472,30.337 Z"/>
+    <path id="facet-10" data-color-role="body-shade" fill="#a7b29f" d="M 58.494,27.820 L 64.472,30.337 L 63.843,50.157 L 61.640,49.843 L 60.382,41.978 Z"/>
+    <path id="facet-11" data-color-role="body-body" fill="#e4e8df" d="M 64.472,30.337 L 69.506,26.876 L 67.618,41.663 L 67.303,50.157 L 63.843,50.157 Z"/>
+    <path id="facet-12" data-color-role="body-light" fill="#f3f5ed" d="M 74.539,28.449 L 80.202,25.933 L 77.685,31.910 L 73.596,39.461 L 68.876,49.843 L 67.303,50.157 L 73.596,32.539 Z"/>
+    <path id="facet-13" data-color-role="body-shade" fill="#a7b29f" d="M 80.202,25.933 L 82.090,31.910 L 80.831,36.000 L 73.910,46.697 L 68.876,49.843 L 73.596,39.461 L 77.685,31.910 Z"/>
+    <path id="facet-14" data-color-role="body-light" fill="#f3f5ed" d="M 80.831,36.000 L 90.899,29.708 L 79.258,42.607 L 72.337,50.157 L 68.876,49.843 Z"/>
+    <path id="facet-15" data-color-role="body-mid" fill="#c9d0c1" d="M 90.899,29.708 L 83.978,39.461 L 77.056,49.843 L 72.337,50.157 L 79.258,42.607 Z"/>
+    <path id="facet-16" data-color-role="body-light" fill="#f3f5ed" d="M 50.629,49.213 L 77.056,49.843 L 78.629,52.045 L 49.371,50.472 Z"/>
+    <path id="facet-17" data-color-role="body-shade" fill="#a7b29f" d="M 49.371,50.472 L 64.157,52.045 L 64.157,53.618 L 50.944,52.674 Z"/>
+    <path id="facet-18" data-color-role="body-mid" fill="#c9d0c1" d="M 64.157,52.045 L 78.629,52.045 L 76.427,53.618 L 64.157,53.618 Z"/>
+    <path id="facet-19" data-color-role="body-light" fill="#f3f5ed" d="M 50.944,52.674 L 76.427,53.618 L 79.888,57.079 L 48.112,56.764 Z"/>
+    <path id="facet-20" data-color-role="body-shade" fill="#a7b29f" d="M 48.112,56.764 L 64.157,57.393 L 64.157,63.056 L 55.663,63.056 Z"/>
+    <path id="facet-21" data-color-role="body-mid" fill="#c9d0c1" d="M 64.157,57.393 L 79.888,57.079 L 70.764,63.056 L 64.157,63.056 Z"/>
+    <path id="facet-22" data-color-role="body-light" fill="#f3f5ed" d="M 50.551,99.551 L 77.449,99.551 L 81.634,104.061 L 64.000,104.964 L 46.366,104.362 Z"/>
+    <path id="facet-23" data-color-role="body-mid" fill="#c9d0c1" d="M 50.551,99.551 L 64.000,100.753 L 64.000,104.964 L 46.366,104.362 Z"/>
+    <path id="facet-24" data-color-role="body-shade" fill="#a7b29f" d="M 46.366,104.362 L 64.000,104.964 L 63.402,110.377 L 46.067,110.076 Z"/>
+    <path id="facet-25" data-color-role="body-mid" fill="#c9d0c1" d="M 64.000,104.964 L 81.634,104.061 L 81.634,108.272 L 63.402,110.377 Z"/>
+    <path id="facet-26" data-color-role="body-body" fill="#e4e8df" d="M 46.067,110.076 L 63.402,110.377 L 81.634,108.272 L 86.715,113.985 L 64.000,114.587 L 41.285,113.985 Z"/>
+    <path id="facet-27" data-color-role="body-light" fill="#f3f5ed" d="M 46.067,110.076 L 63.402,110.377 L 64.000,114.587 L 41.285,113.985 Z"/>
+    <path id="facet-28" data-color-role="body-mid" fill="#c9d0c1" d="M 41.285,113.985 L 64.000,114.587 L 62.804,120.000 L 41.285,120.000 Z"/>
+    <path id="facet-29" data-color-role="body-body" fill="#e4e8df" d="M 64.000,114.587 L 86.715,113.985 L 86.715,120.000 L 62.804,120.000 Z"/>
+  </g>
+  <g id="accent" data-color-role="accent" fill="#b3cb92" clip-path="url(#silhouette-clip)">
+    <path id="diagonal-inlay" d="M 45.769,120.000 L 50.252,120.000 L 81.634,108.272 L 81.634,106.167 Z"/>
+  </g>
+  <path id="outline" data-color-role="outline" d="M 50.551,99.551 L 55.663,63.056 L 48.112,56.764 L 50.944,52.674 L 49.371,50.472 L 50.629,49.213 L 37.730,30.652 L 47.169,35.685 L 47.169,30.022 L 49.371,25.618 L 54.090,28.135 L 60.382,41.978 L 58.494,27.820 L 58.809,25.303 L 64.472,18.382 L 69.506,26.876 L 67.618,41.663 L 73.596,32.539 L 74.539,28.449 L 80.202,25.933 L 82.090,31.910 L 80.831,36.000 L 90.899,29.708 L 83.978,39.461 L 77.056,49.843 L 78.629,52.045 L 76.427,53.618 L 79.888,57.079 L 70.764,63.056 L 77.449,99.551 L 81.634,104.061 L 81.634,108.272 L 86.715,113.985 L 86.715,120.000 L 41.285,120.000 L 41.285,113.985 L 46.067,110.076 L 46.366,104.362 L 50.551,99.551 Z" fill="none" stroke="#171c1a" stroke-width="1.25" stroke-linejoin="round"/>
+</svg>

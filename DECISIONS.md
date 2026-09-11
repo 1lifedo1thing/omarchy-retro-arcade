@@ -68,3 +68,10 @@ Tom requested delivery of the polish milestone and supplied the shared four-poin
 - P07: Version 0.2.0 development package. No stable-release claim before the documented desktop acceptance pass.
 
 - P08: CI established that stockfish is unavailable in the standard Arch repositories used here. Include a private generic-CPU Stockfish executable in the app package, built from checksum-pinned upstream source/network; publish corresponding engine inputs alongside it. This increases the download by roughly 94 MB of network weights and removes a separate engine installation requirement. A system/custom engine can still be selected.
+
+## Chisel artwork integration
+
+- C01: Tom selected Chisel in the design thread and authorized bringing the delivered set into the game. Import all twelve SVGs unchanged; preserve their sculpted planes, fine rims, common 128×128 viewBox and relative heights.
+- C02: Recolour only the single inlay fill token to the active Omarchy accent. Keep body, facet and outline colours fixed for side recognition. Invalidate all twelve cached images when the accent changes; use the SVG loader's size-aware rendering for window/display scaling.
+- C03: Chisel includes its own transparent margins. Remove the former extra 10% inset around board images and match the dragged piece's footprint to its square image; native renders showed that applying both margins made the pieces unnecessarily small.
+- C04: Replace the default artwork without adding a new style selector in this milestone. Previous Cburnett artwork remains recoverable in Git history. No changes to rules, saves, engine selection or package dependencies.

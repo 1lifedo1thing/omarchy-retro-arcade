@@ -1,1 +1,34 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 45 45"><g id="black-pawn" class="black pawn"><path d="M22.5 9c-2.21 0-4 1.79-4 4 0 .89.29 1.71.78 2.38C17.33 16.5 16 18.59 16 21c0 2.03.94 3.84 2.41 5.03-3 1.06-7.41 5.55-7.41 13.47h23c0-7.92-4.41-12.41-7.41-13.47 1.47-1.19 2.41-3 2.41-5.03 0-2.41-1.33-4.5-3.28-5.62.49-.67.78-1.49.78-2.38 0-2.21-1.79-4-4-4z" fill="#000" stroke="#000" stroke-width="1.5" stroke-linecap="round" /></g></svg>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-labelledby="title desc" data-piece="bp" data-artwork-version="chisel-1.0">
+  <title id="title">Black Pawn: Chisel</title>
+  <desc id="desc">Original faceted Omarchy Chess artwork based on the selected Chisel study. Separate recolourable diagonal inlay. Transparent background.</desc>
+  <defs><clipPath id="silhouette-clip"><path d="M 52.674,104.270 L 58.494,88.225 L 54.404,85.079 L 57.236,82.562 L 53.461,77.843 L 51.888,70.921 L 53.461,64.629 L 58.809,60.539 L 61.640,59.596 L 67.303,59.910 L 72.966,62.742 L 75.798,68.404 L 76.427,72.180 L 74.539,78.157 L 70.764,82.562 L 73.596,85.079 L 68.876,88.225 L 75.326,104.270 L 78.849,107.740 L 78.849,110.978 L 83.128,115.373 L 83.128,120.000 L 44.872,120.000 L 44.872,115.373 L 48.899,112.366 L 49.151,107.971 L 52.674,104.270 Z"/></clipPath></defs>
+  <path id="body" data-color-role="body" fill="#242c27" d="M 52.674,104.270 L 58.494,88.225 L 54.404,85.079 L 57.236,82.562 L 53.461,77.843 L 51.888,70.921 L 53.461,64.629 L 58.809,60.539 L 61.640,59.596 L 67.303,59.910 L 72.966,62.742 L 75.798,68.404 L 76.427,72.180 L 74.539,78.157 L 70.764,82.562 L 73.596,85.079 L 68.876,88.225 L 75.326,104.270 L 78.849,107.740 L 78.849,110.978 L 83.128,115.373 L 83.128,120.000 L 44.872,120.000 L 44.872,115.373 L 48.899,112.366 L 49.151,107.971 L 52.674,104.270 Z"/>
+  <g id="facets" clip-path="url(#silhouette-clip)">
+    <path id="facet-00" data-color-role="body-shade" fill="#171c1a" d="M 58.494,88.225 L 64.157,87.910 L 63.528,105.843 L 52.674,104.270 Z"/>
+    <path id="facet-01" data-color-role="body-body" fill="#242c27" d="M 64.157,87.910 L 68.876,88.225 L 75.326,104.270 L 63.528,105.843 Z"/>
+    <path id="facet-02" data-color-role="body-light" fill="#515c53" d="M 58.809,60.539 L 61.640,59.596 L 67.303,59.910 L 72.966,62.742 L 69.506,65.258 L 60.067,64.944 Z"/>
+    <path id="facet-03" data-color-role="body-mid" fill="#354138" d="M 58.809,60.539 L 60.067,64.944 L 53.461,64.629 Z"/>
+    <path id="facet-04" data-color-role="body-shade" fill="#171c1a" d="M 53.461,64.629 L 60.067,64.944 L 56.607,70.607 L 51.888,70.921 Z"/>
+    <path id="facet-05" data-color-role="body-mid" fill="#354138" d="M 51.888,70.921 L 56.607,70.607 L 60.382,77.843 L 57.236,82.562 L 53.461,77.843 Z"/>
+    <path id="facet-06" data-color-role="body-body" fill="#242c27" d="M 60.067,64.944 L 69.506,65.258 L 73.281,71.865 L 70.449,78.157 L 60.382,77.843 L 56.607,70.607 Z"/>
+    <path id="facet-07" data-color-role="body-light" fill="#515c53" d="M 69.506,65.258 L 72.966,62.742 L 75.798,68.404 L 76.427,72.180 L 73.281,71.865 Z"/>
+    <path id="facet-08" data-color-role="body-mid" fill="#354138" d="M 60.382,77.843 L 70.449,78.157 L 70.764,82.562 L 64.472,84.449 L 57.236,82.562 Z"/>
+    <path id="facet-09" data-color-role="body-shade" fill="#171c1a" d="M 73.281,71.865 L 76.427,72.180 L 74.539,78.157 L 70.764,82.562 L 70.449,78.157 Z"/>
+    <path id="facet-10" data-color-role="body-light" fill="#515c53" d="M 57.236,82.562 L 70.764,82.562 L 73.596,85.079 L 54.404,85.079 Z"/>
+    <path id="facet-11" data-color-role="body-mid" fill="#354138" d="M 54.404,85.079 L 64.472,85.708 L 64.157,87.910 L 58.494,88.225 Z"/>
+    <path id="facet-12" data-color-role="body-body" fill="#242c27" d="M 64.472,85.708 L 73.596,85.079 L 68.876,88.225 L 64.157,87.910 Z"/>
+    <path id="facet-13" data-color-role="body-light" fill="#515c53" d="M 52.674,104.270 L 75.326,104.270 L 78.849,107.740 L 64.000,108.434 L 49.151,107.971 Z"/>
+    <path id="facet-14" data-color-role="body-mid" fill="#354138" d="M 52.674,104.270 L 64.000,105.195 L 64.000,108.434 L 49.151,107.971 Z"/>
+    <path id="facet-15" data-color-role="body-shade" fill="#171c1a" d="M 49.151,107.971 L 64.000,108.434 L 63.497,112.597 L 48.899,112.366 Z"/>
+    <path id="facet-16" data-color-role="body-mid" fill="#354138" d="M 64.000,108.434 L 78.849,107.740 L 78.849,110.978 L 63.497,112.597 Z"/>
+    <path id="facet-17" data-color-role="body-body" fill="#242c27" d="M 48.899,112.366 L 63.497,112.597 L 78.849,110.978 L 83.128,115.373 L 64.000,115.836 L 44.872,115.373 Z"/>
+    <path id="facet-18" data-color-role="body-light" fill="#515c53" d="M 48.899,112.366 L 63.497,112.597 L 64.000,115.836 L 44.872,115.373 Z"/>
+    <path id="facet-19" data-color-role="body-mid" fill="#354138" d="M 44.872,115.373 L 64.000,115.836 L 62.993,120.000 L 44.872,120.000 Z"/>
+    <path id="facet-20" data-color-role="body-body" fill="#242c27" d="M 64.000,115.836 L 83.128,115.373 L 83.128,120.000 L 62.993,120.000 Z"/>
+  </g>
+  <g id="accent" data-color-role="accent" fill="#b3cb92" clip-path="url(#silhouette-clip)">
+    <path id="diagonal-inlay" d="M 48.647,120.000 L 52.422,120.000 L 78.849,110.978 L 78.849,109.359 Z"/>
+  </g>
+  <path id="outline" data-color-role="outline" d="M 52.674,104.270 L 58.494,88.225 L 54.404,85.079 L 57.236,82.562 L 53.461,77.843 L 51.888,70.921 L 53.461,64.629 L 58.809,60.539 L 61.640,59.596 L 67.303,59.910 L 72.966,62.742 L 75.798,68.404 L 76.427,72.180 L 74.539,78.157 L 70.764,82.562 L 73.596,85.079 L 68.876,88.225 L 75.326,104.270 L 78.849,107.740 L 78.849,110.978 L 83.128,115.373 L 83.128,120.000 L 44.872,120.000 L 44.872,115.373 L 48.899,112.366 L 49.151,107.971 L 52.674,104.270 Z" fill="none" stroke="#e4e8df" stroke-width="1.25" stroke-linejoin="round"/>
+</svg>

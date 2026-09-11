@@ -14,6 +14,7 @@ use std::{
 };
 
 pub struct ChessApp {
+    pieces: crate::pieces::Pieces,
     pub game: Game,
     pub flipped: bool,
     pub guides: bool,
@@ -47,6 +48,7 @@ pub struct ChessApp {
 impl ChessApp {
     pub fn new(state_dir: PathBuf) -> Self {
         let mut app = Self {
+            pieces: crate::pieces::Pieces::default(),
             game: Game::default(),
             flipped: false,
             guides: true,
@@ -380,6 +382,7 @@ impl ChessApp {
             };
             self.theme_checked = Instant::now();
         }
+        self.pieces.refresh(ctx, self.theme.accent);
         self.apply_style(ctx);
         self.shortcuts(ctx);
         ctx.request_repaint_after(if self.engine.busy {
@@ -768,8 +771,7 @@ impl ChessApp {
                 .piece_at(square)
                 .filter(|_| self.drag_source != Some(square))
             {
-                egui::Image::new(piece_image(piece.color, piece.role))
-                    .paint_at(ui, cell.shrink(cell.width() * 0.1));
+                egui::Image::new(self.pieces.image(piece.color, piece.role)).paint_at(ui, cell);
             }
             if targets.contains(&square) {
                 ui.painter().circle_filled(
@@ -791,10 +793,8 @@ impl ChessApp {
             (self.drag_source, ui.input(|i| i.pointer.interact_pos()))
         {
             if let Some(piece) = position.board().piece_at(from) {
-                egui::Image::new(piece_image(piece.color, piece.role)).paint_at(
-                    ui,
-                    Rect::from_center_size(pointer, Vec2::splat(side / 8. * 0.85)),
-                );
+                egui::Image::new(self.pieces.image(piece.color, piece.role))
+                    .paint_at(ui, Rect::from_center_size(pointer, Vec2::splat(side / 8.)));
             }
         }
         if let Some(m) = &self.hint {
@@ -1097,21 +1097,5 @@ fn role_name(role: Role) -> &'static str {
         Role::Rook => "Rook",
         Role::Queen => "Queen",
         Role::King => "King",
-    }
-}
-fn piece_image(color: Color, role: Role) -> egui::ImageSource<'static> {
-    match (color, role) {
-        (Color::White, Role::Pawn) => egui::include_image!("../assets/pieces/wp.svg"),
-        (Color::White, Role::Knight) => egui::include_image!("../assets/pieces/wn.svg"),
-        (Color::White, Role::Bishop) => egui::include_image!("../assets/pieces/wb.svg"),
-        (Color::White, Role::Rook) => egui::include_image!("../assets/pieces/wr.svg"),
-        (Color::White, Role::Queen) => egui::include_image!("../assets/pieces/wq.svg"),
-        (Color::White, Role::King) => egui::include_image!("../assets/pieces/wk.svg"),
-        (Color::Black, Role::Pawn) => egui::include_image!("../assets/pieces/bp.svg"),
-        (Color::Black, Role::Knight) => egui::include_image!("../assets/pieces/bn.svg"),
-        (Color::Black, Role::Bishop) => egui::include_image!("../assets/pieces/bb.svg"),
-        (Color::Black, Role::Rook) => egui::include_image!("../assets/pieces/br.svg"),
-        (Color::Black, Role::Queen) => egui::include_image!("../assets/pieces/bq.svg"),
-        (Color::Black, Role::King) => egui::include_image!("../assets/pieces/bk.svg"),
     }
 }
