@@ -93,7 +93,14 @@ with tempfile.TemporaryDirectory(prefix='arcade-native-') as tmp:
         scram=json.loads((state/'omarchy-munch/session.json').read_text());assert scram['version']>=1
         key(0xff53);enter('Invaders');key(0x20,hold=.4);home()
         invaders=json.loads((state/'omarchy-invaders/session.json').read_text());assert invaders['version']==1
-        key(0xff53);enter('Chess');home()
+        key(0xff53);enter('Chess')
+        click(468,636);click(468,482)
+        chess_path=state/'omarchy-chess/session.json'
+        for _ in range(100):
+            if chess_path.exists() and len(json.loads(chess_path.read_text())['moves'])>=2:break
+            time.sleep(.1)
+        assert len(json.loads(chess_path.read_text())['moves'])>=2, 'Stockfish did not answer the native move'
+        home()
         assert (state/'omarchy-chess/session.json').is_file()
         # Pinball runs within the SAME native window; no SDL desktop window.
         key(0xff53);enter('Circuit Pinball');time.sleep(.7)
@@ -108,7 +115,7 @@ with tempfile.TemporaryDirectory(prefix='arcade-native-') as tmp:
         # Close from the app-level shortcut.
         key(ord('q'),True);app.wait(timeout=8);assert app.returncode==0
         assert json.loads(save.read_text())['game']==first['game']
-        print('PASS: singleton; one window across five games; Solitaire draw/save/reopen; legacy save paths; native keys; clean shutdown.')
+        print('PASS: singleton; one window across five games; Solitaire draw/save/reopen; legacy save paths; Stockfish replies to native move; native keys; clean shutdown.')
     finally:
         if app.poll() is None:app.kill();app.wait()
 x.XCloseDisplay(display)

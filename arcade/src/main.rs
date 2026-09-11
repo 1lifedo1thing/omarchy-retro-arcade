@@ -195,7 +195,11 @@ impl Arcade {
         });
         let mut chosen = None;
         egui::TopBottomPanel::bottom("arcade-footer")
-            .frame(egui::Frame::NONE.inner_margin(20.))
+            .frame(
+                egui::Frame::NONE
+                    .fill(self.theme.background)
+                    .inner_margin(20.),
+            )
             .show(ctx, |ui| {
                 ui.horizontal(|ui| {
                     ui.label(
@@ -319,6 +323,10 @@ impl Arcade {
 }
 impl eframe::App for Arcade {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+        if ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, Key::F11)) {
+            let fullscreen = ctx.input(|i| i.viewport().fullscreen.unwrap_or(false));
+            ctx.send_viewport_cmd(egui::ViewportCommand::Fullscreen(!fullscreen));
+        }
         if let Some(g) = self.initial.take() {
             self.open(g, ctx);
         }

@@ -4,11 +4,13 @@ Five games. One native app. One more go.
 
 **Circuit Pinball · Solitaire · Scram · Invaders · Chess**
 
+![The native Omarchy Arcade app](docs/screenshots/shelf.png)
+
 Open Arcade, choose a game and play in the same window. `Ctrl+H` returns to the collection; `Ctrl+Q` closes Arcade. The games retain their approved artwork, settings, controls and local saves. Everything works offline.
 
 ## Install
 
-Download the **arch-package** artifact from a passing build in this repository's Actions tab, extract it, then install the `.pkg.tar.zst` file:
+After the consolidated CI build passes, download the **arch-package** artifact from that build in this repository's Actions tab, extract it, then install the `.pkg.tar.zst` file:
 
 ```sh
 sudo pacman -U ./omarchy-retro-arcade-*.pkg.tar.zst
