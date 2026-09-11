@@ -1,65 +1,51 @@
 # Omarchy Space Cadet
 
-Open it and play pinball. A native desktop game with an original Omarchy table, official logo, theme colours and synthesized audio. No accounts, downloads or original Windows game files required for the default game.
+The original Space Cadet source port, with Omarchy appearance and Arcade desktop integration. The default now runs the upstream physics, table logic and missions.
 
-![Native Omarchy table](docs/native-table.png)
+**Original game resources are required.** The executable does not contain the Windows table data, artwork or sounds.
 
-## Play
+## Install and play
 
-- **A / D**, arrow keys or **left / right Shift**: flippers.
-- Hold **Space** to charge the plunger; release to launch.
-- **N** nudges the table. Repeated nudges cause tilt.
-- **P** pauses/resumes; **F2** starts a new game with confirmation; **F11** toggles fullscreen.
-- Controllers: shoulder buttons for flippers, A to launch, Start to pause.
+Download the Arch package from a successful [Linux build](https://github.com/tcballard/omarchy-spacecadet/actions/workflows/linux.yml), unzip it, and install its package with:
 
-Light the three upper O/M/A lanes and hit all three targets to complete a circuit. Each circuit awards a bonus and raises the score multiplier, up to 5x. You have three balls and a short ball-save window after each launch.
+    sudo pacman -U /path/to/omarchy-spacecadet-package.pkg.tar.zst
 
-Local high scores, appearance/audio preferences and the current game are saved automatically. A recovered game starts paused. Focus loss also pauses play. Mute and optional original synthesized background music are in the side panel.
+Or run makepkg -si from the checkout's packaging directory.
 
-## Install on Omarchy
+Open Omarchy Space Cadet from the app menu. On first launch, choose your original Space Cadet resource folder. Keep the complete folder, including PINBALL.DAT and its sounds/music, together. The folder selection is remembered. Full Tilt CADET.DAT and demo data remain supported by upstream.
 
-Download the `omarchy-spacecadet-arch-x86_64` artifact from a successful [Linux build](https://github.com/tcballard/omarchy-spacecadet/actions/workflows/linux.yml), unzip it, then install its `.pkg.tar.zst` file with `sudo pacman -U /path/to/package.pkg.tar.zst`.
+You can also select the folder explicitly:
 
-Or build the current checkout:
+    omarchy-spacecadet --data-dir /path/to/game-resources
 
-```sh
-cd packaging
-makepkg -si
-```
+The app does not download or bundle the original resources. Once configured, it opens the original engine directly. Missing data never silently launches a different pinball game.
 
-This is a development build, not an official Omarchy package.
+## Controls and appearance
 
-To update, install a newer package with the same `sudo pacman -U /path/to/new-package.pkg.tar.zst` command. Saves and settings live outside the package, normally in `~/.local/share/omarchy-spacecadet/` on Linux (or under `XDG_DATA_HOME` when set). Keep that directory when updating. CI tests a 0.2.0-to-0.2.1 package upgrade and verifies native restore without changing the saved progress or preferences.
+Fresh settings use A/D for flippers, Space for the plunger, P for pause, F2 for new game and F11 for fullscreen. Escape pauses. Controller shoulders, A and Start remain available. Settings includes configurable controls, Appearance and Sound. Existing custom bindings are preserved.
 
-## Omarchy Arcade
+Follow Omarchy reads the active palette, including the current state-directory location and older configuration fallback. Original table colours are available for comparison. The colour transformation changes rendered pixels, not collision geometry, physical constants or mission logic.
 
-The [shared Arcade standard](docs/ARCADE_STANDARD.md) defines direct play, familiar controls, theme/sound behaviour, matching identity and local data. It includes the remaining pinball gaps; collection-wide conformity is not yet verified.
+The launcher/window icon and About screen identify this independent Omarchy Arcade application. Official Omarchy assets retain their owner's rights; the source port and application code are MIT.
 
-## Two different tables
+## Updates and local state
 
-**Original Omarchy table (default):** new table geometry, rules, physics model, rendered artwork and audio. It uses SDL and the source port's ImGui stack and shared colour handling. This is a complete independently playable table, not a reproduction of Space Cadet's exact layout, missions or physics.
+Install a newer package with the same pacman -U command. High scores and engine settings are local, normally under ~/.local/share/omarchy-spacecadet/ (respecting XDG_DATA_HOME). The remembered resource path is under the user's configuration directory.
 
-**Classic Space Cadet (optional):** the retained upstream source port with Omarchy colour handling. Run `omarchy-spacecadet --classic` and choose your own original resource folder, or use `--classic --data-dir /path/to/data`. Original resources are neither included nor downloaded. The new original table does not remove this optional mode's resource requirement.
+The original engine does not implement the experimental table's mid-game save/resume. Its scores and rules are different, so those saved games are not converted. Experimental saves remain untouched.
 
-## Appearance and brand
+## Experimental table
 
-Follow Omarchy reads the current palette from `~/.local/state/omarchy/current/theme/colors.toml`, with XDG state and older configuration-path support. Directory replacement on theme changes is handled by reopening the path. You can choose Midnight or Amber, or use `SPACECADET_THEME_FILE` to select a colours file.
+The separately authored table is retained explicitly for existing users:
 
-The official [Omarchy logo and wordmark](https://omarchy.org/brand/) are included unchanged. The logo remains its official green, including under different palettes. Brand assets retain their owner's rights; see [provenance](assets/brand/README.md). This is an independent community application.
+    omarchy-spacecadet --experimental
 
-## Development and verification
+It uses different physics/rules and retains its own save/resume. It is not a fallback or a reproduction of Space Cadet. Screenshots in docs/native-table*.png show that experimental table, not the original engine.
 
-```sh
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
-cmake --build build --parallel
-ctest --test-dir build --output-on-failure
-SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy bin/omarchy-pinball --smoke 600
-```
+## Verification and rebranding
 
-The original table is built into `bin/omarchy-pinball`. The classic engine is `bin/omarchy-spacecadet-game`.
+CI compiles both engines, tests launcher routing and builds/installs the Arch package. Its resource-free gameplay smoke test and saved-game upgrade test exercise only the experimental table. They do not verify original-engine gameplay.
 
-Tests cover physics interactions, rules, a three-minute simulated run, save validation, launcher selection and theme paths. The actual native app has been run and visually inspected at normal and smaller/light-theme sizes. CI additionally builds/installs the Arch package and runs the installed default game without external resources.
+See [resource and rebranding plan](docs/ORIGINAL_ENGINE.md) for the remaining data-dependent work, and [Arcade standard](docs/ARCADE_STANDARD.md) for the collection target.
 
-Actual Hyprland, fractional scaling, physical controller and audio listening acceptance remain hardware checks. See [DECISIONS.md](DECISIONS.md) for the recorded trade-offs and [README.upstream.md](README.upstream.md) for the original source port.
-
-Version tags matching the package version build a GitHub prerelease with the Arch package and SHA256SUMS. Until a tag is published, use the development artifacts above. Appearance and sound are under Settings; rules and version/credits are under Help.
+Version tags matching the package version build GitHub prereleases with packages and checksums. No release is implied by a development PR.

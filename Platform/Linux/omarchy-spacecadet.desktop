@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
 Name=Omarchy Space Cadet
-Comment=Original Omarchy pinball with an optional classic table
+Comment=Original Space Cadet engine with Omarchy appearance
 Exec=omarchy-spacecadet
 Icon=omarchy-spacecadet
 Terminal=false
@@ -11,5 +11,5 @@ StartupWMClass=omarchy-spacecadet
 Actions=ChooseData;
 
 [Desktop Action ChooseData]
-Name=Play classic Space Cadet
+Name=Choose game resource folder
 Exec=omarchy-spacecadet --choose-data

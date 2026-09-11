@@ -54,3 +54,11 @@ The entries above describe the first, incomplete colour-only port. The following
 ## Arcade consistency milestone (0.2.1)
 
 Implement Game/Settings/Help menus, paused menu interaction, a distinct pinball launcher/window icon, and complete About information. Retain the exact official mark in the icon and game. Preserve the version-1 save format. Add a native restore test and CI upgrade from the actual 0.2.0 package; version tags publish package/checksum prereleases. No release tag is created by this change. The shared icon treatment is established here; other games are maintained in their own threads.
+
+## Restore the requested original engine (0.3.0)
+
+The user explicitly chose to return to the original engine. Default launch now selects the retained SpaceCadetPinball engine; the custom model is opt-in through --experimental. Preserve upstream physics, rules and missions. The missing original resources are a data dependency to resolve, not grounds to replace the gameplay again.
+
+Carry the Arcade window icon, Settings/Appearance/Sound grouping, About attribution and fresh-install P/F11/A/D defaults into the original engine. Keep existing bindings. Preserve experimental saves, but do not claim compatible mid-game saves in the original engine.
+
+Original gameplay and artwork replacement require the user's resource folder. See docs/ORIGINAL_ENGINE.md. Build/launcher tests must distinguish engine routing from experimental gameplay smoke coverage.

@@ -12,6 +12,7 @@
 #include "translations.h"
 #include "font_selection.h"
 #include "OmarchyTheme.h"
+#include "../native/ArcadeIcon.h"
 
 constexpr const char* winmain::Version;
 
@@ -90,6 +91,9 @@ int winmain::WinMain(LPCSTR lpCmdLine)
 		pb::ShowMessageBox(SDL_MESSAGEBOX_ERROR, "Could not create window", SDL_GetError());
 		return 1;
 	}
+
+	auto icon = SDL_CreateRGBSurfaceWithFormatFrom((void*)ArcadeIcon,128,128,32,128*4,SDL_PIXELFORMAT_RGBA32);
+	if(icon){SDL_SetWindowIcon(window,icon);SDL_FreeSurface(icon);}
 
 	// If HW fails, fallback to SW SDL renderer.
 	SDL_Renderer* renderer = nullptr;
@@ -515,10 +519,10 @@ void winmain::RenderUi()
 			ImGui::EndMenu();
 		}
 
-		OmarchyTheme::Menu();
 
-		if (ImGui::BeginMenu(pb::get_rc_string(Msg::Menu1_Options)))
+		if (ImGui::BeginMenu("Settings"))
 		{
+			OmarchyTheme::Menu();
 			ImGuiMenuItemWShortcut(GameBindings::ToggleMenuDisplay, Options.ShowMenu);
 			ImGuiMenuItemWShortcut(GameBindings::ToggleFullScreen, Options.FullScreen);
 			if (ImGui::BeginMenu(pb::get_rc_string(Msg::Menu1_Select_Players)))
@@ -564,9 +568,9 @@ void winmain::RenderUi()
 			}
 			ImGui::Separator();
 
-			if (ImGui::BeginMenu("Audio"))
+			if (ImGui::BeginMenu("Sound"))
 			{
-				ImGuiMenuItemWShortcut(GameBindings::ToggleSounds, Options.Sounds);
+				if(ImGui::MenuItem("Mute", nullptr, !Options.Sounds)) options::toggle(Menu1::Sounds);
 				if (ImGui::MenuItem("Stereo Sound Effects", nullptr, Options.SoundStereo))
 				{
 					options::toggle(Menu1::SoundStereo);
@@ -586,7 +590,7 @@ void winmain::RenderUi()
 				}
 				ImGui::Separator();
 
-				ImGuiMenuItemWShortcut(GameBindings::ToggleMusic, Options.Music);
+				if(ImGui::MenuItem("Music", nullptr, Options.Music)) options::toggle(Menu1::Music);
 				ImGui::TextUnformatted("Music Volume");
 				if (ImGui::SliderInt("##Music Volume", &Options.MusicVolume.V, options::MinVolume, options::MaxVolume,
 				                     "%d",
@@ -909,6 +913,7 @@ int winmain::event_handler(const SDL_Event* event)
 		if (event->key.repeat)
 			break;
 
+		if(event->key.keysym.sym==SDLK_ESCAPE){pause(false);break;}
 		pb::InputDown({InputTypes::Keyboard, event->key.keysym.sym});
 		if (!pb::cheat_mode)
 			break;
@@ -1106,13 +1111,17 @@ void winmain::a_dialog()
 		{
 			if (ImGui::BeginTabItem("Omarchy Space Cadet"))
 			{
-				ImGui::TextUnformatted("Omarchy Space Cadet / development preview");
+				ImGui::TextUnformatted("Omarchy Space Cadet 0.3.0");
+				ImGui::TextUnformatted("Omarchy Arcade");
+				if(ImGui::SmallButton("Project and support")) SDL_OpenURL("https://github.com/tcballard/omarchy-spacecadet");
+				ImGui::TextWrapped("Source port and app: MIT. Dear ImGui: MIT. SDL: zlib. Original game resources retain their separate rights.");
+				ImGui::TextWrapped("Official Omarchy artwork: omarchy.org/brand. Brand rights remain with its owner. Independent community application.");
 				ImGui::TextUnformatted("Independent community app. Based on SpaceCadetPinball.");
 				ImGui::TextUnformatted("Original game by Cinematronics, Microsoft");
 				ImGui::Separator();
 
 				ImGui::TextUnformatted("Decompiled -> Ported to SDL");
-				ImGui::Text("Version %s", Version);
+				ImGui::Text("Upstream engine version %s", Version);
 				if (ImGui::SmallButton("Project home: https://github.com/k4zmu2a/SpaceCadetPinball"))
 				{
 #if SDL_VERSION_ATLEAST(2, 0, 14)

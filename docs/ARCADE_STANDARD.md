@@ -14,17 +14,10 @@ Agreed collection baseline, 11 September 2026. These are acceptance criteria, no
 | Data | Local per-user saves/settings outside package-owned files. Automatic saves, validated recovery, clear write errors and save compatibility or migration across updates. |
 | Updates | Stable package names, increasing versions and durable versioned package downloads. Document pacman installation/update. No separate in-game updater required. CI artifacts remain development downloads. |
 
-## Pinball assessment
+## Pinball assessment after original-engine restoration
 
-Updated for the 0.2.1 Arcade milestone:
+Version 0.3.0 defaults to the original engine, requiring one-time resource selection. Settings/Appearance/Sound, Help/About and the Arcade window/launcher icon are integrated. Fresh controls use A/D, P, F2 and F11; existing configured bindings remain.
 
-| Area | Current status |
-| --- | --- |
-| Direct play | Implemented without external data; saved games restore paused. |
-| Controls | F2, P, Escape and F11 implemented. Game/Settings/Help menus implemented; opening them pauses play. |
-| Theme/sound | Theme following, remembered overrides, Mute and optional Music implemented. Live desktop and listening checks remain. |
-| Icons/About | Distinct pinball icon with unchanged official mark installed. About includes version, collection name, support link, upstream credits and licence/brand information. |
-| Saves | Atomic writes and recovery validation implemented. Linux data normally lives in `~/.local/share/omarchy-spacecadet/`, respecting `XDG_DATA_HOME`. |
-| Updates | Version 0.2.1 retains the package name. CI installs 0.2.0, seeds a saved game, upgrades, then verifies that the native app restores and re-saves unchanged data. Version tags trigger package/checksum prereleases; no tag or release is published by this PR. |
+The original engine preserves settings and high scores, but not the experimental table's in-progress saves. The experimental table and its saves remain available through --experimental. Its package upgrade test is not evidence of original-engine save/resume or gameplay.
 
-Other games have not been audited by this change. Real Omarchy desktop acceptance and game-specific quality checks remain necessary: this interface standard alone cannot establish polished pinball physics.
+The direct-play target is met after resource configuration. Full original gameplay, artwork replacement and remaining Arcade interaction parity require original resources and desktop acceptance. See [restoration plan](ORIGINAL_ENGINE.md). Other games are maintained separately.

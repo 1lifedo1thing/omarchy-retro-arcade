@@ -24,14 +24,14 @@ optionsStruct options::Options
 		{
 			"Left Flipper key",
 			Msg::KEYMAPPER_FlipperL,
-			{InputTypes::Keyboard, SDLK_z},
+			{InputTypes::Keyboard, SDLK_a},
 			{InputTypes::Mouse, SDL_BUTTON_LEFT},
 			{InputTypes::GameController, SDL_CONTROLLER_BUTTON_LEFTSHOULDER}
 		},
 		{
 			"Right Flipper key",
 			Msg::KEYMAPPER_FlipperR,
-			{InputTypes::Keyboard, SDLK_SLASH},
+			{InputTypes::Keyboard, SDLK_d},
 			{InputTypes::Mouse,SDL_BUTTON_RIGHT},
 			{InputTypes::GameController, SDL_CONTROLLER_BUTTON_RIGHTSHOULDER}
 		},
@@ -73,14 +73,14 @@ optionsStruct options::Options
 		{
 			"Toggle Pause",
 			Msg::Menu1_Pause_Resume_Game,
-			{InputTypes::Keyboard, SDLK_F3},
+			{InputTypes::Keyboard, SDLK_p},
 			{},
 			{InputTypes::GameController, SDL_CONTROLLER_BUTTON_START}
 		},
 		{
 			"Toggle FullScreen",
 			Msg::Menu1_Full_Screen,
-			{InputTypes::Keyboard, SDLK_F4},
+			{InputTypes::Keyboard, SDLK_F11},
 			{},
 			{}
 		},
@@ -247,13 +247,15 @@ void options::toggle(Menu1 uIDCheckItem)
 	case Menu1::Sounds:
 		Options.Sounds ^= true;
 		Sound::Enable(Options.Sounds);
+		if (!Options.Sounds) midi::music_stop();
+		else if (Options.Music) midi::music_play();
 		return;
 	case Menu1::SoundStereo:
 		Options.SoundStereo ^= true;
 		return;
 	case Menu1::Music:
 		Options.Music ^= true;
-		if (!Options.Music)
+		if (!Options.Music || !Options.Sounds)
 			midi::music_stop();
 		else
 			midi::music_play();

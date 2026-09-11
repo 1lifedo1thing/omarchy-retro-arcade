@@ -14,18 +14,21 @@ def valid(path):
 
 def main():
     parser = argparse.ArgumentParser(description="Omarchy Space Cadet")
-    parser.add_argument("--classic", action="store_true", help="Play the legacy Space Cadet table using your own resources")
+    parser.add_argument("--classic", action="store_true", help="Use the original engine (the default)")
+    parser.add_argument("--experimental", action="store_true", help="Play the separate experimental Omarchy table")
     parser.add_argument("--data-dir", type=Path, help="Folder containing your game data and sounds")
     parser.add_argument("--choose-data", action="store_true", help="Choose a different game data folder")
     parser.add_argument("--version", action="store_true")
     args, game_args = parser.parse_known_args()
     if args.version:
-        print("omarchy-spacecadet 0.2.1")
+        print("omarchy-spacecadet 0.3.0")
         return 0
-    if not (args.classic or args.choose_data or args.data_dir):
+    if args.experimental and (args.classic or args.choose_data or args.data_dir):
+        parser.error("--experimental cannot be combined with original-engine data options")
+    if args.experimental:
         binary = Path("@CMAKE_INSTALL_FULL_LIBEXECDIR@/omarchy-spacecadet/omarchy-pinball")
         if not binary.is_file():
-            print("Original table executable missing. Reinstall omarchy-spacecadet.", file=sys.stderr)
+            print("Experimental table executable missing. Reinstall omarchy-spacecadet.", file=sys.stderr)
             return 1
         os.execv(str(binary), [str(binary)] + game_args)
     config = Path(os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config") / "omarchy-spacecadet"
@@ -43,7 +46,7 @@ def main():
                        Path("/usr/share/SpaceCadetPinball"), Path("/usr/local/share/SpaceCadetPinball")]
     directory = next((p.resolve() for p in candidates if valid(p)), None)
     if not directory and explicit:
-        print("No PINBALL.DAT or CADET.DAT found in the selected folder.", file=sys.stderr)
+        print("No supported Space Cadet DAT file found in the selected folder.", file=sys.stderr)
         return 2
     if not directory and shutil.which("zenity"):
         subprocess.run(["zenity", "--info", "--title=Omarchy Space Cadet",

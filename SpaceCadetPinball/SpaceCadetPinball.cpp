@@ -4,7 +4,7 @@
 int main(int argc, char* argv[])
 {
 	for (int i=1; i<argc; ++i) {
-        if (std::strcmp(argv[i], "--version")==0) { std::puts("omarchy-spacecadet 0.1.0-dev"); return 0; }
+        if (std::strcmp(argv[i], "--version")==0) { std::puts("omarchy-spacecadet 0.3.0"); return 0; }
         if (std::strcmp(argv[i], "--help")==0) {
             std::puts("Omarchy Space Cadet\nUse omarchy-spacecadet --data-dir PATH to choose game resources.\nOptions: -sw (software renderer), -noaudio, --version"); return 0;
         }
