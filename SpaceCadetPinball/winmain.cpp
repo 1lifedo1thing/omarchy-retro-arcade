@@ -16,10 +16,11 @@
 #include "font_selection.h"
 #include "OmarchyTheme.h"
 #include "OmarchyTable.h"
+#include "CircuitView.h"
 #include "../native/ArcadeIcon.h"
 
 constexpr const char* winmain::Version;
-static SDL_Texture* circuitLogo=nullptr;
+
 
 SDL_Window* winmain::MainWindow = nullptr;
 SDL_Renderer* winmain::Renderer = nullptr;
@@ -43,6 +44,7 @@ std::vector<float> winmain::gfrDisplay{};
 unsigned winmain::gfrOffset = 0;
 float winmain::gfrWindow = 5.0f;
 bool winmain::ShowAboutDialog = false;
+static bool showCircuitHelp=false;
 bool winmain::ShowImGuiDemo = false;
 bool winmain::ShowSpriteViewer = false;
 bool winmain::ShowExitPopup = false;
@@ -122,8 +124,6 @@ int winmain::WinMain(LPCSTR lpCmdLine)
 		printf("Using SDL renderer: %s\n", rendererInfo.name);
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
-    auto logoSurface=SDL_CreateRGBSurfaceWithFormatFrom((void*)BrandLogo,128,128,32,128*4,SDL_PIXELFORMAT_RGBA32);
-    if(logoSurface){circuitLogo=SDL_CreateTextureFromSurface(renderer,logoSurface);SDL_FreeSurface(logoSurface);}
 
 	auto prefPath = SDL_GetPrefPath("", strstr(lpCmdLine,"--omarchy-table") ? "omarchy-spacecadet/circuit" : "omarchy-spacecadet");
 	auto basePath = SDL_GetBasePath();
@@ -255,6 +255,7 @@ int winmain::WinMain(LPCSTR lpCmdLine)
 			return 1;
 		}
 
+		if(OmarchyTable::Enabled&&!CircuitView::Init(renderer)){pb::ShowMessageBox(SDL_MESSAGEBOX_ERROR,"Missing Circuit artwork","Reinstall the game package to restore its artwork.");return 1;}
 		fullscrn::init();
 
 		pb::reset_table();
@@ -268,7 +269,7 @@ int winmain::WinMain(LPCSTR lpCmdLine)
 		if (!Options.FullScreen)
 		{
 			auto resInfo = &fullscrn::resolution_array[fullscrn::GetResolution()];
-			SDL_SetWindowSize(MainWindow, resInfo->TableWidth, resInfo->TableHeight);
+			SDL_SetWindowSize(MainWindow, OmarchyTable::Enabled?(getenv("OMARCHY_TEST_COMPACT")?900:1152):resInfo->TableWidth, OmarchyTable::Enabled?(getenv("OMARCHY_TEST_COMPACT")?622:790):resInfo->TableHeight);
 		}
 		SDL_ShowWindow(window);
 		fullscrn::set_screen_mode(Options.FullScreen);
@@ -285,6 +286,7 @@ int winmain::WinMain(LPCSTR lpCmdLine)
 
 		options::uninit();
 		midi::music_shutdown();
+		CircuitView::Shutdown();
 		OmarchyTable::Shutdown();
 		Sound::Close();
 		pb::uninit();
@@ -304,7 +306,6 @@ int winmain::WinMain(LPCSTR lpCmdLine)
 
 	SDL_free(basePath);
 	SDL_free(prefPath);
-	SDL_DestroyTexture(circuitLogo);circuitLogo=nullptr;
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
@@ -332,15 +333,25 @@ void winmain::MainLoop()
                     int w,h;SDL_GetRendererOutputSize(Renderer,&w,&h);auto image=SDL_CreateRGBSurfaceWithFormat(0,w,h,32,SDL_PIXELFORMAT_ARGB8888);
                     SDL_RenderReadPixels(Renderer,nullptr,image->format->format,image->pixels,image->pitch);SDL_SaveBMP(image,path);SDL_FreeSurface(image);
                 }
-                printf("UPSTREAM_TABLE ticks=%d score=%d balls=%d\n",probeTick,pb::MainTable->CurScore,pb::MainTable->BallCount);
+                printf("UPSTREAM_TABLE ticks=%d score=%d balls=%d ramps=%u orbits=%u targets=%u\n",probeTick,pb::MainTable->CurScore,pb::MainTable->BallCount,OmarchyTable::Ramps(),OmarchyTable::Orbits(),OmarchyTable::Targets());
                 break;
             }
-            if(probeTick%240==30)pb::InputDown({InputTypes::Keyboard,SDLK_SPACE});
-            if(probeTick%240==150)pb::InputUp({InputTypes::Keyboard,SDLK_SPACE});
+            if(!getenv("OMARCHY_TEST_SHOT") && probeTick%240==30)pb::InputDown({InputTypes::Keyboard,SDLK_SPACE});
+            if(!getenv("OMARCHY_TEST_SHOT") && probeTick%240==150)pb::InputUp({InputTypes::Keyboard,SDLK_SPACE});
             if(probeTick%90==0)pb::InputDown({InputTypes::Keyboard,SDLK_a});
             if(probeTick%90==40)pb::InputUp({InputTypes::Keyboard,SDLK_a});
             if(probeTick%110==0)pb::InputDown({InputTypes::Keyboard,SDLK_d});
             if(probeTick%110==50)pb::InputUp({InputTypes::Keyboard,SDLK_d});
+            if(getenv("OMARCHY_TRACE")&&probeTick%120==0) for(auto b:pb::MainTable->BallList) if(b->ActiveFlag) printf("TRACE %d %.2f %.2f %.2f %.2f %.2f mask%d\n",probeTick,b->Position.X,b->Position.Y,b->Direction.X,b->Direction.Y,b->Speed,b->CollisionMask);
+            if(probeTick==180 && getenv("OMARCHY_TEST_SHOT")){
+                auto b=pb::MainTable->BallList.front();b->ActiveFlag=1;b->CollisionFlag=0;b->CollisionMask=1;b->EdgeCollisionCount=0;b->CollisionDisabledFlag=false;
+                std::string shot=getenv("OMARCHY_TEST_SHOT");float x=372,y=455,dx=0,dy=-1,speed=55;
+                if(shot=="bumper"){x=470;y=330;speed=20;}
+                if(shot=="target"){x=505;y=190;speed=15;}
+                if(shot=="orbit"){x=780;y=175;dx=0;dy=-1;speed=15;}
+                if(shot=="drain"){x=540;y=985;dy=1;speed=15;}
+                b->Position={(x-540)/25,(y-500)/25,b->Radius};b->Direction={dx,dy,0};b->Speed=speed;
+            }
             ++probeTick;has_focus=true;
         }
 		if (DispFrameRate)
@@ -396,7 +407,7 @@ void winmain::MainLoop()
 				auto dt = probeLimit ? 1000.f/120 : static_cast<float>(frameDuration.count());
 				pb::frame(dt);
                 if(probeLimit)for(auto ball:pb::MainTable->BallList){
-                    if(!std::isfinite(ball->Position.X)||!std::isfinite(ball->Position.Y)||!std::isfinite(ball->Speed)){return_value=2;return;}
+                    if(!std::isfinite(ball->Position.X)||!std::isfinite(ball->Position.Y)||!std::isfinite(ball->Position.Z)||!std::isfinite(ball->Speed)||(ball->ActiveFlag&&(fabs(ball->Position.X)>22||ball->Position.Y < -22 ||ball->Position.Y>24))){return_value=2;return;}
                 }
 				if (DispGRhistory)
 				{
@@ -413,7 +424,7 @@ void winmain::MainLoop()
 			}
 			no_time_loss = false;
 
-			if (UpdateToFrameCounter >= UpdateToFrameRatio)
+			if (UpdateToFrameCounter >= UpdateToFrameRatio && (!probeLimit || probeTick%30==0 || probeTick==probeLimit))
 			{
 				if (Options.HideCursor && CursorIdleCounter <= 0)
 					ImGui::SetMouseCursor(ImGuiMouseCursor_None);
@@ -427,7 +438,7 @@ void winmain::MainLoop()
 				// Alternative clear hack, clear might fail on some systems
 				// Todo: remove original clear, if save for all platforms
 				SDL_RenderFillRect(Renderer, nullptr);
-				render::PresentVScreen();
+				if(!OmarchyTable::Enabled) render::PresentVScreen();
 
 				ImGui::Render();
 				ImGui_Render_RenderDrawData(ImGui::GetDrawData());
@@ -708,7 +719,7 @@ void winmain::RenderUi()
 				ImGui::EndMenu();
 			}
 
-			if (ImGui::BeginMenu(pb::get_rc_string(Msg::Menu1_Table_Resolution)))
+			if (!OmarchyTable::Enabled && ImGui::BeginMenu(pb::get_rc_string(Msg::Menu1_Table_Resolution)))
 			{
 				char buffer[20]{};
 				auto resolutionStringId = Msg::Menu1_UseMaxResolution_640x480;
@@ -740,7 +751,7 @@ void winmain::RenderUi()
 				ImGui::EndMenu();
 			}
 
-			if (ImGui::BeginMenu("Game Data"))
+			if (!OmarchyTable::Enabled && ImGui::BeginMenu("Game Data"))
 			{
 				if (ImGui::MenuItem("Prefer 3DPB Data", nullptr, Options.Prefer3DPBGameData))
 				{
@@ -759,13 +770,14 @@ void winmain::RenderUi()
 
 		if (ImGui::BeginMenu(pb::get_rc_string(Msg::Menu1_Help)))
 		{
+if(OmarchyTable::Enabled && ImGui::MenuItem("How to play")){pause(false);showCircuitHelp=true;}
 #ifndef NDEBUG
 			if (ImGui::MenuItem("ImGui Demo", nullptr, ShowImGuiDemo))
 			{
 				ShowImGuiDemo ^= true;
 			}
 #endif
-			if (ImGui::MenuItem("Sprite Viewer", nullptr, ShowSpriteViewer))
+			if (!OmarchyTable::Enabled && ImGui::MenuItem("Sprite Viewer", nullptr, ShowSpriteViewer))
 			{
 				if (!ShowSpriteViewer)
 					pause(false);
@@ -775,7 +787,7 @@ void winmain::RenderUi()
 			{
 				DispGRhistory ^= true;
 			}
-			if (ImGui::MenuItem("Debug Overlay", nullptr, Options.DebugOverlay))
+			if (!OmarchyTable::Enabled && ImGui::MenuItem("Debug Overlay", nullptr, Options.DebugOverlay))
 			{
 				Options.DebugOverlay ^= true;
 			}
@@ -877,16 +889,21 @@ void winmain::RenderUi()
 		ImGui::EndPopup();
 	}
 
-	// Print game texts on the sidebar
-	gdrv::grtext_draw_ttext_in_box();
-    if(OmarchyTable::Enabled){
-        auto d=ImGui::GetBackgroundDrawList();
-        auto pos=[](float x,float y){return ImVec2(fullscrn::OffsetX+x*fullscrn::ScaleX,fullscrn::OffsetY+(options::Options.ShowMenu ? MainMenuHeight : 0)+y*fullscrn::ScaleY);};
-        if(circuitLogo)d->AddImage((ImTextureID)circuitLogo,pos(168,190),pos(232,254));
-        d->AddText(pos(415,28),ImGui::GetColorU32(ImGuiCol_Text),"OMARCHY CIRCUIT");
-        d->AddText(pos(415,50),ImGui::GetColorU32(ImGuiCol_Text),"SCORE");
-        d->AddText(pos(415,94),ImGui::GetColorU32(ImGuiCol_Text),"BALL");
+    if(showCircuitHelp){ImGui::OpenPopup("Omarchy Circuit - How to play");showCircuitHelp=false;}
+    if(ImGui::BeginPopupModal("Omarchy Circuit - How to play",nullptr,ImGuiWindowFlags_AlwaysAutoResize)){
+        ImGui::TextUnformatted("A / D: flippers    Hold SPACE, release: launch");
+        ImGui::TextUnformatted("P / Escape: pause    F2: new game    F11: fullscreen");
+        ImGui::Separator();
+        ImGui::TextUnformatted("Three balls. Keep the ball above the flippers.");
+        ImGui::BulletText("Bumpers: 100. Twelve hits: circuit bonus +2500.");
+        ImGui::BulletText("Targets: 250. All eight targets: system bonus +5000.");
+        ImGui::BulletText("Right orbit: 1000. Upper left ramp: 1500.");
+        ImGui::TextUnformatted("High scores persist. Unfinished games do not resume.");
+        if(ImGui::Button("Close"))ImGui::CloseCurrentPopup();
+        ImGui::EndPopup();
     }
+    if(OmarchyTable::Enabled) CircuitView::Draw();
+    else gdrv::grtext_draw_ttext_in_box();
 }
 
 int winmain::event_handler(const SDL_Event* event)
@@ -1132,7 +1149,8 @@ int winmain::ProcessWindowMessages()
 void winmain::memalloc_failure()
 {
 	midi::music_stop();
-	OmarchyTable::Shutdown();
+	CircuitView::Shutdown();
+		OmarchyTable::Shutdown();
 		Sound::Close();
 	const char* caption = pb::get_rc_string(Msg::STRING270);
 	const char* text = pb::get_rc_string(Msg::STRING279);
@@ -1156,8 +1174,9 @@ void winmain::a_dialog()
 		{
 			if (ImGui::BeginTabItem("Omarchy Space Cadet"))
 			{
-				ImGui::TextUnformatted("Omarchy Space Cadet 0.4.0");
+				ImGui::TextUnformatted("Omarchy Space Cadet 0.5.0");
 				ImGui::TextUnformatted("Omarchy Arcade");
+                if(OmarchyTable::Enabled)ImGui::TextWrapped("Omarchy Circuit: an original illustrated orbital table, powered by the SpaceCadetPinball engine. Artwork developed with OpenAI Image Generation.");
 				if(ImGui::SmallButton("Project and support")) SDL_OpenURL("https://github.com/tcballard/omarchy-spacecadet");
 				ImGui::TextWrapped("Source port and app: MIT. Dear ImGui: MIT. SDL: zlib. Original game resources retain their separate rights.");
 				ImGui::TextWrapped("Official Omarchy artwork: omarchy.org/brand. Brand rights remain with its owner. Independent community application.");

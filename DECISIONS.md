@@ -70,3 +70,7 @@ The user chose to author an Omarchy table for the original engine, rather than r
 The default now launches --omarchy-table internally. --classic retains user-supplied resources; --experimental retains the old independent model. Circuit has its own settings/high-score directory. Do not imply mid-game saves or original missions. Multiplayer/demo/mission cheats are disabled for this table.
 
 A real executable integration test checks 180 simulated seconds, bumper scoring, drains and finite ball state without an external DAT.
+
+## 0.5.0: approved orbital-machine presentation
+
+Replace the rejected procedural test-table presentation with the user-approved detailed illustration, live engine-driven mechanisms and dot-matrix scoreboard. Keep upstream physics; author measured geometry, target banks, an elevated TRamp and orbit sensors. Composite the exact official logo centrally. Use selective green recolouring so theme integration retains the depicted materials. Test actual ramp/target/orbit/drain shots and ball containment, not just successful compilation.

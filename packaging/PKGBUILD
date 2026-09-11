@@ -1,12 +1,12 @@
 pkgname=omarchy-spacecadet
-pkgver=0.4.0
+pkgver=0.5.0
 pkgrel=1
 pkgdesc='Space Cadet source port with Omarchy appearance'
 arch=('x86_64' 'aarch64')
 url='https://github.com/tcballard/omarchy-spacecadet'
 license=('MIT')
-depends=('sdl2' 'sdl2_mixer' 'python' 'zenity')
-makedepends=('cmake' 'ninja' 'gcc')
+depends=('sdl2' 'sdl2_mixer' 'sdl2_image' 'python' 'zenity')
+makedepends=('cmake' 'ninja' 'gcc' 'pkgconf')
 # Local source recipe: invoke makepkg from a clean checkout's packaging directory.
 # It deliberately does not fetch or redistribute original game data.
 build() {

@@ -34,6 +34,8 @@ set(SDL2_BUILDING_LIBRARY ON)
 
 find_package(SDL2 REQUIRED)
 FIND_PACKAGE(SDL2_mixer REQUIRED)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(SDL2_IMAGE REQUIRED IMPORTED_TARGET SDL2_image)
 
 include_directories(${SDL2_INCLUDE_DIR} ${SDL2_MIXER_INCLUDE_DIR})
 get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
@@ -44,6 +46,7 @@ endforeach()
 
 
 set(SOURCE_FILES
+        SpaceCadetPinball/CircuitView.cpp
         SpaceCadetPinball/OmarchyTable.cpp
         SpaceCadetPinball/OmarchyTheme.cpp
         SpaceCadetPinball/ThemePalette.cpp
@@ -284,3 +287,9 @@ endif()
 if(BUILD_TESTING)
     add_test(NAME authored-upstream-table COMMAND python3 "${CMAKE_CURRENT_SOURCE_DIR}/tests/upstream_table_test.py" $<TARGET_FILE:SpaceCadetPinball>)
 endif()
+
+target_link_libraries(SpaceCadetPinball PkgConfig::SDL2_IMAGE)
+target_compile_definitions(SpaceCadetPinball PRIVATE
+ CIRCUIT_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assets/circuit"
+ CIRCUIT_INSTALL_DIR="${CMAKE_INSTALL_FULL_DATADIR}/omarchy-spacecadet/circuit")
+install(FILES assets/circuit/table.png DESTINATION "${CMAKE_INSTALL_DATADIR}/omarchy-spacecadet/circuit")

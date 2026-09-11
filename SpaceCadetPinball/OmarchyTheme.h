@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 namespace OmarchyTheme {
+uint32_t Accent();
 void Init(const char* preferences);
 void Update();
 void Menu();

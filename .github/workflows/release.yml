@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-24.04
     container: archlinux:base-devel
     steps:
-      - run: pacman -Syu --noconfirm cmake ninja sdl2 sdl2_mixer python zenity git github-cli
+      - run: pacman -Syu --noconfirm cmake ninja sdl2 sdl2_mixer sdl2_image pkgconf python zenity git github-cli
       - uses: actions/checkout@v4
       - name: Verify tag matches package
         shell: bash

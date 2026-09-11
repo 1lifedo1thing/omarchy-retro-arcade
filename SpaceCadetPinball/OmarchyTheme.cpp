@@ -55,6 +55,7 @@ static void reload() {
     }
     apply();
 }
+uint32_t Accent(){return mode==3 || (mode==0&&!usingFile) ? 0xa3ce6b : palette.accent;}
 void Init(const char* preferences) {
     settings=std::string(preferences ? preferences : "")+"appearance.txt";
     std::ifstream saved(settings); int value=0;
