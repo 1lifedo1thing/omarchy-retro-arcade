@@ -12,8 +12,7 @@
 
 ## Remaining gates
 
-- Initial GitHub publication is pending; the destination repository is currently empty.
-- Clean Arch package installation/reinstallation and CI results for the consolidated revision. The complete workflow and pinned Stockfish build recipe are prepared but have not run in this repository.
+- Clean Arch package installation/reinstallation and CI results for the consolidated revision. [The first consolidated build](https://github.com/tcballard/omarchy-retro-arcade/actions/runs/34657618469) is running.
 - Real Omarchy/Wayland desktop acceptance: sound, fractional scaling, low-end CPU/GPU performance, Pinball input latency and game difficulty.
 
 This is a development preview. Headless Linux verification is not a real Omarchy desktop playtest.
