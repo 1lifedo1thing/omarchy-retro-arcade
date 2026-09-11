@@ -1,6 +1,12 @@
-# Decisions for Tom to review
+# Decision log
 
-These are implementation choices made under the instruction to build autonomously. They are reviewable defaults, not new requirements attributed to Tom. No release, marketplace submission or upstream endorsement is implied.
+These are implementation choices made under the instruction to build autonomously. The current choices are approved as recorded below. No release, marketplace submission or upstream endorsement is implied.
+
+## Approval
+
+Tom approved all current implementation decisions following delivery of the Rust build: “I’m happy with all decisions you made”. This approval covers R01–R10 and the earlier choices that they do not supersede, as delivered at commit `1023007fc808395adcb0cb174f614664c6bdcb66`. Superseded Python choices remain historical only.
+
+These choices are now the agreed baseline. The approval does not establish completion of the outstanding desktop acceptance checks or change the draft PR/release status.
 
 | ID | Choice made | Reason / trade-off | Review priority |
 |---|---|---|---|
@@ -41,7 +47,7 @@ These are implementation choices made under the instruction to build autonomousl
 | R09 | XDG portal file dialogs, AccessKit enabled | Requires a working desktop portal. Full accessible 64-square board and screen-reader acceptance remain unfinished (D18). |
 | R10 | Preserve feature scope and draft PR | No clocks, online play or speculative engine rewrite. Real Hyprland/Dell acceptance remains required before stable release. |
 
-## Most useful next review
+## Future product review
 
 1. Does the Rust native interface feel right, including portal dialogs and keyboard interaction?
 2. Does the restrained 2D board feel right on the Dell with real themes?
