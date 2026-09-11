@@ -13,7 +13,7 @@ jobs:
         with:
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
-      - run: sudo apt-get update && sudo apt-get install -y libegl1-mesa-dev libgl1-mesa-dev libxkbcommon-dev libwayland-dev libx11-dev libxi-dev libxcursor-dev libxrandr-dev xvfb desktop-file-utils
+      - run: sudo apt-get update && sudo apt-get install -y libegl1-mesa-dev libgl1-mesa-dev libxkbcommon-dev libxkbcommon-x11-0 libwayland-dev libx11-dev libxi-dev libxcursor-dev libxrandr-dev xvfb desktop-file-utils
       - run: cargo fmt --check
       - run: cargo clippy --locked --all-targets -- -D warnings
       - run: cargo test --locked
@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     container: archlinux:base-devel
     steps:
-      - run: pacman -Syu --noconfirm git rust libglvnd libx11 libxcursor libxi libxrandr libxkbcommon wayland dbus mesa xorg-server-xvfb xorg-xauth
+      - run: pacman -Syu --noconfirm git rust libglvnd libx11 libxcursor libxi libxrandr libxkbcommon libxkbcommon-x11 wayland dbus mesa xorg-server-xvfb xorg-xauth
       - uses: actions/checkout@v4
       - run: |
           useradd -m builder

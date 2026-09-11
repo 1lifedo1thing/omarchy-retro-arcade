@@ -6,7 +6,7 @@ pkgdesc='Native Rust Klondike with Omarchy theme integration'
 arch=('x86_64' 'aarch64')
 url='https://github.com/tcballard/omarchy-solitaire'
 license=('MIT' 'LicenseRef-Omarchy-Artwork')
-depends=('gcc-libs' 'glibc' 'libglvnd' 'libx11' 'libxcursor' 'libxi' 'libxrandr' 'libxkbcommon' 'wayland' 'dbus')
+depends=('gcc-libs' 'glibc' 'libglvnd' 'libx11' 'libxcursor' 'libxi' 'libxrandr' 'libxkbcommon' 'libxkbcommon-x11' 'wayland' 'dbus')
 optdepends=('xdg-desktop-portal: special card-back file chooser'
             'xdg-desktop-portal-hyprland: file chooser integration on Omarchy')
 makedepends=('rust')

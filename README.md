@@ -51,7 +51,7 @@ runtime dependencies. For Ubuntu development:
 
 ```sh
 sudo apt install build-essential libegl1-mesa-dev libgl1-mesa-dev \
-  libxkbcommon-dev libwayland-dev libx11-dev libxi-dev libxcursor-dev libxrandr-dev
+  libxkbcommon-dev libxkbcommon-x11-0 libwayland-dev libx11-dev libxi-dev libxcursor-dev libxrandr-dev
 cargo run --locked --release
 ```
 

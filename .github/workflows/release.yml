@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     container: archlinux:base-devel
     steps:
-      - run: pacman -Syu --noconfirm git rust libglvnd libx11 libxcursor libxi libxrandr libxkbcommon wayland dbus mesa xorg-server-xvfb xorg-xauth python
+      - run: pacman -Syu --noconfirm git rust libglvnd libx11 libxcursor libxi libxrandr libxkbcommon libxkbcommon-x11 wayland dbus mesa xorg-server-xvfb xorg-xauth python
       - uses: actions/checkout@v4
       - name: Verify version agrees with tag and package
         run: |
