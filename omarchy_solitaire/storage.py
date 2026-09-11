@@ -10,7 +10,7 @@ def xdg_dir(variable, fallback):
     return Path(value) if value and Path(value).is_absolute() else Path.home() / fallback
 
 
-def read_json(path, limit=4_000_000):
+def read_json(path, limit=32_000_000):
     with Path(path).open("rb") as stream:
         raw = stream.read(limit + 1)
     if len(raw) > limit:
@@ -31,4 +31,3 @@ def atomic_json(path, data):
     finally:
         if os.path.exists(temporary):
             os.unlink(temporary)
-

@@ -38,7 +38,6 @@ class Card:
 
 
 class Game:
-    HISTORY_LIMIT = 500
 
     def __init__(self, seed=None, draw=1):
         if draw not in (1, 3):
@@ -79,7 +78,6 @@ class Game:
 
     def _remember(self):
         self.history.append(self.snapshot())
-        self.history = self.history[-self.HISTORY_LIMIT:]
 
     def undo(self):
         if not self.history:
@@ -183,7 +181,7 @@ class Game:
         if not isinstance(data, dict) or data.get("version") != 1:
             raise ValueError("Unsupported save version")
         history = data.get("history", [])
-        if not isinstance(history, list) or len(history) > cls.HISTORY_LIMIT:
+        if not isinstance(history, list):
             raise ValueError("Invalid undo history")
         for state in [data.get("state")] + history:
             cls.validate(state)
