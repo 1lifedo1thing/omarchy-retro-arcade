@@ -21,14 +21,15 @@ ApplicationWindow {
     palette.highlight: theme.colors.accent
     palette.highlightedText: theme.colors.onAccent
     property bool celebrating: false
+    property bool dialogOpen: newDeal.visible || settings.visible || help.visible || statistics.visible
     onActiveChanged: game.setActive(active)
     onClosing: game.save()
 
-    Shortcut { sequence: "Ctrl+N"; onActivated: newDeal.open() }
-    Shortcut { sequence: "Ctrl+Z"; enabled: !newDeal.visible; onActivated: game.undo() }
-    Shortcut { sequence: "H"; enabled: !settings.visible && !newDeal.visible; onActivated: game.hint() }
-    Shortcut { sequence: "F1"; onActivated: help.open() }
-    Shortcut { sequence: "Ctrl+,"; onActivated: settings.open() }
+    Shortcut { sequence: "Ctrl+N"; enabled: !window.dialogOpen; onActivated: newDeal.open() }
+    Shortcut { sequence: "Ctrl+Z"; enabled: !window.dialogOpen; onActivated: game.undo() }
+    Shortcut { sequence: "H"; enabled: !window.dialogOpen; onActivated: game.hint() }
+    Shortcut { sequence: "F1"; enabled: !window.dialogOpen; onActivated: help.open() }
+    Shortcut { sequence: "Ctrl+,"; enabled: !window.dialogOpen; onActivated: settings.open() }
     Shortcut { sequence: "Ctrl+Q"; onActivated: window.close() }
 
     header: Item {
@@ -160,6 +161,8 @@ ApplicationWindow {
         onClosed: { game.setPaused(false); table.forceActiveFocus() }
         contentItem: ScrollView {
             clip: true
+            ScrollBar.vertical.policy: ScrollBar.AlwaysOn
+            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
             ColumnLayout {
             width: settings.availableWidth; spacing: 16
             Label { text: "The Omarchy edition"; font.pixelSize: 18; font.weight: Font.Medium }
@@ -224,6 +227,8 @@ ApplicationWindow {
         onClosed: { game.setPaused(false); table.forceActiveFocus() }
         contentItem: ScrollView {
             clip: true
+            ScrollBar.vertical.policy: ScrollBar.AlwaysOn
+            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
             ColumnLayout {
             width: help.availableWidth; spacing: 15
             Label { text: "Get all 52 cards onto the four foundations, building each suit from ace to king."; wrapMode: Text.WordWrap; Layout.fillWidth: true; font.pixelSize: 15 }

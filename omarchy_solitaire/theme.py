@@ -28,7 +28,7 @@ def contrast(a, b):
 def readable(foreground, background):
     if contrast(foreground, background) >= 4.5:
         return foreground
-    return "#141814" if contrast("#141814", background) > contrast("#ffffff", background) else "#ffffff"
+    return "#000000" if contrast("#000000", background) > contrast("#ffffff", background) else "#ffffff"
 
 
 def blend(a, b, amount):
@@ -44,8 +44,14 @@ def palette(raw):
     fg = readable(fg, bg)
     accent = readable(accent, bg)
     surface = blend(bg, fg, .06)
+    fg = readable(fg, surface)
+    accent = readable(accent, surface)
+    if contrast(fg, bg) < 4.5 or contrast(accent, bg) < 4.5:
+        surface = bg
+        fg = readable(fg, bg)
+        accent = readable(accent, bg)
     return {"table": bg, "surface": surface, "text": fg,
-            "muted": readable(blend(bg, fg, .62), bg), "accent": accent,
+            "muted": fg, "accent": accent,
             "onAccent": readable(bg, accent), "line": blend(bg, fg, .22),
             "back": blend(bg, accent, .16), "backPattern": blend(bg, accent, .37),
             "face": "#faf7ef", "ink": "#202826", "red": "#ab263d"}
@@ -117,10 +123,6 @@ class Theme(QObject):
             return
         directory = next((p for p in self.candidates() if (p / "colors.toml").is_file()), None)
         if directory is None:
-            if self._signature is not None:
-                self._signature = None
-                self._colors, self._name, self._art = palette({}), "House green", ""
-                self.changed.emit()
             return
         paths = [directory / "colors.toml", directory.parent / "theme.name",
                  directory / "solitaire/back.svg", directory / "solitaire/back.png"]
@@ -177,4 +179,3 @@ class Theme(QObject):
             self._signature = None
             self.refresh()
         self.changed.emit()
-

@@ -7,6 +7,11 @@ PySide6/Qt 6.11.2 using the offscreen platform and software rendering.
 
 `python -m unittest discover -s tests -v`
 
+**Result: 17 tests passed.** The full suite completed in 22.4 seconds. The eight
+Qt integration tests were subsequently rerun after the final keyboard/dialog
+changes and passed, including real double-click-to-foundation input. No QML
+warnings were emitted by the native interaction test.
+
 - Seeded deal layout, 52-card uniqueness and face orientation.
 - Draw-one/draw-three, partial packets, recycle order and undo.
 - Alternating-colour sequences, king-only empty columns, revealing hidden cards.
@@ -19,6 +24,11 @@ PySide6/Qt 6.11.2 using the offscreen platform and software rendering.
 - Static custom artwork imports; scripts and external resources rejected.
 - Timer pause and statistics counting across undo/restart/repeated victory.
 - Native Qt click-to-move, keyboard draw/undo, sequence drag-and-drop, and window capture at two sizes.
+
+Both the source distribution and wheel build successfully using
+`python -m build --no-isolation`. The wheel includes all QML and SVG assets and
+was installed into an isolated local staging directory for a native startup
+and screenshot check.
 
 ## Visual inspection
 
@@ -34,6 +44,12 @@ fractional scaling, assistive-technology integration or pacman installation.
 The Arch CI job builds and tests inside Arch; verify its result before installing
 the artifact. A real Omarchy desktop smoke test remains required before a public
 release is presented as ready.
+
+At handoff, publishing to GitHub's default branch was blocked by automatic
+approval review because explicit permission to publish was required. The
+commits are local; remote CI has **not run**, and the Arch package recipe has
+**not been executed** in this environment. Approval to push the prepared commits
+is the next step, followed by checking both CI jobs.
 
 Suggested desktop check: install package, launch from the menu, draw and drag a
 sequence, undo, switch between light/dark Omarchy themes without losing the

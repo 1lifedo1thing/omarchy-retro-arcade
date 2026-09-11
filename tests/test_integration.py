@@ -100,6 +100,25 @@ class IntegrationTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 validate_art(path)
 
+    def test_locked_palette_survives_restart(self):
+        self.game.theme._colors = palette({"background": "#102030", "foreground": "#ffffff", "accent": "#99eeff"})
+        self.game.theme._name = "Locked test"
+        self.game.preference("followTheme", False)
+        other = Controller(self.temp.name)
+        try:
+            self.assertFalse(other.theme.following)
+            self.assertEqual(other.theme.colors["table"], "#102030")
+            self.assertEqual(other.theme.name, "Locked test")
+        finally:
+            shiboken6.delete(other)
+
+    def test_contrast_on_light_dark_and_mid_grey(self):
+        for background in ("#ffffff", "#000000", "#777777", "#808080", "#aabbcc"):
+            colors = palette({"background": background, "foreground": background, "accent": background})
+            for foreground in ("text", "muted", "accent"):
+                for surface in ("table", "surface"):
+                    self.assertGreaterEqual(contrast(colors[foreground], colors[surface]), 4.5)
+
     def test_timer_pause_and_single_win_count(self):
         self.game.draw()
         self.game.setActive(False); self.game.tick()
@@ -143,6 +162,10 @@ class IntegrationTests(unittest.TestCase):
             self.assertEqual(self.game.selection, (6, 0))
             QTest.mouseClick(window, Qt.LeftButton, Qt.NoModifier, point(3, top + 50))
             self.assertEqual(len(self.game.game.piles[2]), 1)
+            # A foundation double-click succeeds through actual pointer events.
+            self.game.undo()
+            QTest.mouseDClick(window, Qt.LeftButton, Qt.NoModifier, point(0, table_y + 50))
+            self.assertEqual(len(self.game.game.piles[2]), 1)
             # Keyboard space draws; Ctrl+Z restores.
             board.forceActiveFocus()
             QTest.keyClick(window, Qt.Key_Space)
@@ -157,6 +180,13 @@ class IntegrationTests(unittest.TestCase):
             QTest.mouseMove(window, end, 40)
             QTest.mouseRelease(window, Qt.LeftButton, Qt.NoModifier, end)
             self.assertEqual([c.id for c in self.game.game.piles[6]], [12, 24])
+            # Tab navigation includes the board; dialogs suppress gameplay shortcuts.
+            self.assertTrue(board.property("activeFocusOnTab"))
+            QTest.keyClick(window, Qt.Key_Comma, Qt.ControlModifier)
+            snapshot = self.game.game.snapshot()
+            QTest.keyClick(window, Qt.Key_Z, Qt.ControlModifier)
+            self.assertEqual(self.game.game.snapshot(), snapshot)
+            QTest.keyClick(window, Qt.Key_Escape)
             QTest.qWait(100)
             self.assertFalse(window.grabWindow().isNull())
             window.setWidth(800); window.setHeight(600)

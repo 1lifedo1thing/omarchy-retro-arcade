@@ -13,7 +13,7 @@ Item {
     property bool destination: false
     property int pattern: game.preferences.pattern
     property string artwork: pattern === 3 ? game.customArt : theme.artwork
-    property real phase: 0
+    property real phase: .55
     HoverHandler { id: cardHover }
     width: 112
     height: width * 1.43
@@ -87,7 +87,7 @@ Item {
                     y: positions[index][1] * parent.height - height / 2
                     text: card.suit
                     font.family: "DejaVu Serif"
-                    font.pixelSize: card.width * (card.value === 1 ? .44 : .22)
+                    font.pixelSize: card.width * (card.value === 1 ? .44 : card.value >= 9 ? .18 : .22)
                     color: card.red ? theme.colors.red : theme.colors.ink
                     rotation: positions[index][1] > .5 ? 180 : 0
                 }

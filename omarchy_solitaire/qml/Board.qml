@@ -3,6 +3,7 @@ import QtQuick.Controls
 
 FocusScope {
     id: board
+    activeFocusOnTab: true
     property real availableHeight: 600
     property bool compact: availableHeight < 460
     property real gap: Math.max(14, width * .018)

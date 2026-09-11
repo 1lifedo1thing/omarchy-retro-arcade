@@ -107,6 +107,16 @@ class GameTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 Game.deserialize(corruption)
 
+    def test_full_undo_history_beyond_500_moves(self):
+        game = Game(7)
+        initial = game.snapshot()
+        for _ in range(550):
+            game.draw()
+        restored = Game.deserialize(game.serialize())
+        for _ in range(550):
+            self.assertTrue(restored.undo())
+        self.assertEqual(restored.snapshot(), initial)
+
     def test_random_play_invariants_roundtrip_and_undo(self):
         rng = random.Random(42)
         for seed in range(20):
