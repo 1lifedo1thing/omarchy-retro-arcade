@@ -40,6 +40,7 @@ pub struct Online {
     worker: Option<Receiver<Result<Reply, String>>>,
     pub message: String,
     current: Option<Recording>,
+    shared_current: bool,
     board: Option<Board>,
     show: bool,
     share: bool,
@@ -81,6 +82,7 @@ impl Online {
             worker: None,
             message,
             current: None,
+            shared_current: false,
             board: None,
             show: false,
             share: false,
@@ -108,7 +110,11 @@ impl Online {
             true
         }
     }
+    pub fn has_modal(&self) -> bool {
+        self.share || self.show || self.delete
+    }
     pub fn discard(&mut self) {
+        self.shared_current = false;
         self.current = None;
         self.share = false;
     }
@@ -192,10 +198,17 @@ impl Online {
                     }
                 }
                 Ok(Reply::Shared(ticket)) => {
+                    let matched = self
+                        .current
+                        .as_ref()
+                        .is_some_and(|r| r.ticket.ticket == ticket);
                     self.state.pending.retain(|p| p.submission.ticket != ticket);
                     self.save();
                     self.message = "Score accepted. Refresh the board to see your best.".into();
-                    self.current = None;
+                    if matched {
+                        self.current = None;
+                        self.shared_current = true;
+                    }
                     self.share = false;
                 }
                 Ok(Reply::Deleted) => {
@@ -331,6 +344,8 @@ impl Online {
             {
                 self.share = true;
             }
+        } else if self.shared_current {
+            ui.label("Shared with the community leaderboard.");
         } else {
             ui.label("Local result. Saved or offline runs are not globally ranked.");
         }
@@ -516,6 +531,37 @@ mod tests {
                 & 0o777,
             0o600
         );
+    }
+    #[test]
+    fn delayed_retry_does_not_replace_the_current_run() {
+        let temp = tempfile::tempdir().unwrap();
+        let mut o = Online::new();
+        o.file = temp.path().join("state.json");
+        o.current = Some(Recording {
+            ticket: Ticket {
+                ticket: "current".into(),
+                seed: 1,
+                expires: now() + 300,
+                rules: RULES.into(),
+                mode: "Marathon".into(),
+            },
+            events: vec![],
+            pauses: vec![],
+            previous: 0,
+            pause: None,
+        });
+        let (tx, rx) = std::sync::mpsc::channel();
+        o.worker = Some(rx);
+        tx.send(Ok(Reply::Shared("previous".into()))).unwrap();
+        o.poll();
+        assert_eq!(o.current.as_ref().unwrap().ticket.ticket, "current");
+        assert!(!o.shared_current);
+        let (tx, rx) = std::sync::mpsc::channel();
+        o.worker = Some(rx);
+        tx.send(Ok(Reply::Shared("current".into()))).unwrap();
+        o.poll();
+        assert!(o.current.is_none());
+        assert!(o.shared_current);
     }
     #[test]
     fn expired_retries_are_removed() {

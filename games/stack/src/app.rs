@@ -412,7 +412,7 @@ impl eframe::App for StackApp {
             self.suspend();
         }
         let press = |key| ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, key));
-        if !self.settings && !self.restart {
+        if !self.settings && !self.restart && !self.online.has_modal() {
             if self.sim.is_none() {
                 if press(Key::Enter) {
                     self.start(Mode::Marathon, false);
