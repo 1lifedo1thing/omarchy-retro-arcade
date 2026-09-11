@@ -246,7 +246,6 @@ if(UNIX AND NOT APPLE)
     configure_file(Platform/Linux/omarchy-spacecadet.in omarchy-spacecadet @ONLY)
     install(PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/omarchy-spacecadet" DESTINATION "${CMAKE_INSTALL_BINDIR}")
     install(FILES Platform/Linux/omarchy-spacecadet.desktop DESTINATION "${CMAKE_INSTALL_DATADIR}/applications")
-    install(FILES Platform/Linux/omarchy-spacecadet.svg DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps")
     install(FILES LICENSE DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/omarchy-spacecadet")
 endif()
 include(CTest)
@@ -254,4 +253,29 @@ if(BUILD_TESTING)
     add_executable(theme-tests tests/theme_test.cpp SpaceCadetPinball/ThemePalette.cpp)
     target_include_directories(theme-tests PRIVATE SpaceCadetPinball)
     add_test(NAME theme-palette COMMAND theme-tests)
+endif()
+
+# Original Omarchy table: no legacy game resources or SDL_mixer dependency.
+add_executable(OmarchyPinball
+    native/NativeApp.cpp native/PinballModel.cpp
+    SpaceCadetPinball/ThemePalette.cpp
+    SpaceCadetPinball/imgui.cpp SpaceCadetPinball/imgui_draw.cpp
+    SpaceCadetPinball/imgui_widgets.cpp SpaceCadetPinball/imgui_tables.cpp
+    SpaceCadetPinball/imgui_impl_sdl.cpp SpaceCadetPinball/imgui_impl_sdlrenderer.cpp)
+set_target_properties(OmarchyPinball PROPERTIES OUTPUT_NAME "omarchy-pinball" CXX_STANDARD 14)
+target_include_directories(OmarchyPinball PRIVATE native SpaceCadetPinball)
+target_link_libraries(OmarchyPinball ${SDL2_LIBRARY})
+if(UNIX AND NOT APPLE)
+    install(TARGETS OmarchyPinball RUNTIME DESTINATION "${CMAKE_INSTALL_LIBEXECDIR}/omarchy-spacecadet")
+    install(FILES assets/brand/omarchy-logo.svg DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps" RENAME "omarchy-spacecadet.svg")
+    install(FILES assets/brand/README.md DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/omarchy-spacecadet" RENAME "BRAND.md")
+endif()
+if(BUILD_TESTING)
+    add_executable(pinball-tests tests/pinball_test.cpp native/PinballModel.cpp)
+    target_include_directories(pinball-tests PRIVATE native)
+    set_target_properties(pinball-tests PROPERTIES CXX_STANDARD 14)
+    add_test(NAME original-table COMMAND pinball-tests)
+endif()
+if(BUILD_TESTING)
+    add_test(NAME theme-path COMMAND python3 "${CMAKE_CURRENT_SOURCE_DIR}/tests/theme_path_test.py" $<TARGET_FILE:theme-tests>)
 endif()

@@ -27,11 +27,17 @@ class LauncherTests(unittest.TestCase):
             self.assertIn("'-sw'", result.stdout)
             saved = root / "config/omarchy-spacecadet/data-directory"
             self.assertEqual(saved.read_text().strip(), str(data))
-            again = subprocess.run(["python3", str(launcher)], env=env, capture_output=True, text=True)
+            again = subprocess.run(["python3", str(launcher), "--classic"], env=env, capture_output=True, text=True)
             self.assertEqual(again.returncode, 0, again.stderr)
             invalid = subprocess.run(["python3", str(launcher), "--data-dir", str(root / "missing")], env=env, capture_output=True, text=True)
             self.assertEqual(invalid.returncode, 2)
             self.assertFalse((data / "WRONG").exists())
+            native = binary.with_name("omarchy-pinball")
+            native.write_text("#!/usr/bin/env python3\nprint('original table ready')\n")
+            native.chmod(0o755)
+            result = subprocess.run(["python3", str(launcher)], env=env, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("original table ready", result.stdout)
 
 if __name__ == "__main__":
     unittest.main()

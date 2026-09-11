@@ -22,10 +22,12 @@ jobs:
           python3 tests/launcher_test.py
           desktop-file-validate Platform/Linux/omarchy-spacecadet.desktop
           bin/omarchy-spacecadet-game --version
+          SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy bin/omarchy-pinball --smoke 600 --screenshot native-smoke.bmp
       - name: Stage install
         run: |
           DESTDIR="$PWD/stage" cmake --install build
           test -x stage/usr/libexec/omarchy-spacecadet/omarchy-spacecadet-game
+          test -x stage/usr/libexec/omarchy-spacecadet/omarchy-pinball
           test -x stage/usr/bin/omarchy-spacecadet
           stage/usr/bin/omarchy-spacecadet --version
           tar -C stage -czf omarchy-spacecadet-linux-x86_64.tar.gz .
@@ -52,7 +54,7 @@ jobs:
         run: |
           pacman -U --noconfirm packaging/*.pkg.tar.zst
           omarchy-spacecadet --version
-          /usr/lib/omarchy-spacecadet/omarchy-spacecadet-game --version || /usr/libexec/omarchy-spacecadet/omarchy-spacecadet-game --version
+          SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy omarchy-spacecadet --smoke 600
       - uses: actions/upload-artifact@v4
         with:
           name: omarchy-spacecadet-arch-x86_64

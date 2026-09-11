@@ -1,8 +1,25 @@
 #include "ThemePalette.h"
 #include <algorithm>
 #include <string>
+#include <fstream>
+#include <cstdlib>
+#include <vector>
 
 namespace cadet {
+std::string themePath() {
+    const char* custom=std::getenv("SPACECADET_THEME_FILE");
+    if(custom && *custom) return custom;
+    const char* home=std::getenv("HOME");
+    const char* state=std::getenv("XDG_STATE_HOME");
+    const char* config=std::getenv("XDG_CONFIG_HOME");
+    std::vector<std::string> paths;
+    if(state && *state) paths.push_back(std::string(state)+"/omarchy/current/theme/colors.toml");
+    if(home && *home) paths.push_back(std::string(home)+"/.local/state/omarchy/current/theme/colors.toml");
+    if(config && *config) paths.push_back(std::string(config)+"/omarchy/current/theme/colors.toml");
+    if(home && *home) paths.push_back(std::string(home)+"/.config/omarchy/current/theme/colors.toml");
+    for(const auto& path:paths) { std::ifstream file(path); if(file) return path; }
+    return paths.empty() ? std::string{} : paths.front();
+}
 static std::string trim(const std::string& s) {
     auto first = s.find_first_not_of(" \t\r\n");
     if (first == std::string::npos) return {};

@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <istream>
+#include <string>
 
 namespace cadet {
 struct Palette {
@@ -11,5 +12,6 @@ struct Palette {
 };
 // Parse only literal colour assignments. Never execute theme configuration.
 Palette readPalette(std::istream& input, Palette fallback = Palette{});
+std::string themePath();
 uint32_t tint(uint32_t rgb, const Palette& palette);
 }

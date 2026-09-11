@@ -1,7 +1,7 @@
 pkgname=omarchy-spacecadet
-pkgver=0.1.0
+pkgver=0.2.0
 pkgrel=1
-pkgdesc='Space Cadet pinball with Omarchy appearance (development preview; game data required)'
+pkgdesc='Original Omarchy pinball with optional classic Space Cadet mode'
 arch=('x86_64' 'aarch64')
 url='https://github.com/tcballard/omarchy-spacecadet'
 license=('MIT')

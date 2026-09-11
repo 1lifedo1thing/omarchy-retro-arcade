@@ -59,17 +59,14 @@ void Init(const char* preferences) {
     settings=std::string(preferences ? preferences : "")+"appearance.txt";
     std::ifstream saved(settings); int value=0;
     if(saved>>value && value>=0 && value<=3) mode=value;
-    const char* custom=std::getenv("SPACECADET_THEME_FILE");
-    const char* config=std::getenv("XDG_CONFIG_HOME");
-    const char* home=std::getenv("HOME");
-    themeFile=custom && *custom ? custom :
-        std::string(config && *config ? config : (home ? std::string(home)+"/.config" : ""))+"/omarchy/current/theme/colors.toml";
+    themeFile=cadet::themePath();
     reload();
 }
 void Update() {
     Uint32 now=SDL_GetTicks();
     if(mode!=0 || now-checked<2000) return;
     checked=now;
+    themeFile=cadet::themePath();
     std::ifstream file(themeFile, std::ios::binary);
     char data[65536]; file.read(data,sizeof(data));
     std::string current(data,static_cast<size_t>(file.gcount()));

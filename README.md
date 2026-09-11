@@ -1,65 +1,57 @@
 # Omarchy Space Cadet
 
-Classic desktop pinball, with colours that follow Omarchy.
+Open it and play pinball. A native desktop game with an original Omarchy table, official logo, theme colours and synthesized audio. No accounts, downloads or original Windows game files required for the default game.
 
-A native C++/SDL application based on [SpaceCadetPinball](https://github.com/k4zmu2a/SpaceCadetPinball). Independent community project. **Development preview: bring your own game resources.**
+![Native Omarchy table](docs/native-table.png)
 
-## What is implemented
+## Play
 
-- Live Omarchy colours across the menus and rendered table.
-- Midnight and Amber palettes, plus original table colours.
-- Separate preferences and local high scores.
-- Native launcher, first-launch game-data selection and launcher action to change the folder.
-- Existing pinball gameplay, keyboard/controller controls, fullscreen, audio and local multiplayer from upstream.
-- Linux build checks and a local Arch package recipe.
+- **A / D**, arrow keys or **left / right Shift**: flippers.
+- Hold **Space** to charge the plunger; release to launch.
+- **N** nudges the table. Repeated nudges cause tilt.
+- **P** pauses/resumes; **F2** starts a new game with confirmation; **F11** toggles fullscreen.
+- Controllers: shoulder buttons for flippers, A to launch, Start to pause.
 
-This is currently a recoloured source port. A wholly original Omarchy table, artwork and audio pack is still outstanding; see [decisions and limitations](DECISIONS.md).
+Light the three upper O/M/A lanes and hit all three targets to complete a circuit. Each circuit awards a bonus and raises the score multiplier, up to 5x. You have three balls and a short ball-save window after each launch.
 
-## Build on Omarchy
+Local high scores, appearance/audio preferences and the current game are saved automatically. A recovered game starts paused. Focus loss also pauses play. Mute and optional original synthesized background music are in the side panel.
 
-From a checkout with the build dependencies installed (`cmake`, `ninja`, a C++ compiler, SDL2 and SDL2_mixer development files):
+## Install on Omarchy
 
-```sh
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
-cmake --build build --parallel
-ctest --test-dir build --output-on-failure
-```
+Download the `omarchy-spacecadet-arch-x86_64` artifact from a successful [Linux build](https://github.com/tcballard/omarchy-spacecadet/actions/workflows/linux.yml), unzip it, then install its `.pkg.tar.zst` file with `sudo pacman -U /path/to/package.pkg.tar.zst`.
 
-For a package, use the local recipe:
+Or build the current checkout:
 
 ```sh
 cd packaging
 makepkg -si
 ```
 
-The package uses the enclosing checkout. Review the source first. It is not yet an official repository package.
+This is a development build, not an official Omarchy package.
 
-## First launch
+## Two different tables
 
-Open **Omarchy Space Cadet** from the application launcher and select your existing Space Cadet resource folder. Keep the DAT file together with the original sound/music resources and subdirectories.
+**Original Omarchy table (default):** new table geometry, rules, physics model, rendered artwork and audio. It uses SDL and the source port's ImGui stack and shared colour handling. This is a complete independently playable table, not a reproduction of Space Cadet's exact layout, missions or physics.
 
-Or select the folder explicitly:
+**Classic Space Cadet (optional):** the retained upstream source port with Omarchy colour handling. Run `omarchy-spacecadet --classic` and choose your own original resource folder, or use `--classic --data-dir /path/to/data`. Original resources are neither included nor downloaded. The new original table does not remove this optional mode's resource requirement.
+
+## Appearance and brand
+
+Follow Omarchy reads the current palette from `~/.local/state/omarchy/current/theme/colors.toml`, with XDG state and older configuration-path support. Directory replacement on theme changes is handled by reopening the path. You can choose Midnight or Amber, or use `SPACECADET_THEME_FILE` to select a colours file.
+
+The official [Omarchy logo and wordmark](https://omarchy.org/brand/) are included unchanged. The logo remains its official green, including under different palettes. Brand assets retain their owner's rights; see [provenance](assets/brand/README.md). This is an independent community application.
+
+## Development and verification
 
 ```sh
-omarchy-spacecadet --data-dir /path/to/game-data
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
+cmake --build build --parallel
+ctest --test-dir build --output-on-failure
+SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy bin/omarchy-pinball --smoke 600
 ```
 
-Supported data filenames include PINBALL.DAT and CADET.DAT (also lowercase). The folder is remembered. Use `--choose-data` or the launcher's **Choose game data folder** action to change it.
+The original table is built into `bin/omarchy-pinball`. The classic engine is `bin/omarchy-spacecadet-game`.
 
-To run a build before installation, launch the absolute path to `bin/omarchy-spacecadet-game` with your resource folder as its working directory. The installed launcher performs this setup for you.
+Tests cover physics interactions, rules, a three-minute simulated run, save validation, launcher selection and theme paths. The actual native app has been run and visually inspected at normal and smaller/light-theme sizes. CI additionally builds/installs the Arch package and runs the installed default game without external resources.
 
-## Appearance
-
-The **Appearance** menu offers Follow Omarchy, Midnight, Amber and Original table colours. Preferences persist independently of the upstream app.
-
-Follow Omarchy reads `${XDG_CONFIG_HOME:-~/.config}/omarchy/current/theme/colors.toml` and notices changes within about two seconds. Set `SPACECADET_THEME_FILE` to read another colours file. Missing/invalid assignments retain the fallback palette. The app does not execute theme files or write to Omarchy configuration.
-
-## Controls and resources
-
-Use Game > New Game to start, and the Options menu to inspect/change key bindings. Existing pause, fullscreen, sound and controller options remain available. `-sw` requests software rendering; `-noaudio` disables audio initialization.
-
-No original external game resources are downloaded or bundled. The source retains upstream embedded resources; see [UPSTREAM.md](UPSTREAM.md) and [README.upstream.md](README.upstream.md) for provenance and original build instructions.
-
-## Verification
-
-CI builds on Ubuntu, runs palette and launcher tests, validates the desktop entry and stages installation. A second job builds and installs an Arch package, available as the `omarchy-spacecadet-arch-x86_64` workflow artifact. Both jobs have passed. The Ubuntu tarball is not a portable cross-distribution release. Gameplay and Omarchy desktop acceptance still require a real desktop with game data.
+Actual Hyprland, fractional scaling, physical controller and audio listening acceptance remain hardware checks. See [DECISIONS.md](DECISIONS.md) for the recorded trade-offs and [README.upstream.md](README.upstream.md) for the original source port.

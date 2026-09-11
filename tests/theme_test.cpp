@@ -3,7 +3,8 @@
 #include <iostream>
 #include <cstdlib>
 static void check(bool ok,const char* name) { if(!ok) { std::cerr<<name<<'\n'; std::exit(1); } }
-int main() {
+int main(int argc, char**) {
+    if(argc>1) { std::cout<<cadet::themePath(); return 0; }
     std::istringstream input("background = \"#123456\"\naccent = '#AbCdEf' # note\nyellow = \"#fedcba\"\nforeground = \"#ffffff\"\n");
     auto p=cadet::readPalette(input);
     check(p.background==0x123456 && p.accent==0xabcdef && p.warm==0xfedcba,"valid assignments");
