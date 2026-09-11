@@ -4,7 +4,7 @@ import fs from 'node:fs';import os from 'node:os';import path from 'node:path';i
 const binary=process.env.INVADERS_BINARY;assert(binary,'Set INVADERS_BINARY');
 const root=path.resolve(import.meta.dirname,'..');
 const state=fs.mkdtempSync(path.join(os.tmpdir(),'invaders-window-'));
-const env={...process.env,DISPLAY:'127.0.0.1:119',LIBGL_ALWAYS_SOFTWARE:'1',XDG_STATE_HOME:state};
+const env={...process.env,DISPLAY:'127.0.0.1:119',LIBGL_ALWAYS_SOFTWARE:'1',XDG_STATE_HOME:state,XDG_DATA_HOME:path.join(state,"data")};
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 const probe=(...args)=>execFileSync(process.env.XPROBE||'/tmp/invaders-xprobe',args,{env,encoding:'utf8'}).trim();
 const server=spawn(process.env.XVFB||'Xvfb',[':119','-screen','0','1200x1100x24','-nolisten','unix','-listen','tcp','-ac'],{env,stdio:'ignore'});

@@ -1,3 +1,5 @@
+mod art;
+mod bitmap;
 mod game;
 mod render;
 mod sound;
@@ -8,6 +10,7 @@ use game::Game;
 use std::time::{Duration, Instant};
 use storage::{Saved, Store};
 struct App {
+    art: art::Art,
     s: Saved,
     store: Store,
     paused: bool,
@@ -49,7 +52,12 @@ impl App {
                 false,
             ),
         };
+        let mut art = art::Art::default();
+        if s.custom_art {
+            art.reload();
+        }
         Self {
+            art,
             s,
             store,
             paused,
@@ -120,6 +128,12 @@ impl eframe::App for App {
         visuals.selection.bg_fill = t.accent;
         visuals.selection.stroke = egui::Stroke::new(1_f32, t.accent_text());
         ctx.set_visuals(visuals);
+        ctx.style_mut(|s| {
+            s.text_styles
+                .insert(egui::TextStyle::Body, egui::FontId::proportional(16.));
+            s.text_styles
+                .insert(egui::TextStyle::Button, egui::FontId::proportional(16.));
+        });
         let focused = ctx.input(|i| i.focused);
         if !focused && self.had_focus {
             self.paused = true;
@@ -127,6 +141,17 @@ impl eframe::App for App {
         self.had_focus = focused;
         let popup = ctx.memory(|m| m.any_popup_open());
         let mut quit = false;
+        let retry = self.s.game.over
+            && !self.settings
+            && !self.help
+            && !self.confirm
+            && self.error.is_none()
+            && !popup
+            && focused
+            && ctx.input(|i| i.key_pressed(Key::Enter));
+        if retry {
+            self.restart();
+        }
         ctx.input_mut(|i| {
             if i.consume_shortcut(&egui::KeyboardShortcut::new(egui::Modifiers::CTRL, Key::Q)) {
                 quit = true;
@@ -237,7 +262,7 @@ impl eframe::App for App {
         }
         egui::TopBottomPanel::bottom("controls").show(ctx, |ui| {
             ui.horizontal(|ui| {
-                ui.label("LEFT RIGHT / A D   MOVE      SPACE   FIRE      P   PAUSE");
+                ui.label(egui::RichText::new("A/D  MOVE    SPACE  FIRE    P  PAUSE").size(14.));
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     if ui
                         .button(if self.s.sound {
@@ -264,6 +289,23 @@ impl eframe::App for App {
                         ui.label("Audio needs paplay (libpulse on Arch).");
                     }
                     ui.label("The playfield stays dark for clear projectiles.");
+                    ui.separator();
+                    ui.label("Orbit artwork");
+                    ui.label("Edit the sprite PNG independently of game rules.");
+                    ui.horizontal(|ui| {
+                        if ui.button("Create editable copy").clicked() {
+                            self.art.editable_copy();
+                        }
+                        if ui.button("Reload artwork").clicked() && self.art.reload() {
+                            self.s.custom_art = true;
+                        }
+                    });
+                    if ui.button("Use built-in artwork").clicked() {
+                        self.art.builtin();
+                        self.s.custom_art = false;
+                    }
+                    ui.label(art::path().display().to_string());
+                    ui.label(&self.art.message);
                     if ui.button("Done").clicked() {
                         self.settings = false;
                         self.save();
@@ -274,7 +316,7 @@ impl eframe::App for App {
             egui::Window::new("About Omarchy Invaders")
                 .collapsible(false)
                 .show(ctx, |ui| {
-                    render::about_icon(ui);
+                    render::about_icon(ui, &self.art);
                     ui.heading("OMARCHY INVADERS");
                     ui.label("Omarchy Arcade · 0.1.0 · Community project");
                     ui.separator();
@@ -284,7 +326,7 @@ impl eframe::App for App {
                     ui.label("Ctrl+N: new · Ctrl+M: sound · Ctrl+Q: quit");
                     ui.label("Ctrl+,: settings · F1: help");
                     ui.separator();
-                    ui.label("Original Rust gameplay and pixel artwork. GPL-3.0-or-later.");
+                    ui.label("Original Rust gameplay. Orbit artwork developed with ImageGen.");
                     ui.label("Audio helper adapted from Omarchy Chess.");
                     if ui.button("Close").clicked() {
                         self.help = false;
@@ -343,9 +385,17 @@ fn main() -> eframe::Result<()> {
             std::process::exit(1);
         }
     };
+    let icon = image::load_from_memory(include_bytes!("../packaging/omarchy-invaders.png"))
+        .expect("embedded icon")
+        .to_rgba8();
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_title("Omarchy Invaders")
+            .with_icon(egui::IconData {
+                width: icon.width(),
+                height: icon.height(),
+                rgba: icon.into_raw(),
+            })
             .with_inner_size([860., 900.])
             .with_min_inner_size([600., 680.]),
         ..Default::default()

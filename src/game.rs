@@ -1,6 +1,23 @@
 use serde::{Deserialize, Serialize};
 pub const W: f32 = 800.;
 pub const H: f32 = 700.;
+// Sparse formation slots, deliberately independent from replaceable sprite pixels.
+const LETTERS: [[&str; 5]; 7] = [
+    ["###", "#.#", "#.#", "#.#", "###"],
+    ["#.#", "###", "###", "#.#", "#.#"],
+    [".#.", "#.#", "###", "#.#", "#.#"],
+    ["##.", "#.#", "##.", "#.#", "#.#"],
+    ["###", "#..", "#..", "#..", "###"],
+    ["#.#", "#.#", "###", "#.#", "#.#"],
+    ["#.#", "#.#", ".#.", ".#.", ".#."],
+];
+#[derive(Clone, Debug)]
+pub struct Burst {
+    pub p: Body,
+    pub age: f32,
+    pub player: bool,
+}
+
 #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct Body {
     pub x: f32,
@@ -13,6 +30,12 @@ pub struct Alien {
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Game {
+    #[serde(default)]
+    pub orbit: bool,
+    #[serde(skip)]
+    pub bursts: Vec<Burst>,
+    #[serde(default)]
+    pub march_frame: u64,
     pub ship: f32,
     pub aliens: Vec<Alien>,
     pub shots: Vec<Body>,
@@ -36,6 +59,9 @@ pub struct Game {
 impl Default for Game {
     fn default() -> Self {
         let mut g = Self {
+            orbit: true,
+            bursts: vec![],
+            march_frame: 0,
             ship: W / 2.,
             aliens: vec![],
             shots: vec![],
@@ -62,17 +88,24 @@ impl Default for Game {
 }
 impl Game {
     fn populate(&mut self) {
-        self.aliens = (0..5)
-            .flat_map(|r| {
-                (0..11).map(move |c| Alien {
-                    p: Body {
-                        x: 110. + c as f32 * 48.,
-                        y: 100. + r as f32 * 40.,
-                    },
-                    kind: r,
-                })
-            })
-            .collect();
+        self.orbit = true;
+        self.bursts.clear();
+        self.aliens.clear();
+        for (letter, rows) in LETTERS.iter().enumerate() {
+            for (row, pixels) in rows.iter().enumerate() {
+                for (col, pixel) in pixels.bytes().enumerate() {
+                    if pixel == b'#' {
+                        self.aliens.push(Alien {
+                            p: Body {
+                                x: 88. + (letter * 4 + col) as f32 * 24.,
+                                y: 160. + row as f32 * 28.,
+                            },
+                            kind: row,
+                        });
+                    }
+                }
+            }
+        }
         self.shields.clear();
         for base in [140., 310., 480., 650.] {
             for y in 0..7 {
@@ -107,7 +140,7 @@ impl Game {
             && self.wave >= 1
             && self.wave <= 10000
             && self.lives <= 3
-            && self.aliens.len() <= 55
+            && self.aliens.len() <= 120
             && self.shots.len() <= 10
             && self.bombs.len() <= 100
             && self.shields.len() <= 308
@@ -136,6 +169,10 @@ impl Game {
         if self.over {
             return false;
         }
+        for burst in &mut self.bursts {
+            burst.age += dt;
+        }
+        self.bursts.retain(|burst| burst.age < 0.36);
         if self.transition > 0. {
             self.transition = (self.transition - dt).max(0.);
             return false;
@@ -153,10 +190,11 @@ impl Game {
         }
         let mut hit = false;
         self.march += dt;
-        let period = (0.055 + self.aliens.len() as f32 * 0.009)
+        let period = (0.055 + self.aliens.len() as f32 * if self.orbit { 0.0055 } else { 0.009 })
             / (1. + (self.wave - 1).min(15) as f32 * 0.08);
         if self.march >= period {
             self.march = 0.;
+            self.march_frame = self.march_frame.wrapping_add(1);
             let edge = self
                 .aliens
                 .iter()
@@ -202,6 +240,7 @@ impl Game {
         for b in &mut self.bombs {
             b.y += (180. + self.wave.min(15) as f32 * 12.) * dt;
         }
+        let half = if self.orbit { 10. } else { 18. };
         let mut shots = std::mem::take(&mut self.shots);
         shots.retain(|s| {
             if s.y < 0. {
@@ -210,12 +249,16 @@ impl Game {
             if erode(&mut self.shields, *s) {
                 return false;
             }
-            if let Some(i) = self
-                .aliens
-                .iter()
-                .position(|a| (a.p.x - s.x).abs() < 18. && (a.p.y - s.y).abs() < 15.)
-            {
+            if let Some(i) = self.aliens.iter().position(|a| {
+                (a.p.x - s.x).abs() < half
+                    && (a.p.y - s.y).abs() < if self.orbit { 11. } else { 15. }
+            }) {
                 let a = self.aliens.remove(i);
+                self.bursts.push(Burst {
+                    p: a.p,
+                    age: 0.,
+                    player: false,
+                });
                 self.score = self.score.saturating_add(if a.kind == 0 {
                     30
                 } else if a.kind < 3 {
@@ -230,6 +273,11 @@ impl Game {
                 .ufo
                 .is_some_and(|u| (u.x - s.x).abs() < 27. && (u.y - s.y).abs() < 12.)
             {
+                self.bursts.push(Burst {
+                    p: self.ufo.unwrap(),
+                    age: 0.,
+                    player: false,
+                });
                 self.ufo = None;
                 self.score = self.score.saturating_add(150);
                 hit = true;
@@ -257,6 +305,14 @@ impl Game {
         });
         self.bombs = bombs;
         if damaged {
+            self.bursts.push(Burst {
+                p: Body {
+                    x: self.ship,
+                    y: 652.,
+                },
+                age: 0.,
+                player: true,
+            });
             self.lives = self.lives.saturating_sub(1);
             self.grace = 2.;
             self.bombs.clear();
@@ -300,8 +356,38 @@ mod tests {
     #[test]
     fn initial_state() {
         let g = Game::default();
-        assert_eq!(g.aliens.len(), 55);
+        assert!(g.aliens.len() > 55 && g.aliens.len() <= 120);
         assert!(g.valid());
+    }
+    #[test]
+    fn formation_slots_do_not_overlap_and_march_together() {
+        let mut g = Game::default();
+        for (i, a) in g.aliens.iter().enumerate() {
+            for b in g.aliens.iter().skip(i + 1) {
+                assert!((a.p.x - b.p.x).abs() >= 24. || (a.p.y - b.p.y).abs() >= 28.);
+            }
+        }
+        let original = g.aliens.clone();
+        for _ in 0..120 {
+            g.step(1. / 120., 0., false);
+        }
+        let dx = g.aliens[0].p.x - original[0].p.x;
+        assert!(dx > 0.);
+        assert!(g
+            .aliens
+            .iter()
+            .zip(&original)
+            .all(|(a, b)| a.p.x - b.p.x == dx));
+    }
+    #[test]
+    fn legacy_save_keeps_original_hit_geometry() {
+        let mut value = serde_json::to_value(Game::default()).unwrap();
+        value.as_object_mut().unwrap().remove("orbit");
+        value.as_object_mut().unwrap().remove("march_frame");
+        let old: Game = serde_json::from_value(value).unwrap();
+        assert!(!old.orbit);
+        assert!(old.valid());
+        assert!(old.bursts.is_empty());
     }
     #[test]
     fn boundaries() {
@@ -321,10 +407,16 @@ mod tests {
     #[test]
     fn kill_scores_once() {
         let mut g = Game::default();
-        g.shots.push(Body { x: 110., y: 103. });
+        let n = g.aliens.len();
+        let p = g.aliens[0].p;
+        g.shots.push(Body {
+            x: p.x,
+            y: p.y + 3.,
+        });
         g.step(1. / 120., 0., false);
         assert_eq!(g.score, 30);
-        assert_eq!(g.aliens.len(), 54);
+        assert_eq!(g.aliens.len(), n - 1);
+        assert_eq!(g.bursts.len(), 1);
         assert!(g.shots.is_empty());
     }
     #[test]
@@ -333,7 +425,7 @@ mod tests {
         g.aliens.clear();
         g.step(1. / 120., 0., false);
         assert_eq!(g.wave, 2);
-        assert_eq!(g.aliens.len(), 55);
+        assert!(g.aliens.len() > 55 && g.aliens.len() <= 120);
         assert!(g.transition > 0.);
     }
     #[test]

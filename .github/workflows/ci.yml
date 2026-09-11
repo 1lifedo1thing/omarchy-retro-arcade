@@ -32,6 +32,7 @@ jobs:
         run: |
           rustc tools/xprobe.rs -o /tmp/invaders-xprobe
           INVADERS_BINARY="$GITHUB_WORKSPACE/target/release/omarchy-invaders" node tools/native-check.mjs
+          INVADERS_BINARY="$GITHUB_WORKSPACE/target/release/omarchy-invaders" node tools/artwork-check.mjs
       - uses: actions/upload-artifact@v4
         with:
           name: invaders-linux-preview

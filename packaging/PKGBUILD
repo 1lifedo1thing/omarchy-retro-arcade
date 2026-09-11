@@ -16,6 +16,6 @@ package() {
  cd "$srcdir/$pkgname-$pkgver"
  install -Dm755 target/release/omarchy-invaders "$pkgdir/usr/bin/omarchy-invaders"
  install -Dm644 packaging/omarchy-invaders.desktop "$pkgdir/usr/share/applications/omarchy-invaders.desktop"
- install -Dm644 packaging/omarchy-invaders.svg "$pkgdir/usr/share/icons/hicolor/scalable/apps/omarchy-invaders.svg"
+ install -Dm644 packaging/omarchy-invaders.png "$pkgdir/usr/share/icons/hicolor/256x256/apps/omarchy-invaders.png"
  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
 }

@@ -12,6 +12,7 @@ pub struct Saved {
     pub game: Game,
     pub high: u32,
     pub sound: bool,
+    pub custom_art: bool,
     pub follow: bool,
     pub version: u32,
 }

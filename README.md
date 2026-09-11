@@ -2,9 +2,9 @@
 
 A native Rust arcade shooter for Omarchy Arcade. Clear marching alien formations, defend behind destructible bunkers and survive increasingly fast waves.
 
-Development preview. Original pixel sprites, no ROMs or original game resources required.
+Development preview with the approved 8-bit Orbit direction: original pixel spacecraft, an opening OMARCHY formation, animated impacts and a matching launcher icon. No ROMs or original game resources required.
 
-![Native gameplay](docs/preview.png)
+![Native gameplay](docs/orbit-opening.png)
 
 ## Play
 
@@ -47,3 +47,7 @@ cargo test --locked
 ```
 
 See [decisions](DECISIONS.md) and [verification](docs/VERIFICATION.md). This is a community project, not an official Omarchy bundled application.
+
+## Replace artwork
+
+In Settings, choose **Create editable copy**, edit the PNG at the displayed path, then **Reload artwork**. Your run and scores stay intact. The selected custom artwork persists across launches; **Use built-in artwork** restores Orbit. Existing custom files are never overwritten by the copy button. Invalid replacements keep the currently loaded artwork. See [artwork format](docs/ARTWORK.md).

@@ -2178,6 +2178,7 @@ version = "0.1.0"
 dependencies = [
  "eframe",
  "fs2",
+ "image",
  "serde",
  "serde_json",
  "tempfile",
