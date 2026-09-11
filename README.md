@@ -29,6 +29,12 @@ makepkg -si
 
 This is a development build, not an official Omarchy package.
 
+To update, install a newer package with the same `sudo pacman -U /path/to/new-package.pkg.tar.zst` command. Saves and settings live outside the package, normally in `~/.local/share/omarchy-spacecadet/` on Linux (or under `XDG_DATA_HOME` when set). Keep that directory when updating. An upgrade preserving an existing save still needs release acceptance testing.
+
+## Omarchy Arcade
+
+The [shared Arcade standard](docs/ARCADE_STANDARD.md) defines direct play, familiar controls, theme/sound behaviour, matching identity and local data. It includes the remaining pinball gaps; collection-wide conformity is not yet verified.
+
 ## Two different tables
 
 **Original Omarchy table (default):** new table geometry, rules, physics model, rendered artwork and audio. It uses SDL and the source port's ImGui stack and shared colour handling. This is a complete independently playable table, not a reproduction of Space Cadet's exact layout, missions or physics.
