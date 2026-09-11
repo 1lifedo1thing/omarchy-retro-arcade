@@ -271,3 +271,55 @@ fn accesskit_exposes_all_squares_with_piece_names() {
     );
     assert_eq!(app.selected, Some(Square::E2));
 }
+
+#[test]
+fn settings_blocks_accessible_board_actions_and_escape_closes() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut app = ChessApp::new(dir.path().into());
+    app.game.mode = Mode::Local;
+    let ctx = egui::Context::default();
+    ctx.enable_accesskit();
+    egui_extras::install_image_loaders(&ctx);
+    frame(&mut app, &ctx, vec![]);
+    let out = frame(&mut app, &ctx, vec![]);
+    let tree = out.platform_output.accesskit_update.unwrap();
+    let id = tree
+        .nodes
+        .iter()
+        .find(|(_, n)| n.label() == Some("e2, white Pawn"))
+        .unwrap()
+        .0;
+    frame(
+        &mut app,
+        &ctx,
+        vec![Event::Key {
+            key: egui::Key::Comma,
+            physical_key: None,
+            pressed: true,
+            repeat: false,
+            modifiers: egui::Modifiers::CTRL,
+        }],
+    );
+    let action = || {
+        Event::AccessKitActionRequest(egui::accesskit::ActionRequest {
+            action: egui::accesskit::Action::Click,
+            target: id,
+            data: None,
+        })
+    };
+    frame(&mut app, &ctx, vec![action()]);
+    assert_eq!(app.selected, None);
+    frame(
+        &mut app,
+        &ctx,
+        vec![Event::Key {
+            key: egui::Key::Escape,
+            physical_key: None,
+            pressed: true,
+            repeat: false,
+            modifiers: Default::default(),
+        }],
+    );
+    frame(&mut app, &ctx, vec![action()]);
+    assert_eq!(app.selected, Some(Square::E2));
+}

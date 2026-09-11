@@ -15,5 +15,8 @@ fi
 git -C "$project_dir" archive --format=tar.gz --prefix=omarchy-chess/ HEAD > "$work_dir/omarchy-chess-source.tar.gz"
 cp "$project_dir/packaging/PKGBUILD" "$work_dir/PKGBUILD"
 source_hash="$(sha256sum "$work_dir/omarchy-chess-source.tar.gz" | cut -d ' ' -f1)"
-sed -i "s/sha256sums=('SKIP')/sha256sums=('$source_hash')/" "$work_dir/PKGBUILD"
+sed -i "s/'SKIP'/'$source_hash'/" "$work_dir/PKGBUILD"
 (cd "$work_dir" && PKGDEST="$output_dir" makepkg --cleanbuild --clean)
+
+mkdir -p "$output_dir/sources"
+cp "$work_dir"/*.tar.gz "$work_dir"/*.nnue "$output_dir/sources/"

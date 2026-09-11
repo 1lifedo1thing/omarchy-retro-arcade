@@ -1,6 +1,6 @@
 # Arcade acceptance: Chess
 
-Use the `rust-arch-preview` artifact from the current passing PR run. Extract it and install with `sudo pacman -U ./omarchy-chess-*.pkg.tar.zst`. Pacman resolves Stockfish and runtime dependencies. Launch Chess from the application menu.
+Use the `rust-arch-preview` artifact from the current passing PR run. Extract it and install with `sudo pacman -U ./omarchy-chess-*.pkg.tar.zst`. The package includes Stockfish; pacman resolves runtime dependencies. Launch Chess from the application menu.
 
 1. Fresh install: board opens without a wizard. Move e2 to e4; Stockfish replies. Open Game → New Game and play Black; the computer opens.
 2. Local play: choose Friend. Click, drag and use arrow keys/Enter to move. Check promotion selection and undo. Keyboard focus stays visible; Tab can leave the board.

@@ -23,7 +23,7 @@ Theme source: released Omarchy v4.0.3 uses `~/.local/state/omarchy/current/theme
 
 ## Chess implementation
 
-Chess remains untimed and opens directly into a board. The Arch package depends on Stockfish, so installing it installs the opponent too. A source build without Stockfish starts a local game; Settings offers the package command and an executable picker. Computer strength labels do not claim an Elo rating.
+Chess remains untimed and opens directly into a board. The Arch package includes a pinned Stockfish executable, so installation includes the opponent. A source build without Stockfish starts a local game; Settings offers an executable picker. Computer strength labels do not claim an Elo rating.
 
 `settings.json` sits beside `session.json` under the game's XDG state directory. Sound and Follow Omarchy persist independently of the game. Stockfish executable choice is local and passed as an executable path, never a shell command. Original malformed settings are preserved.
 

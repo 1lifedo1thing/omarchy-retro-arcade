@@ -19,6 +19,7 @@ pub fn find_engine() -> Option<PathBuf> {
     }
     find_executable(Path::new("stockfish"))
         .or_else(|| find_executable(Path::new("/usr/games/stockfish")))
+        .or_else(|| find_executable(Path::new("/usr/lib/omarchy-chess/stockfish")))
 }
 fn executable(path: &Path) -> bool {
     #[cfg(unix)]

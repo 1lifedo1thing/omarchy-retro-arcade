@@ -7,7 +7,7 @@ Omarchy Chess is GPL-3.0-or-later. Full license: LICENSE. Exact Rust dependency 
 - **rfd**, contributors: MIT. Desktop file dialogs through XDG portals. https://github.com/PolyMeilex/rfd
 - **serde / serde_json**, **toml**, **tempfile**, **rustix** and their contributors: see each crate's license files in the source resolved by Cargo.lock. They provide serialization, configuration, atomic files and operating-system interfaces. **fs2** is MIT OR Apache-2.0.
 - **Chess piece artwork**, Cburnett, adapted by python-chess: the twelve SVGs in `assets/pieces/` were extracted from `chess.svg` in chess 1.11.2. Used under the GPL option stated in that module. https://github.com/niklasf/python-chess/blob/v1.11.2/chess/svg.py . Python-chess is artwork provenance only; it is not an application or build dependency.
-- **Stockfish**, the Stockfish developers: GPL-3.0-or-later. A separate executable, not included in the application binary or Arch package. https://github.com/official-stockfish/Stockfish
+- **Stockfish**, the Stockfish developers: GPL-3.0-or-later. The Arch package includes a separate generic-CPU executable compiled from commit 59aae690f91d6f69aac194f447d84b4a2c3be778, with network nn-1a298aa575a0.nnue. Full source and network SHA-256 checksums are in packaging/PKGBUILD; corresponding engine sources/network are uploaded alongside the package as stockfish-and-app-source. Its license is installed with the package. https://github.com/official-stockfish/Stockfish
 
 The small app icon in packaging/ is original project artwork, GPL-3.0-or-later. The app reads user-installed Omarchy theme colours but does not redistribute Omarchy branding or theme files.
 

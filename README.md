@@ -6,6 +6,10 @@ A native Linux chess app written in Rust, for offline games against Stockfish or
 
 **Development preview.** Independent community project; not an official Omarchy component.
 
+![Chess in Omarchy Arcade](docs/preview.png)
+
+[Compact light appearance](docs/preview-light.png)
+
 ## Features
 
 - Computer play as White or Black with four strength settings; local two-player play.
@@ -15,7 +19,7 @@ A native Linux chess app written in Rust, for offline games against Stockfish or
 - Atomic autosave, single-instance protection, archived games and PGN import/export.
 - Live Omarchy colours with a built-in fallback palette.
 
-No Python runtime, account, telemetry, online service or runtime downloads. The Arch package installs Stockfish as a dependency.
+No Python runtime, account, telemetry, online service or runtime downloads. The Arch package includes a pinned Stockfish build.
 
 ## Run from source
 
@@ -44,7 +48,7 @@ CI builds development packages. Download `rust-arch-preview` from a passing [Act
 sudo pacman -U ./omarchy-chess-*.pkg.tar.zst
 ```
 
-The package resolves Stockfish and sound playback dependencies automatically. These are development artifacts, not a signed release channel. No AUR submission is required.
+The package includes Stockfish and resolves sound playback dependencies automatically. These are development artifacts, not a signed release channel. No AUR submission is required.
 
 To build locally, install `base-devel`, `git`, `rust`, `pkgconf` and the dependencies in `packaging/PKGBUILD`. From a clean committed checkout:
 

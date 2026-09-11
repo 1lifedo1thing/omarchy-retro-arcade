@@ -598,6 +598,14 @@ impl ChessApp {
         self.dialogs(ctx);
     }
     fn activate(&mut self, square: Square) {
+        if self.settings
+            || self.new_dialog
+            || self.help
+            || self.resign_dialog
+            || !self.promotion.is_empty()
+        {
+            return;
+        }
         self.cursor = square;
         if self.preview.is_some() || !self.game.human_turn() {
             return;
@@ -930,8 +938,7 @@ impl ChessApp {
                 if self.preferences.sound && !Sound::available() { ui.label("Sound needs paplay (libpulse package). Games remain playable without audio."); }
                 ui.separator(); ui.strong("Computer opponent");
                 ui.label(if self.engine_path().is_some() { "Stockfish configured" } else { "Stockfish not installed" });
-                ui.label("Install with: sudo pacman -S stockfish");
-                if ui.button("Copy install command").clicked() { ctx.copy_text("sudo pacman -S stockfish".into()); }
+                ui.label("The Chess Arch package includes Stockfish. For source builds, choose a downloaded executable below.");
                 if ui.button("Choose Stockfish executable…").clicked() {
                     if let Some(path) = rfd::FileDialog::new().set_title("Choose Stockfish").pick_file() {
                         self.invalidate(); self.preferences.engine_path = Some(path); self.engine_error = false; self.save_preferences();
@@ -947,7 +954,7 @@ impl ChessApp {
         }
 
         if self.new_dialog {
-            egui::Modal::new(egui::Id::new("New game")).show(ctx, |ui| {
+            let modal = egui::Modal::new(egui::Id::new("New game")).show(ctx, |ui| {
                 ui.heading("New game");
                 ui.horizontal(|ui| {
                     ui.selectable_value(&mut self.new_mode, Mode::Computer, "Computer");
@@ -986,9 +993,12 @@ impl ChessApp {
                     }
                 });
             });
+            if modal.should_close() {
+                self.new_dialog = false;
+            }
         }
         if !self.promotion.is_empty() {
-            egui::Modal::new(egui::Id::new("Promote pawn")).show(ctx, |ui| {
+            let modal = egui::Modal::new(egui::Id::new("Promote pawn")).show(ctx, |ui| {
                 ui.heading("Promote pawn");
                 for m in self.promotion.clone() {
                     if let Some(role) = m.promotion() {
@@ -1001,9 +1011,12 @@ impl ChessApp {
                     self.promotion.clear();
                 }
             });
+            if modal.should_close() {
+                self.promotion.clear();
+            }
         }
         if self.resign_dialog {
-            egui::Modal::new(egui::Id::new("Resign game?")).show(ctx, |ui| {
+            let modal = egui::Modal::new(egui::Id::new("Resign game?")).show(ctx, |ui| {
                 ui.heading("Resign game?");
                 ui.horizontal(|ui| {
                     if ui.button("Resign").clicked() {
@@ -1018,15 +1031,21 @@ impl ChessApp {
                     }
                 });
             });
+            if modal.should_close() {
+                self.resign_dialog = false;
+            }
         }
         if self.help {
-            egui::Modal::new(egui::Id::new("Help / About")).show(ctx,|ui|{
+            let modal = egui::Modal::new(egui::Id::new("Help / About")).show(ctx,|ui|{
             ui.add(egui::Image::new(egui::include_image!("../packaging/omarchy-chess.svg")).max_size(Vec2::splat(64.)));
             ui.heading("Chess"); ui.label(format!("Omarchy Arcade · Version {}", env!("CARGO_PKG_VERSION"))); ui.label("Powered by Stockfish, shakmaty and egui. GPL-3.0-or-later.");
             ui.label("Board: click or drag; arrow keys, Enter/Space to select, Escape to clear.\nMove field: e4, Nf3, O-O, e2e4 or e7e8n.\nCtrl+, Settings · Ctrl+M Sound · Ctrl+N New · Ctrl+O Import · Ctrl+S Export\nCtrl+Z Takeback · Ctrl+H Hint · Ctrl+F Flip · Ctrl+L Live · Ctrl+Q Quit");
             ui.label("Independent community app. No accounts or network services.\nPieces: Cburnett, adapted by python-chess; GPL artwork, embedded SVGs.");
             if ui.button("Close").clicked(){self.help=false;}
         });
+            if modal.should_close() {
+                self.help = false;
+            }
         }
     }
 }
