@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Omarchy Invaders
+Comment=Defend your sector in a native arcade shooter
+Exec=omarchy-invaders
+Icon=omarchy-invaders
+Terminal=false
+Categories=Game;ArcadeGame;
+StartupWMClass=omarchy-invaders
