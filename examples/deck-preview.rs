@@ -11,6 +11,7 @@ struct Preview {
     palette: Palette,
     output: String,
     all: bool,
+    numbers: bool,
     capture: bool,
 }
 impl eframe::App for Preview {
@@ -19,7 +20,23 @@ impl eframe::App for Preview {
             let p=ui.painter();
             let style=|pattern|DeckStyle{palette:&self.palette,pattern,holographic:false,sheen:0.5,deck:&self.deck,art:None};
             let label=|x,y,t:&str,size|{p.text(pos2(x,y),egui::Align2::LEFT_TOP,t,egui::FontId::proportional(size),self.palette.text);};
-            if self.all {
+            if self.numbers {
+                label(32.,20.,"OMARCHY SOLITAIRE · Number-card study",26.);
+                label(32.,60.,"Measured rank spacing · natural-width 10 · balanced pip field",16.);
+                for (n,id) in [1,15,30,45,7,34,48].iter().enumerate() {
+                    let r=Rect::from_min_size(pos2(32.+n as f32*131.,110.),vec2(116.,162.4));
+                    cards::paint(p,r,Card(*id,true),&style(0),false);
+                }
+                label(32.,310.,"Overlapping columns at playing size",20.);
+                for (n,width) in [80.,96.,112.,124.].iter().enumerate() {
+                    let x=32.+n as f32*228.;
+                    label(x,349.,&format!("{width} px"),16.);
+                    for (row,id) in [51,24,10,35,8,33].iter().enumerate() {
+                        let r=Rect::from_min_size(pos2(x,386.+row as f32*width*0.28),vec2(*width,width*1.4));
+                        cards::paint(p,r,Card(*id,true),&style(0),false);
+                    }
+                }
+            } else if self.all {
                 label(22.,14.,"OMARCHY SOLITAIRE · Complete deck / 80 px",22.);
                 for n in 0..52 { let r=Rect::from_min_size(pos2(22.+(n%13) as f32*91.,62.+(n/13) as f32*143.),vec2(80.,112.));cards::paint(p,r,Card(n as u8,true),&style(0),false); }
             } else {
@@ -61,6 +78,7 @@ impl eframe::App for Preview {
 }
 fn main() -> eframe::Result {
     let args: Vec<_> = std::env::args().collect();
+    let numbers = args.iter().any(|x| x == "--numbers");
     let all = args.iter().any(|x| x == "--all");
     let light = args.iter().any(|x| x == "--light");
     let palette = if light {
@@ -90,6 +108,7 @@ fn main() -> eframe::Result {
                 palette,
                 output,
                 all,
+                numbers,
                 capture: false,
             }))
         }),

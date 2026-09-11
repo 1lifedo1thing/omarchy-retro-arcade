@@ -28,31 +28,37 @@ fn svg(body: &str) -> String {
         r#"<svg xmlns="http://www.w3.org/2000/svg" width="500" height="700" viewBox="0 0 500 700">{body}</svg>"#
     )
 }
+// A separate pip field leaves a quiet band under each corner index.
+const PIP_TOP: f32 = 190.;
+const PIP_BOTTOM: f32 = 510.;
+const PIP_LEFT: f32 = 155.;
+const PIP_RIGHT: f32 = 345.;
 fn pips(rank: u8) -> Vec<(f32, f32)> {
+    let (t, b, l, r) = (PIP_TOP, PIP_BOTTOM, PIP_LEFT, PIP_RIGHT);
     match rank {
         1 => vec![(250., 350.)],
-        2 => vec![(250., 160.), (250., 540.)],
-        3 => vec![(250., 160.), (250., 350.), (250., 540.)],
+        2 => vec![(250., t), (250., b)],
+        3 => vec![(250., t), (250., 350.), (250., b)],
         n => {
-            let mut p = vec![(145., 160.), (355., 160.), (145., 540.), (355., 540.)];
+            let mut p = vec![(l, t), (r, t), (l, b), (r, b)];
             if n == 5 {
                 p.push((250., 350.));
             }
             if (6..=8).contains(&n) {
-                p.extend([(145., 350.), (355., 350.)]);
+                p.extend([(l, 350.), (r, 350.)]);
                 if n >= 7 {
-                    p.push((250., 255.));
+                    p.push((250., 270.));
                 }
                 if n == 8 {
-                    p.push((250., 445.));
+                    p.push((250., 430.));
                 }
             }
             if n >= 9 {
-                p.extend([(145., 287.), (355., 287.), (145., 413.), (355., 413.)]);
+                p.extend([(l, 296.667), (r, 296.667), (l, 403.333), (r, 403.333)]);
                 if n == 9 {
                     p.push((250., 350.));
                 } else {
-                    p.extend([(250., 223.), (250., 477.)]);
+                    p.extend([(250., 243.333), (250., 456.667)]);
                 }
             }
             p
@@ -65,13 +71,17 @@ pub fn face_svg(c: Card) -> String {
         .lines()
         .nth(c.rank() as usize - 1)
         .expect("thirteen bundled ranks");
+    let (width, rank) = rank.split_once('|').expect("measured rank outline");
+    let width: f32 = width.parse().expect("rank ink width");
+    // 24 units of clear space, measured between the actual ink edges.
+    let suit_half_width = [43., 25., 35., 35.][c.suit() as usize] * 0.72;
     let index = format!(
-        r#"<g transform="translate(28 23)" fill="{ink}">{rank}</g>{}"#,
+        r#"<g transform="translate(32 28)" fill="{ink}">{rank}</g>{}"#,
         mark(
             c.suit() as usize,
-            if c.rank() == 10 { 130. } else { 111. },
-            62.,
-            0.70,
+            32. + width + 24. + suit_half_width,
+            67.,
+            0.72,
             ink,
             false
         )
@@ -88,9 +98,9 @@ pub fn face_svg(c: Card) -> String {
                 if c.rank() == 1 {
                     2.45
                 } else if c.rank() >= 9 {
-                    0.9
+                    0.95
                 } else {
-                    1.0
+                    1.12
                 },
                 ink,
                 y > 350.,

@@ -10,7 +10,7 @@ production proportions and indexes are adapted for overlapping Klondike cards.
   is one rank. The renderer uses its upper 512 × 512 bust and rotates that same
   texture region for the lower half, guaranteeing identical ends. All four suits
   share the three portraits; suit identity comes from indexes and medallions.
-- `ranks.svgparts`: outlined DejaVu Serif glyphs, one fragment per rank. The
+- `ranks.svgparts`: outlined DejaVu Serif Bold glyphs, one measured fragment per rank. The
   font's license is in `FONT-LICENSE.txt`; no system font is required at runtime.
 - Faces and the three theme-coloured SVG backs are authored in `src/deck.rs`.
   The official logo is embedded from `assets/omarchy-logo.svg` with its geometry
@@ -60,3 +60,8 @@ target/release/examples/deck-preview light.png --light
 
 The proof does not read or write game saves. The complete-deck proof includes
 all 52 faces at 80 px; the main proof includes 80 px back samples.
+
+Rebuild rank outlines with `python tools/build_rank_art.py /path/to/DejaVuSerif-Bold.ttf`
+(fontTools is a development-only requirement). Each fragment records its visible
+ink width, allowing a clear 24-unit gap before the suit without squeezing 10.
+The native proof accepts `--numbers` for pip layouts and overlapping indexes.

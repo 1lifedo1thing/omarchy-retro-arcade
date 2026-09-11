@@ -78,3 +78,12 @@ three generated rank portraits are shared across suits, with explicit suit
 medallions and indexes. Backs are authored SVG with theme-derived inks and the
 unchanged official mark. Mipmap filtering prevents fine artwork aliasing.
 All assets are embedded in the executable; there is no new runtime dependency.
+
+## Number-card design pass
+
+Use DejaVu Serif Bold at a consistent 78-unit ink height on the 500-unit card.
+Normalize glyph bearings and derive suit placement from visible rank width, with
+24 units of clear separation. Ten retains its natural proportions. Corner insets
+are 32 × 28 units, within the tableau exposure. The pip field spans y=190–510,
+with symmetric side columns at x=155/345 and larger low-rank pips; nine and ten
+use a denser four-row layout. The lower index is still an exact 180-degree copy.

@@ -68,3 +68,12 @@ claimed. No public release or distribution submission has been made.
 - Real Omarchy/Hyprland display scaling, portal interaction and hardware
   performance remain desktop acceptance checks; no new claim of hardware
   testing is made by this artwork change.
+
+## Number-card layout pass
+
+All 26 tests, formatting and strict all-target Clippy pass. Release renders were
+inspected across every face at 80 px, light/dark palettes, compact/standard games,
+and overlapping runs at 80/96/112/124 px. `deck-numbers.png` is produced by the
+native painter and is included in CI captures. The pass corrects crowded fixed
+rank/suit positions, restores the natural width of 10, strengthens rank weight,
+and moves/rebalances the pip field clear of the indexes.

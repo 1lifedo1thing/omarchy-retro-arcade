@@ -42,7 +42,7 @@ def main():
             print(f'Captured {name}: {width} × {height}')
 
     if args.deck_binary:
-        for name, extra in [('deck-artwork', []), ('deck-all-faces', ['--all']), ('deck-artwork-light', ['--light'])]:
+        for name, extra in [('deck-artwork', []), ('deck-all-faces', ['--all']), ('deck-artwork-light', ['--light']), ('deck-numbers', ['--numbers'])]:
             target = output / f'{name}.png'
             subprocess.run([str(args.deck_binary.resolve()), str(target), *extra], check=True, timeout=30)
             if not target.read_bytes().startswith(b'\x89PNG\r\n\x1a\n'):
