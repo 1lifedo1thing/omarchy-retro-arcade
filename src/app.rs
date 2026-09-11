@@ -72,6 +72,7 @@ pub struct SolitaireApp {
     visuals: [Option<Visual>; 52],
     drag: Option<Drag>,
     focus: (usize, usize),
+    return_focus: bool,
     board_rect: Rect,
     now: f64,
     last_tick: Option<f64>,
@@ -128,6 +129,7 @@ impl SolitaireApp {
             visuals: [None; 52],
             drag: None,
             focus: (0, 0),
+            return_focus: false,
             board_rect: Rect::NOTHING,
             now: 0.,
             last_tick: None,
@@ -420,6 +422,9 @@ impl SolitaireApp {
         }
         self.style(ctx);
         self.shortcuts(ctx);
+        if self.dialog.is_some() || self.import.is_some() {
+            self.drag = None;
+        }
         egui::TopBottomPanel::top("toolbar")
             .frame(
                 egui::Frame::new()
@@ -576,13 +581,17 @@ impl SolitaireApp {
         if self.dialog.is_some() || self.import.is_some() {
             if ctx.input(|i| i.key_pressed(Key::Escape)) {
                 self.dialog = None;
+                self.import = None;
+                self.return_focus = true;
+                ctx.memory_mut(|m| m.request_focus(Id::new("card-table")));
             }
             return;
         }
         let mut action = None;
+        let mut quit = false;
         ctx.input_mut(|i| {
             if i.consume_key(egui::Modifiers::CTRL, Key::Q) {
-                ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+                quit = true;
             }
             if i.consume_key(egui::Modifiers::CTRL, Key::N) {
                 self.dialog = Some(Dialog::New);
@@ -600,6 +609,9 @@ impl SolitaireApp {
                 action = Some(Action::Hint);
             }
         });
+        if quit {
+            ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+        }
         if let Some(a) = action {
             self.act(a);
         }
@@ -647,6 +659,10 @@ impl SolitaireApp {
             // A stable explicit focus widget permits arrow navigation after mouse or Tab entry.
             let keyboard=ui.interact(board,board_id,Sense::focusable_noninteractive());
             if resp.has_focus(){keyboard.request_focus();}
+            if self.return_focus && self.dialog.is_none() && self.import.is_none() {
+                keyboard.request_focus();
+                if keyboard.has_focus(){self.return_focus=false;}else{ui.ctx().request_repaint();}
+            }
             let mut board_focus=keyboard.has_focus();
             let slots:[Rect;13]=std::array::from_fn(|p| {
                 let col=if p==0{0}else if p==1{1}else if p<6{p+1}else{p-6};
@@ -912,6 +928,7 @@ impl SolitaireApp {
         });
         if close {
             self.dialog = None;
+            self.return_focus = true;
             ctx.memory_mut(|m| m.request_focus(Id::new("card-table")));
         }
     }

@@ -104,6 +104,8 @@ fn compact_window_and_modal_shortcuts_preserve_table() {
     assert_eq!(h.app.session.game.state.moves, 1);
     h.key(Key::Escape, Modifiers::NONE);
     assert!(h.app.dialog.is_none());
+    h.key(Key::Space, Modifiers::NONE);
+    assert_eq!(h.app.session.game.state.moves, 2);
     h.app.dialog = Some(Dialog::Deck);
     h.frame(vec![]);
     h.app.dialog = Some(Dialog::Help);
@@ -198,4 +200,27 @@ fn board_accepts_space_immediately_after_launch() {
     let mut h = Harness::new(800., 600.);
     h.key(Key::Space, Modifiers::NONE);
     assert_eq!(h.app.session.game.state.moves, 1);
+}
+#[test]
+fn quit_shortcut_requests_close_without_reentering_input_lock() {
+    let mut h = Harness::new(800., 600.);
+    let out = h.ctx.run(
+        RawInput {
+            screen_rect: Some(Rect::from_min_size(pos2(0., 0.), h.size)),
+            time: Some(h.time + 0.1),
+            events: vec![Event::Key {
+                key: Key::Q,
+                physical_key: Some(Key::Q),
+                pressed: true,
+                repeat: false,
+                modifiers: Modifiers::CTRL,
+            }],
+            ..Default::default()
+        },
+        |ctx| h.app.ui(ctx),
+    );
+    assert!(out.viewport_output.values().any(|v| v
+        .commands
+        .iter()
+        .any(|c| matches!(c, egui::ViewportCommand::Close))));
 }
