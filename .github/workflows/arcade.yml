@@ -1,0 +1,64 @@
+name: Arcade build and package
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Native dependencies
+        run: sudo apt-get update && sudo apt-get install -y cmake libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libegl1-mesa-dev libgl1-mesa-dev libxkbcommon-dev libxkbcommon-x11-0 libwayland-dev libx11-dev libxi-dev libxcursor-dev libxrandr-dev libxtst6 xvfb stockfish desktop-file-utils
+      - run: cargo fmt --all --check
+      - run: cargo clippy --workspace --locked --all-targets -- -D warnings
+      - run: REQUIRE_STOCKFISH=1 cargo test --workspace --locked --all-targets
+      - run: scripts/build.sh
+      - run: ctest --test-dir build/pinball --output-on-failure -R 'theme-palette|theme-path|authored-upstream-table'
+      - run: desktop-file-validate packaging/omarchy-retro-arcade.desktop
+      - name: One window, five games, existing saves
+        run: xvfb-run -a -s '-screen 0 1440x1100x24' env LIBGL_ALWAYS_SOFTWARE=1 SDL_AUDIODRIVER=dummy python3 scripts/native-check.py target/release/omarchy-retro-arcade
+      - name: Capture the actual app
+        run: |
+          mkdir -p /tmp/arcade-renders
+          for game in chess solitaire scram invaders pinball; do
+            xvfb-run -a env LIBGL_ALWAYS_SOFTWARE=1 SDL_AUDIODRIVER=dummy XDG_STATE_HOME=/tmp/arcade-$game/state XDG_DATA_HOME=/tmp/arcade-$game/data XDG_CONFIG_HOME=/tmp/arcade-$game/config target/release/omarchy-retro-arcade --game "$game" --screenshot "/tmp/arcade-renders/$game.png"
+          done
+          xvfb-run -a env LIBGL_ALWAYS_SOFTWARE=1 target/release/omarchy-retro-arcade --compact --screenshot /tmp/arcade-renders/shelf-compact.png
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-windows
+          path: /tmp/arcade-renders/
+  arch:
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+    steps:
+      - run: pacman -Syu --noconfirm git rust cmake python sdl2 sdl2_image sdl2_mixer libglvnd libx11 libxcursor libxi libxrandr libxkbcommon libxkbcommon-x11 libxtst wayland dbus mesa libpulse xdg-desktop-portal xorg-server-xvfb xorg-xauth
+      - uses: actions/checkout@v4
+      - name: Build the complete package
+        run: |
+          useradd -m builder
+          chown -R builder:builder "$GITHUB_WORKSPACE"
+          su builder -c "cd '$GITHUB_WORKSPACE' && packaging/build-arch.sh"
+      - name: Install and verify
+        run: |
+          pacman -U --noconfirm dist/arch/*.pkg.tar.zst
+          omarchy-retro-arcade --version
+          test "$(pacman -Ql omarchy-retro-arcade | grep -c '/usr/share/applications/.*\.desktop$')" = 1
+          su builder -c "cd '$GITHUB_WORKSPACE' && xvfb-run -a -s '-screen 0 1440x1100x24' env LIBGL_ALWAYS_SOFTWARE=1 SDL_AUDIODRIVER=dummy python3 scripts/native-check.py /usr/bin/omarchy-retro-arcade"
+          su builder -c 'xvfb-run -a env LIBGL_ALWAYS_SOFTWARE=1 XDG_STATE_HOME=/tmp/arcade-upgrade omarchy-retro-arcade --game solitaire --screenshot /tmp/arcade-before.png'
+          cp /tmp/arcade-upgrade/omarchy-solitaire/session.json /tmp/arcade-original.json
+          pacman -U --noconfirm dist/arch/*.pkg.tar.zst
+          cmp /tmp/arcade-original.json /tmp/arcade-upgrade/omarchy-solitaire/session.json
+          su builder -c 'xvfb-run -a env LIBGL_ALWAYS_SOFTWARE=1 XDG_STATE_HOME=/tmp/arcade-upgrade omarchy-retro-arcade --game solitaire --screenshot /tmp/arcade-after.png'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arch-package
+          path: dist/arch/*.pkg.tar.zst
+      - uses: actions/upload-artifact@v4
+        with:
+          name: corresponding-source-and-engine
+          path: dist/arch/sources/

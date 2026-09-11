@@ -25,5 +25,7 @@ jobs:
           test "$(git rev-parse FETCH_HEAD)" = b1dec039416e539c13901851c01727f93bb553ec
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          published=$(git commit-tree b1dec039416e539c13901851c01727f93bb553ec^{tree} -p HEAD -p b1dec039416e539c13901851c01727f93bb553ec -m "Publish consolidated arcade with full game histories")
+          git read-tree b1dec039416e539c13901851c01727f93bb553ec
+          git reset HEAD -- .github/workflows/publish.yml
+          published=$(git commit-tree "$(git write-tree)" -p HEAD -p b1dec039416e539c13901851c01727f93bb553ec -m "Publish consolidated arcade with full game histories")
           git push origin "$published:refs/heads/main"
