@@ -34,3 +34,27 @@ jobs:
           name: omarchy-spacecadet-linux-x86_64
           path: omarchy-spacecadet-linux-x86_64.tar.gz
           if-no-files-found: error
+  arch-package:
+    runs-on: ubuntu-24.04
+    container: archlinux:base-devel
+    timeout-minutes: 20
+    steps:
+      - name: Dependencies
+        run: pacman -Syu --noconfirm cmake ninja sdl2 sdl2_mixer python zenity git
+      - uses: actions/checkout@v4
+      - name: Build Arch package as an unprivileged user
+        run: |
+          useradd -m builder
+          chown -R builder:builder "$GITHUB_WORKSPACE"
+          cd packaging
+          runuser -u builder -- makepkg --noconfirm
+      - name: Install and inspect
+        run: |
+          pacman -U --noconfirm packaging/*.pkg.tar.zst
+          omarchy-spacecadet --version
+          /usr/lib/omarchy-spacecadet/omarchy-spacecadet-game --version || /usr/libexec/omarchy-spacecadet/omarchy-spacecadet-game --version
+      - uses: actions/upload-artifact@v4
+        with:
+          name: omarchy-spacecadet-arch-x86_64
+          path: packaging/*.pkg.tar.zst
+          if-no-files-found: error
