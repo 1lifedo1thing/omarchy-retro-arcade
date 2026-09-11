@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "omarchy-chess"
+version = "0.1.0.dev1"
+description = "A quiet, native chess board for Omarchy, powered by Stockfish"
+requires-python = ">=3.11"
+license = {text = "GPL-3.0-or-later"}
+dependencies = ["chess>=1.11.2,<2", "PySide6>=6.6,<7"]
+
+[project.scripts]
+omarchy-chess = "omarchy_chess.app:main"
+
+[tool.setuptools.packages.find]
+include = ["omarchy_chess*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+

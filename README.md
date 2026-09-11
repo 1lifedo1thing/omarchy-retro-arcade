@@ -8,4 +8,4 @@ Independent community project, not an official Omarchy distribution component.
 
 ## License
 
-GPL-3.0-or-later. Third-party components retain their own licenses and attribution.
+GPL-3.0-or-later. See [LICENSE](LICENSE). Third-party components retain their own licenses and attribution.
