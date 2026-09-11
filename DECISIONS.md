@@ -50,3 +50,7 @@ The entries above describe the first, incomplete colour-only port. The following
 - Inspect the normal and smaller light-theme render. Preserve official logo shape/colour and verify source hashes.
 - CI must compile both engines, build/install the Arch package and run the default game with no external data before this revision is handed off.
 - Hardware acceptance still includes real Omarchy/Hyprland focus/fullscreen behavior, fractional scaling, physical controller input, subjective pinball feel and listening to audio. Classic mode gameplay is still unverified here because no original data was available.
+
+## Arcade consistency milestone (0.2.1)
+
+Implement Game/Settings/Help menus, paused menu interaction, a distinct pinball launcher/window icon, and complete About information. Retain the exact official mark in the icon and game. Preserve the version-1 save format. Add a native restore test and CI upgrade from the actual 0.2.0 package; version tags publish package/checksum prereleases. No release tag is created by this change. The shared icon treatment is established here; other games are maintained in their own threads.

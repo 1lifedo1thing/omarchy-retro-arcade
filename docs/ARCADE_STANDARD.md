@@ -16,15 +16,15 @@ Agreed collection baseline, 11 September 2026. These are acceptance criteria, no
 
 ## Pinball assessment
 
-Source inspected at `11194f53e2898ca3dd50442c94916a4a7b875d67`:
+Updated for the 0.2.1 Arcade milestone:
 
 | Area | Current status |
 | --- | --- |
 | Direct play | Implemented without external data; saved games restore paused. |
-| Controls | F2, P, Escape and F11 implemented. Common Game/Settings/Help grouping remains; controls currently occupy a side panel. |
+| Controls | F2, P, Escape and F11 implemented. Game/Settings/Help menus implemented; opening them pauses play. |
 | Theme/sound | Theme following, remembered overrides, Mute and optional Music implemented. Live desktop and listening checks remain. |
-| Icons/About | Official logo installed and basic About text present. Distinct collection icon, version, collection name, support link and full credits/licence information remain. |
+| Icons/About | Distinct pinball icon with unchanged official mark installed. About includes version, collection name, support link, upstream credits and licence/brand information. |
 | Saves | Atomic writes and recovery validation implemented. Linux data normally lives in `~/.local/share/omarchy-spacecadet/`, respecting `XDG_DATA_HOME`. |
-| Updates | Stable Arch package and manual pacman installation exist. Versioned release publication and an upgrade test preserving an existing save remain. |
+| Updates | Version 0.2.1 retains the package name. CI installs 0.2.0, seeds a saved game, upgrades, then verifies that the native app restores and re-saves unchanged data. Version tags trigger package/checksum prereleases; no tag or release is published by this PR. |
 
 Other games have not been audited by this change. Real Omarchy desktop acceptance and game-specific quality checks remain necessary: this interface standard alone cannot establish polished pinball physics.

@@ -29,7 +29,7 @@ makepkg -si
 
 This is a development build, not an official Omarchy package.
 
-To update, install a newer package with the same `sudo pacman -U /path/to/new-package.pkg.tar.zst` command. Saves and settings live outside the package, normally in `~/.local/share/omarchy-spacecadet/` on Linux (or under `XDG_DATA_HOME` when set). Keep that directory when updating. An upgrade preserving an existing save still needs release acceptance testing.
+To update, install a newer package with the same `sudo pacman -U /path/to/new-package.pkg.tar.zst` command. Saves and settings live outside the package, normally in `~/.local/share/omarchy-spacecadet/` on Linux (or under `XDG_DATA_HOME` when set). Keep that directory when updating. CI tests a 0.2.0-to-0.2.1 package upgrade and verifies native restore without changing the saved progress or preferences.
 
 ## Omarchy Arcade
 
@@ -61,3 +61,5 @@ The original table is built into `bin/omarchy-pinball`. The classic engine is `b
 Tests cover physics interactions, rules, a three-minute simulated run, save validation, launcher selection and theme paths. The actual native app has been run and visually inspected at normal and smaller/light-theme sizes. CI additionally builds/installs the Arch package and runs the installed default game without external resources.
 
 Actual Hyprland, fractional scaling, physical controller and audio listening acceptance remain hardware checks. See [DECISIONS.md](DECISIONS.md) for the recorded trade-offs and [README.upstream.md](README.upstream.md) for the original source port.
+
+Version tags matching the package version build a GitHub prerelease with the Arch package and SHA256SUMS. Until a tag is published, use the development artifacts above. Appearance and sound are under Settings; rules and version/credits are under Help.

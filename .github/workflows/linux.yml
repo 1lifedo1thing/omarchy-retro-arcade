@@ -44,6 +44,18 @@ jobs:
       - name: Dependencies
         run: pacman -Syu --noconfirm cmake ninja sdl2 sdl2_mixer python zenity git
       - uses: actions/checkout@v4
+      - name: Install previous version and seed its saved game
+        run: |
+          git fetch --depth=1 origin 11194f53e2898ca3dd50442c94916a4a7b875d67
+          mkdir /tmp/previous
+          git archive FETCH_HEAD | tar -x -C /tmp/previous
+          useradd -m previous
+          chown -R previous:previous /tmp/previous
+          cd /tmp/previous/packaging
+          runuser -u previous -- makepkg --noconfirm
+          pacman -U --noconfirm /tmp/previous/packaging/*.pkg.tar.zst
+          cd "$GITHUB_WORKSPACE"
+          python tests/upgrade_test.py seed /tmp/arcade-upgrade
       - name: Build Arch package as an unprivileged user
         run: |
           useradd -m builder
@@ -54,6 +66,7 @@ jobs:
         run: |
           pacman -U --noconfirm packaging/*.pkg.tar.zst
           omarchy-spacecadet --version
+          python tests/upgrade_test.py verify /tmp/arcade-upgrade /usr/libexec/omarchy-spacecadet/omarchy-pinball
           SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy omarchy-spacecadet --smoke 600
       - uses: actions/upload-artifact@v4
         with:
