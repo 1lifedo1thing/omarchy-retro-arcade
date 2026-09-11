@@ -1,3 +1,3 @@
 # Omarchy Arcade
 
-The consolidated native arcade application. Publication is in progress.
+Publishing the verified consolidated app and original game histories.
