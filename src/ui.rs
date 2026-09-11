@@ -634,7 +634,7 @@ impl ChessApp {
             );
         }
         if response.drag_started() {
-            if let Some(pos) = response.interact_pointer_pos() {
+            if let Some(pos) = ui.input(|i| i.pointer.press_origin()) {
                 self.drag_source = square_at(rect, pos, self.flipped);
                 self.selected = self.drag_source;
             }
@@ -651,13 +651,29 @@ impl ChessApp {
                 }
             }
         }
-        if response.clicked() {
+        if response.clicked()
+            && ui.input(|i| i.pointer.button_released(egui::PointerButton::Primary))
+        {
             response.request_focus();
+            ui.ctx().request_repaint();
             if let Some(pos) = response.interact_pointer_pos() {
                 if let Some(square) = square_at(rect, pos, self.flipped) {
                     self.activate(square);
                 }
             }
+        }
+        if response.has_focus() {
+            ui.memory_mut(|m| {
+                m.set_focus_lock_filter(
+                    response.id,
+                    egui::EventFilter {
+                        horizontal_arrows: true,
+                        vertical_arrows: true,
+                        escape: true,
+                        ..Default::default()
+                    },
+                )
+            });
         }
         if response.has_focus()
             && !self.new_dialog

@@ -130,3 +130,85 @@ fn compact_native_layout_produces_board() {
     assert!(app.board_rect.unwrap().width() >= 300.);
     assert!(!output.shapes.is_empty());
 }
+
+#[test]
+fn drag_uses_pressed_square_even_when_first_motion_crosses_square() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut app = ChessApp::new(dir.path().into());
+    app.game.mode = Mode::Local;
+    let ctx = egui::Context::default();
+    egui_extras::install_image_loaders(&ctx);
+    frame(&mut app, &ctx, vec![]);
+    frame(&mut app, &ctx, vec![]);
+    let board = app.board_rect.unwrap();
+    let from = square_rect(board, Square::E2, false).center();
+    let to = square_rect(board, Square::E4, false).center();
+    frame(
+        &mut app,
+        &ctx,
+        vec![
+            Event::PointerMoved(from),
+            Event::PointerButton {
+                pos: from,
+                button: PointerButton::Primary,
+                pressed: true,
+                modifiers: Default::default(),
+            },
+        ],
+    );
+    frame(&mut app, &ctx, vec![Event::PointerMoved(to)]);
+    frame(
+        &mut app,
+        &ctx,
+        vec![Event::PointerButton {
+            pos: to,
+            button: PointerButton::Primary,
+            pressed: false,
+            modifiers: Default::default(),
+        }],
+    );
+    assert_eq!(app.game.notation, vec!["1.  e4"]);
+}
+
+#[test]
+fn focused_board_keyboard_can_complete_move() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut app = ChessApp::new(dir.path().into());
+    app.game.mode = Mode::Local;
+    let ctx = egui::Context::default();
+    egui_extras::install_image_loaders(&ctx);
+    frame(&mut app, &ctx, vec![]);
+    frame(&mut app, &ctx, vec![]);
+    let board = app.board_rect.unwrap();
+    click(
+        &mut app,
+        &ctx,
+        square_rect(board, Square::E2, false).center(),
+    );
+    frame(&mut app, &ctx, vec![]);
+    for key in [egui::Key::ArrowUp, egui::Key::ArrowUp, egui::Key::Enter] {
+        frame(
+            &mut app,
+            &ctx,
+            vec![Event::Key {
+                key,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers: Default::default(),
+            }],
+        );
+        frame(
+            &mut app,
+            &ctx,
+            vec![Event::Key {
+                key,
+                physical_key: None,
+                pressed: false,
+                repeat: false,
+                modifiers: Default::default(),
+            }],
+        );
+    }
+    assert_eq!(app.game.notation, vec!["1.  e4"]);
+}
