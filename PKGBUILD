@@ -1,35 +1,38 @@
-# Build from the checkout root with: makepkg -s
+# Build from this checkout's root as an ordinary user: makepkg -si
 pkgname=omarchy-solitaire
-pkgver=0.1.0
+pkgver=0.2.0
 pkgrel=1
-pkgdesc='Native Klondike solitaire with Omarchy theme integration'
-arch=('any')
+pkgdesc='Native Rust Klondike with Omarchy theme integration'
+arch=('x86_64' 'aarch64')
 url='https://github.com/tcballard/omarchy-solitaire'
 license=('MIT' 'LicenseRef-Omarchy-Artwork')
-depends=('python' 'pyside6' 'qt6-declarative' 'qt6-svg' 'qt6-wayland' 'ttf-dejavu')
-makedepends=('python-build' 'python-installer' 'python-setuptools' 'python-wheel')
-checkdepends=()
+depends=('gcc-libs' 'glibc' 'libglvnd' 'libx11' 'libxcursor' 'libxi' 'libxrandr' 'libxkbcommon' 'wayland' 'dbus')
+optdepends=('xdg-desktop-portal: special card-back file chooser'
+            'xdg-desktop-portal-hyprland: file chooser integration on Omarchy')
+makedepends=('rust')
 source=()
 sha256sums=()
 
 build() {
   cd "$startdir"
-  python -m build --wheel --no-isolation
+  cargo build --release --locked
 }
 
 check() {
   cd "$startdir"
-  QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=software python -m unittest discover -s tests -v
+  cargo test --locked
 }
 
 package() {
   cd "$startdir"
-  python -m installer --destdir="$pkgdir" dist/*.whl
+  install -Dm755 target/release/omarchy-solitaire "$pkgdir/usr/bin/omarchy-solitaire"
   install -Dm644 packaging/io.github.tcballard.omarchy-solitaire.desktop \
     "$pkgdir/usr/share/applications/io.github.tcballard.omarchy-solitaire.desktop"
-  install -Dm644 omarchy_solitaire/assets/solitaire.svg \
+  install -Dm644 assets/solitaire.svg \
     "$pkgdir/usr/share/icons/hicolor/scalable/apps/io.github.tcballard.omarchy-solitaire.svg"
   install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
   install -Dm644 NOTICE "$pkgdir/usr/share/licenses/$pkgname/NOTICE"
+  install -Dm644 THIRD_PARTY.md "$pkgdir/usr/share/licenses/$pkgname/THIRD_PARTY.md"
+  install -Dm644 THIRD_PARTY_LICENSES.txt "$pkgdir/usr/share/licenses/$pkgname/THIRD_PARTY_LICENSES.txt"
   install -Dm644 docs/CARD-BACKS.md "$pkgdir/usr/share/doc/$pkgname/CARD-BACKS.md"
 }
