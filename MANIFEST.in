@@ -1,4 +1,0 @@
-include LICENSE README.md THIRD_PARTY.md DECISIONS.md
-recursive-include packaging *.desktop *.svg *.sh PKGBUILD
-recursive-include docs *.md *.png
-recursive-include tests *.py

@@ -1,32 +1,32 @@
-# Build from a checked-out source tree: ./packaging/build-arch.sh
+# Build from a clean checkout with packaging/build-arch.sh.
 pkgname=omarchy-chess
-pkgver=0.1.0dev1
+pkgver=0.1.0
 pkgrel=1
-pkgdesc='Native offline chess for Omarchy, powered by Stockfish'
-arch=('any')
+pkgdesc='Native offline chess for Omarchy, written in Rust'
+arch=('x86_64' 'aarch64')
 url='https://github.com/tcballard/omarchy-chess'
 license=('GPL-3.0-or-later')
-depends=('python>=3.11' 'pyside6' 'qt6-svg' 'qt6-wayland' 'python-chess')
-optdepends=('stockfish: computer opponent and hints')
-makedepends=('python-build' 'python-installer' 'python-setuptools' 'python-wheel')
-checkdepends=('python-pytest')
+depends=('gcc-libs' 'glibc' 'libxcb' 'libxkbcommon' 'libxkbcommon-x11' 'libglvnd' 'wayland' 'xdg-desktop-portal')
+optdepends=('stockfish: computer opponent and hints' 'xdg-desktop-portal-gtk: file chooser fallback')
+makedepends=('rust>=1.98' 'pkgconf')
 source=('omarchy-chess-source.tar.gz')
-# Generated local snapshot; build-arch.sh replaces this with its SHA256.
+# Replaced by build-arch.sh with the checksum of its exact source snapshot.
 sha256sums=('SKIP')
-
+prepare() {
+  cd "$srcdir/omarchy-chess"
+  cargo fetch --locked
+}
 build() {
   cd "$srcdir/omarchy-chess"
-  python -m build --wheel --no-isolation
+  cargo build --frozen --release
 }
-
 check() {
   cd "$srcdir/omarchy-chess"
-  QT_QPA_PLATFORM=offscreen python -m pytest -q
+  cargo test --frozen --all-targets
 }
-
 package() {
   cd "$srcdir/omarchy-chess"
-  python -m installer --destdir="$pkgdir" dist/*.whl
+  install -Dm755 target/release/omarchy-chess "$pkgdir/usr/bin/omarchy-chess"
   install -Dm644 packaging/omarchy-chess.desktop "$pkgdir/usr/share/applications/omarchy-chess.desktop"
   install -Dm644 packaging/omarchy-chess.svg "$pkgdir/usr/share/icons/hicolor/scalable/apps/omarchy-chess.svg"
   install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"

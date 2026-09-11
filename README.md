@@ -2,99 +2,94 @@
 
 Open a board. Choose a side. Play.
 
-A native Linux chess app for offline games against Stockfish or a friend at the same computer. It follows your active Omarchy colours and keeps your unfinished game ready for next time.
+A native Linux chess app written in Rust, for offline games against Stockfish or a friend at the same computer. It follows your active Omarchy colours and resumes your unfinished game.
 
-![Native Omarchy Chess preview](docs/preview.png)
+**Development preview.** Independent community project; not an official Omarchy component.
 
-**Development preview, not a stable release.** Independent community project; not an official Omarchy component.
+## Features
 
-## What works
+- Computer play as White or Black with four strength settings; local two-player play.
+- Click, drag, arrow-key navigation and typed algebraic or coordinate moves.
+- Castling, en passant, all promotions, checkmate, stalemate, automatic draws, draw claims and resignation.
+- Move history with read-only review, highlights, hints, takebacks, guides and board flipping.
+- Atomic autosave, single-instance protection, archived games and PGN import/export.
+- Live Omarchy colours with a built-in fallback palette.
 
-- Computer play as White or Black, with four strength settings; local two-player mode.
-- Click, drag, arrow-key board navigation and typed algebraic/coordinate moves.
-- Legal moves, castling, en passant, all four promotions, checkmate, stalemate, automatic draws, draw claims and resignation.
-- Last-move/check highlights, captured pieces, move history and read-only position review.
-- Optional move guides, hints, takebacks and board flipping.
-- Atomic autosave, automatic resume, single-instance session protection and archived games.
-- PGN main-line import/export, including standard-chess custom starting positions.
-- Live Omarchy theme updates; a built-in fallback palette on other Linux desktops.
-
-No account, telemetry, online service or runtime downloads. Dependencies must be installed first.
+No Python runtime, account, telemetry, online service or runtime downloads. Stockfish is installed separately.
 
 ## Run from source
 
-Requires Python 3.11+ and a Linux desktop with Qt's system libraries. Stockfish is a separate executable.
+Requires a Linux desktop, Rust (the toolchain is pinned in `rust-toolchain.toml`), a C linker, pkg-config and the system libraries listed in `packaging/PKGBUILD`. File dialogs use the desktop's XDG portal.
 
 ```bash
 git clone --branch feat/native-chess-preview https://github.com/tcballard/omarchy-chess.git
 cd omarchy-chess
-python3 -m venv .venv
-.venv/bin/python -m pip install .
-.venv/bin/omarchy-chess
+cargo build --release --locked
+./target/release/omarchy-chess
 ```
 
-Install Stockfish using your distribution's supported package route, or obtain a Linux executable from [Stockfish's official downloads](https://stockfishchess.org/download/). The app checks PATH, `/usr/bin/stockfish` and `/usr/games/stockfish`. For an explicit executable:
+Install Stockfish using your distribution, or obtain an executable from [Stockfish's official downloads](https://stockfishchess.org/download/). The app checks PATH and `/usr/games/stockfish`. To choose a specific executable:
 
 ```bash
-OMARCHY_CHESS_ENGINE=/absolute/path/to/stockfish .venv/bin/omarchy-chess
+OMARCHY_CHESS_ENGINE=/absolute/path/to/stockfish ./target/release/omarchy-chess
 ```
 
-This variable is one executable path, never a shell command. Without Stockfish, choose **New game → Friend**; local play remains available. Missing or failed engines expose **Retry engine** after a computer move is requested.
+The variable is one executable path, never a shell command. Without an engine, choose **New game → Friend**. Local play works independently; failed computer requests expose **Retry engine**.
 
-## Arch / Omarchy packaging
+## Arch / Omarchy
 
-CI builds native `.pkg.tar.zst` development artifacts. Download the `arch-preview` artifact from a passing [Actions run](https://github.com/tcballard/omarchy-chess/actions), extract it, inspect the packages, then install the application and rules dependency together:
+CI builds development packages. Download `rust-arch-preview` from a passing [Actions run](https://github.com/tcballard/omarchy-chess/actions), extract and inspect it, then install:
 
 ```bash
-sudo pacman -U ./python-chess-*.pkg.tar.zst ./omarchy-chess-*.pkg.tar.zst
+sudo pacman -U ./omarchy-chess-*.pkg.tar.zst
 ```
 
-Stockfish is a separate optional package/executable and is needed for computer games and hints. No AUR account or marketplace submission is needed to build these packages. These are development artifacts, not a signed release channel.
+Stockfish remains optional for local play. These are development artifacts, not a signed release channel. No AUR submission is required.
 
-To build packages locally, first install the build dependencies (`base-devel`, `git`, `python-build`, `python-installer`, `python-setuptools`, `python-wheel`, `python-pytest`, `pyside6`, `qt6-svg`, `qt6-wayland`). Build and install `packaging/python-chess` if `python-chess` is not already available. Then, from a clean committed checkout, run:
+To build locally, install `base-devel`, `git`, `rust`, `pkgconf` and the dependencies in `packaging/PKGBUILD`. From a clean committed checkout:
 
 ```bash
 ./packaging/build-arch.sh
 ```
 
-The script builds but never installs or invokes sudo. It snapshots the exact commit and checksums that source archive. The resulting app package adds a desktop launcher and icon.
+The script snapshots and checksums the exact source commit, then builds without installing or invoking sudo. The package includes a desktop launcher and icon. There is no separate Python rules package.
 
 ## Controls
 
 | Action | Control |
 |---|---|
-| Select / move | Click twice or drag a piece |
+| Select / move | Click twice or drag |
 | Navigate board | Arrow keys; Enter/Space to select; Escape to clear |
-| Type a move | Move field: `e4`, `Nf3`, `O-O`, `e2e4`, `e7e8n` |
+| Type move | Move field: `e4`, `Nf3`, `O-O`, `e2e4`, `e7e8n` |
 | New game | Ctrl+N |
 | Import / export PGN | Ctrl+O / Ctrl+S |
 | Take back / hint | Ctrl+Z / Ctrl+H |
 | Flip / return live | Ctrl+F / Ctrl+L |
 | Help / quit | F1 / Ctrl+Q |
 
-Takeback against the computer normally returns to your previous turn. Local mode undoes one move. Draw claims are offered when python-chess finds a valid threefold-repetition or fifty-move claim, including claims available through an intended legal move. Fivefold repetition and the seventy-five-move rule end games automatically.
+Computer takeback returns to your previous turn; local takeback undoes one ply. Threefold/fifty-move draws require a claim, including when available through an intended legal move. Fivefold repetition and the seventy-five-move rule end games automatically.
 
-## Files and behaviour
+## Files and compatibility
 
 - Session: `${XDG_STATE_HOME:-~/.local/state}/omarchy-chess/session.json`.
-- Previous games: the same directory's `archive/`, before a new game or import replaces them.
+- Previous games: `archive/` in that directory, saved before replacement.
 - Theme: `${XDG_CONFIG_HOME:-~/.config}/omarchy/current/theme/colors.toml`, checked every two seconds.
-- Corrupt saves remain untouched until a new game/import archives a recovery copy. Failed writes are reported; export PGN to keep a copy.
-- Imports accept **one standard-chess game up to 1 MB** and use its main line. Comments and side variations are not retained in the new export. Original files are untouched. Imported unfinished games continue in local mode.
+- Legacy Python-preview saves are imported and backed up before the first Rust write. Close the old app before launching Rust. An existing legacy `session.lock` prevents startup; remove a stale legacy lock only after verifying the old process is no longer running.
+- Corrupt saves stay untouched until replacement archives a recovery copy. Write failures are shown in the app; export PGN to keep another copy.
+- PGN imports accept one standard-chess game up to 1 MB and 2,048 plies, including custom starting FENs. Comments and variations are not retained; original files stay intact. Unfinished imports continue in local mode.
 
-## Development and review
+## Development
 
 ```bash
-.venv/bin/python -m pip install pytest ruff build
-QT_QPA_PLATFORM=offscreen .venv/bin/python -m pytest -q
-.venv/bin/ruff check omarchy_chess tests
-.venv/bin/python -m build
+cargo fmt --check
+cargo clippy --locked --all-targets -- -D warnings
+REQUIRE_STOCKFISH=1 cargo test --locked --all-targets
 ```
 
-Real-engine tests skip when Stockfish is absent; CI explicitly installs it for the Python test jobs. Headless Qt tests are not a substitute for real Wayland/Hyprland testing.
+Set `OMARCHY_CHESS_ENGINE` if Stockfish is not on PATH or in `/usr/games`. Without `REQUIRE_STOCKFISH`, the real-engine test skips when the engine is absent. CI also builds a release binary, captures a window under Xvfb and builds an Arch package.
 
-Read [DECISIONS.md](DECISIONS.md) for judgement calls, [docs/VERIFICATION.md](docs/VERIFICATION.md) for evidence and desktop acceptance checks, and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the code map.
+See [DECISIONS.md](DECISIONS.md) for judgement calls, [verification](docs/VERIFICATION.md) for evidence and remaining desktop checks, and [architecture](docs/ARCHITECTURE.md) for the code map.
 
 ## License
 
-GPL-3.0-or-later. See [LICENSE](LICENSE) and [THIRD_PARTY.md](THIRD_PARTY.md). Powered by Stockfish, python-chess and Qt for Python.
+GPL-3.0-or-later. See [LICENSE](LICENSE) and [THIRD_PARTY.md](THIRD_PARTY.md). Powered by shakmaty, egui and the separately installed Stockfish engine.

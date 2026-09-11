@@ -1,22 +1,25 @@
-# Code map
+# Rust code map
 
-- `game.py`: authoritative board, move validation, results, takebacks, PGN and notation. No Qt dependency.
-- `storage.py`: versioned JSON session, bounded loading, XDG location, atomic text/byte writes.
-- `theme.py`: small TOML reader with strict six-digit colour validation and fallback.
-- `engine.py`: QThread job around python-chess's UCI client. A separate process per bounded search; cancellation closes its transport. Requests carry a game revision.
-- `board.py`: scalable QPainter board using SVG pieces. Coordinate mapping handles both orientations. Emits move intent; never changes game state itself.
-- `app.py`: native menus, dialogs, history, persistence orchestration and engine-result acceptance. Only current-job/current-revision legal moves may change the live board.
+- `src/game.rs`: authoritative positions, legal moves, notation, results, draw claims, takebacks and PGN. Uses shakmaty and pgn-reader; no GUI dependency in this module.
+- `src/storage.rs`: versioned JSON, legacy migration, bounded reads, atomic writes, archives and lifetime advisory lock.
+- `src/theme.rs`: bounded TOML reads, strict colour validation and fallback palette.
+- `src/engine.rs`: external UCI process, worker thread, cancellation, startup/search/write deadlines and legal-result validation.
+- `src/ui.rs`: egui board, controls, modal dialogs, history, input, persistence orchestration and engine-result acceptance.
+- `src/main.rs`: CLI version, single-instance guard and eframe native window lifecycle.
+- `assets/pieces/`: embedded SVG pieces; no artwork downloads at runtime.
 
 ## State transitions
 
-A human move is validated, outstanding hint work is cancelled, the revision advances, the game changes, UI and disk are updated, and an engine turn is requested if needed. New game, import, resignation, draw claim and takeback invalidate outstanding work. Engine results must match the active job and revision, and remain legal in the current board.
+Human move intent is validated against the authoritative game. Changes cancel outstanding work and advance the revision, then update the UI, save and request an engine turn if needed. New game, import, resignation, draw claim and takeback invalidate outstanding results. Only current-revision legal engine moves may change the board.
 
-Engine exceptions surface in the window with Retry. No network fallback or random substitute move is used. Shutdown cancels workers and lets bounded startup/search work finish before Qt objects are destroyed.
+Each move/hint launches a fresh UCI process. Startup, readiness, writes and search are bounded; cancellation interrupts waiting and kills/reaps the child. Nonblocking stdin prevents a stalled reader from trapping a large position write. Errors surface with Retry; there is no network fallback or random substitute opponent.
 
 ## Persistence
 
-PGN stores move history, including a custom starting FEN. JSON wraps mode, side, difficulty and board preferences. Loading reconstructs the full move stack so repetition detection survives restart. A malformed session cannot replace the live game; starting a new game archives the old bytes first. The lock is held for the application's lifetime, not merely during a write.
+Version 2 JSON stores the initial FEN, full UCI move history, game settings, result and board preferences. Loading reconstructs all positions so repetition survives restart. Version 1 Python-preview sessions are read through their PGN and backed up before migration. Corrupt bytes are archived before replacement. Atomic writes use a temporary file in the destination directory, file fsync, rename and directory fsync.
+
+A Rust advisory file lock is held for the application lifetime. The legacy Qt lock is also checked so both implementations cannot silently overwrite the same session. Stale legacy lock recovery is deliberately manual.
 
 ## Testing boundaries
 
-Unit tests validate the application's integration with rules, imports and persistence rather than reimplementing chess. Qt tests exercise actual events and dialogs. Real engine tests cover Black's opening, hints and cancellation; a silent executable verifies startup timeout and responsive UI. CI tests an Ubuntu Python installation and an Arch package build separately.
+Rules tests exercise integration, unusual chess rules, PGN rejection, migration and recovery. Headless egui tests deliver pointer events and inspect state/layout. Fake UCI executables exercise failures; real Stockfish validates interoperability. Xvfb CI rendering and Arch packaging complement these tests. Real Wayland/Hyprland behaviour and assistive-technology acceptance remain separate checks.

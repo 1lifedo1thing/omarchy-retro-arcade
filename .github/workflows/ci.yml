@@ -1,68 +1,67 @@
-name: Verify chess preview
+name: Verify Rust chess
 on:
   push:
-    branches: [main, 'feat/**']
+    branches: [main]
   pull_request:
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: rust-chess-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
-  test:
+  rust:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ['3.11', '3.13']
     env:
-      QT_QPA_PLATFORM: offscreen
       OMARCHY_CHESS_ENGINE: /usr/games/stockfish
+      REQUIRE_STOCKFISH: '1'
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install engine and native runtime dependencies
+          toolchain: '1.98.1'
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Native runtime and test engine
         run: |
           sudo apt-get update
-          sudo apt-get install -y stockfish libegl1 libopengl0 libxkbcommon0 desktop-file-utils
-      - name: Install application and test tools
-        run: python -m pip install . pytest ruff build
-      - name: Lint and test with real Stockfish
+          sudo apt-get install -y stockfish pkg-config libxkbcommon-dev libxkbcommon-x11-0 libegl1-mesa-dev libgl1-mesa-dri xvfb xauth desktop-file-utils
+      - name: Check and test Rust
         run: |
-          ruff check omarchy_chess tests
-          ruff format --check omarchy_chess tests
+          cargo fmt --check
+          cargo clippy --locked --all-targets -- -D warnings
+          cargo test --locked --all-targets
           desktop-file-validate packaging/omarchy-chess.desktop
-          python -m pytest -q
-      - name: Build wheel and source distribution
-        run: python -m build
-      - name: Render native window
-        run: python -m omarchy_chess --screenshot preview.png
+      - name: Build and render native Rust application
+        run: |
+          cargo build --locked --release --features screenshot
+          target/release/omarchy-chess --version
+          timeout 30s xvfb-run -a env LIBGL_ALWAYS_SOFTWARE=1 EFRAME_SCREENSHOT_TO="$GITHUB_WORKSPACE/rust-preview.png" target/release/omarchy-chess
       - uses: actions/upload-artifact@v4
         with:
-          name: python-preview-${{ matrix.python-version }}
+          name: rust-linux-preview
           path: |
-            dist/*
-            preview.png
+            target/release/omarchy-chess
+            rust-preview.png
+            THIRD_PARTY.md
+            LICENSE
   arch-package:
     runs-on: ubuntu-latest
     container: archlinux:base-devel
     steps:
-      - name: Install build dependencies
+      - name: Install native dependencies
         run: |
-          pacman -Syu --noconfirm git python python-build python-installer python-setuptools python-wheel python-pytest pyside6 qt6-svg qt6-wayland sudo
+          pacman -Syu --noconfirm git rust pkgconf libxcb libxkbcommon libxkbcommon-x11 libglvnd wayland xdg-desktop-portal sudo
           useradd -m builder
-          echo 'builder ALL=(ALL) NOPASSWD: /usr/bin/pacman' > /etc/sudoers.d/builder
       - uses: actions/checkout@v4
-      - name: Build and install rules dependency
+      - name: Build and install native package
         run: |
           chown -R builder:builder "$GITHUB_WORKSPACE"
-          cd packaging/python-chess
-          sudo -u builder makepkg --cleanbuild --clean
-          pacman -U --noconfirm ./*.pkg.tar.zst
-      - name: Build native application package
-        run: sudo -u builder ./packaging/build-arch.sh
+          sudo -u builder ./packaging/build-arch.sh
+          pacman -U --noconfirm dist/arch/*.pkg.tar.zst
+          /usr/bin/omarchy-chess --version
+          ! pacman -Ql omarchy-chess | grep -E '\.(py|pyc)$'
       - uses: actions/upload-artifact@v4
         with:
-          name: arch-preview
-          path: |
-            dist/arch/*.pkg.tar.zst
-            packaging/python-chess/*.pkg.tar.zst
+          name: rust-arch-preview
+          path: dist/arch/*.pkg.tar.zst

@@ -24,9 +24,26 @@ These are implementation choices made under the instruction to build autonomousl
 | D18 | Keyboard controls and move text field now; screen-reader acceptance pending | Tab navigation, named controls and board focus messages exist. A custom painted board does not yet expose 64 individually accessible square objects. Do not claim full screen-reader support. | High |
 | D19 | Work delivered on a feature branch and draft PR | Main gets a minimal project introduction; implementation commits stay reviewable. No automatic merge. | Low |
 
+## Rust migration — supersedes stack-specific choices above
+
+**User requirement:** Rust is Tom's default for new work together. Omarchy Chess must use Rust. This supersedes D01; Python is no longer a pending choice. The original table is retained as historical context, not the current stack specification.
+
+| ID | Current choice | Reason / trade-off |
+|---|---|---|
+| R01 | Rust throughout; project guidance in AGENTS.md | User-directed. No Python runtime or Python build steps. |
+| R02 | eframe/egui 0.31, OpenGL, Wayland and X11 | Native compiled Linux window with custom-drawn controls; these are not GTK/Qt system widgets. Mature pinned API; upgrades are separate work. |
+| R03 | shakmaty 0.27 and pgn-reader 0.26 | Established Rust legal-move and PGN support. Replaces python-chess rules, preserving GPL-3.0-or-later. |
+| R04 | External Stockfish over our bounded UCI adapter | Preserves D03–D05. Nonblocking command writes and cancellation prevent a stalled engine from blocking UI work. |
+| R05 | Embedded Cburnett SVGs from prior dependency | Supersedes D08 distribution details. Attribution retained; no Python dependency. |
+| R06 | Version 2 JSON with legacy save import and backup | Reconstructs full history. fs2 advisory lock replaces QLockFile (D10); existing legacy lock blocks startup. |
+| R07 | App implements repetition/50-move claim policy over legal positions | Supersedes D12 library API details. Intended-move claims are available without a nomination dialog, as before. |
+| R08 | Rust binary and one Arch package | Supersedes Python packaging in D17. Toolchain 1.98.1 and Cargo.lock pinned; thin LTO disabled after release-link failure. ARM packaging declared but not tested. |
+| R09 | XDG portal file dialogs, AccessKit enabled | Requires a working desktop portal. Full accessible 64-square board and screen-reader acceptance remain unfinished (D18). |
+| R10 | Preserve feature scope and draft PR | No clocks, online play or speculative engine rewrite. Real Hyprland/Dell acceptance remains required before stable release. |
+
 ## Most useful next review
 
-1. Keep the Python/Qt stack, or change before investing further in polish?
+1. Does the Rust native interface feel right, including portal dialogs and keyboard interaction?
 2. Does the restrained 2D board feel right on the Dell with real themes?
 3. Should the next milestone prioritise a one-step Stockfish installation, beginner-friendly opponents, clocks, or accessibility?
 

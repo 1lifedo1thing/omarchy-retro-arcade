@@ -1,15 +1,12 @@
-__pycache__/
-*.py[cod]
-.pytest_cache/
-.venv/
-build/
-dist/
-*.egg-info/
+/target/
+/dist/
+/packaging/src/
+/packaging/pkg/
 *.pkg.tar.*
-packaging/src/
-packaging/pkg/
-
+# Historical Python build artifacts, not part of the Rust application.
+__pycache__/
+*.egg-info/
+.pytest_cache/
 .ruff_cache/
-packaging/python-chess/src/
-packaging/python-chess/pkg/
-packaging/python-chess/*.tar.gz
+build/
+.venv/
