@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "gdrv.h"
+#include "OmarchyTheme.h"
 
 #include "GroupData.h"
 #include "partman.h"
@@ -117,9 +118,9 @@ void gdrv_bitmap8::ScaleIndexed(float scaleX, float scaleY)
 	Stride = IndexedStride = Width = newWidht;
 	Height = newHeight;
 
-	delete IndexedBmpPtr;
+	delete[] IndexedBmpPtr;
 	IndexedBmpPtr = newIndBuf;
-	delete BmpBufPtr1;
+	delete[] BmpBufPtr1;
 	BmpBufPtr1 = new ColorRgba[Stride * Height];
 }
 
@@ -156,7 +157,11 @@ void gdrv_bitmap8::BlitToTexture()
 	assertm(result == 0, "Updating non-streaming texture");
 	assertm(static_cast<unsigned>(pitch) == Width * sizeof(ColorRgba), "Padding on vScreen texture");
 
-	std::memcpy(lockedPixels, BmpBufPtr1, Width * Height * sizeof(ColorRgba));
+	for (int y = 0; y < Height; ++y)
+	{
+		auto row = reinterpret_cast<uint32_t*>(reinterpret_cast<unsigned char*>(lockedPixels) + y * pitch);
+		OmarchyTheme::Transform(reinterpret_cast<const uint32_t*>(BmpBufPtr1 + y * Stride), row, Width);
+	}
 
 	SDL_UnlockTexture(Texture);
 }

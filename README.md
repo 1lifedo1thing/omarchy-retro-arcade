@@ -1,123 +1,65 @@
-<!-- markdownlint-disable-file MD033 -->
+# Omarchy Space Cadet
 
-# SpaceCadetPinball
+Classic desktop pinball, with colours that follow Omarchy.
 
-## Summary
+A native C++/SDL application based on [SpaceCadetPinball](https://github.com/k4zmu2a/SpaceCadetPinball). Independent community project. **Development preview: bring your own game resources.**
 
-Reverse engineering of `3D Pinball for Windows - Space Cadet`, a game bundled with Windows.
+## What is implemented
 
-## How to play
+- Live Omarchy colours across the menus and rendered table.
+- Midnight and Amber palettes, plus original table colours.
+- Separate preferences and local high scores.
+- Native launcher, first-launch game-data selection and launcher action to change the folder.
+- Existing pinball gameplay, keyboard/controller controls, fullscreen, audio and local multiplayer from upstream.
+- Linux build checks and a local Arch package recipe.
 
-Place compiled executable into a folder containing original game resources (not included).\
-Supports data files from Windows and Full Tilt versions of the game.
+This is currently a recoloured source port. A wholly original Omarchy table, artwork and audio pack is still outstanding; see [decisions and limitations](DECISIONS.md).
 
-## Known source ports
+## Build on Omarchy
 
-| Platform           | Author          | URL                                                                                                        |
-| ------------------ | --------------- | ---------------------------------------------------------------------------------------------------------- |
-| PS Vita            | Axiom           | <https://github.com/suicvne/SpaceCadetPinball_Vita>                                                        |
-| Emscripten         | alula           | <https://github.com/alula/SpaceCadetPinball> <br> Play online: <https://alula.github.io/SpaceCadetPinball> |
-| Nintendo Switch    | averne          | <https://github.com/averne/SpaceCadetPinball-NX>                                                           |
-| webOS TV           | mariotaku       | <https://github.com/webosbrew/SpaceCadetPinball>                                                           |
-| Android (WIP)      | Iscle           | https://github.com/Iscle/SpaceCadetPinball                                                                 |
-| Nintendo Wii       | MaikelChan      | https://github.com/MaikelChan/SpaceCadetPinball                                                            |
-| Nintendo 3DS       | MaikelChan      | https://github.com/MaikelChan/SpaceCadetPinball/tree/3ds                                                   |
-| Nintendo DS        | Headshotnoby    | https://github.com/headshot2017/3dpinball-nds                                                              |
-| Nintendo Wii U     | IntriguingTiles | https://github.com/IntriguingTiles/SpaceCadetPinball-WiiU                                                  |
-| PlayStation 2      | Headshotnoby    | https://github.com/headshot2017/3dpinball-ps2                                                              |
-| Sega Dreamcast     | Headshotnoby    | https://github.com/headshot2017/3dpinball-dc                                                               |
-| MorphOS            | BeWorld         | https://www.morphos-storage.net/?id=1688897                                                                |
-| AmigaOS 4          | rjd324          | http://aminet.net/package/game/actio/spacecadetpinball-aos4                                                |
-| Android (WIP)      | fexed           | https://github.com/fexed/Pinball-on-Android                                                                |
-
-Platforms covered by this project: desktop Windows, Linux and macOS.
-
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-
-## Source
-
-* `pinball.exe` from `Windows XP` (SHA-1 `2A5B525E0F631BB6107639E2A69DF15986FB0D05`) and its public PDB
-* `CADET.EXE` 32bit version from `Full Tilt! Pinball` (SHA-1 `3F7B5699074B83FD713657CD94671F2156DBEDC4`)
-
-## Tools used
-
-`Ghidra`, `Ida`, `Visual Studio`
-
-## What was done
-
-* All structures were populated, globals and locals named.
-* All subs were decompiled, C pseudo code was converted to compilable C++. Loose (namespace?) subs were assigned to classes.
-
-## Compiling
-
-Project uses `C++11` and depends on `SDL2` libs.
-
-### On Windows
-
-Download and unpack devel packages for `SDL2` and `SDL2_mixer`.\
-Set paths to them in `CMakeLists.txt`, see suggested placement in `/Libs`.\
-Compile with Visual Studio; tested with 2019.
-
-### On Linux
-
-Install devel packages for `SDL2` and `SDL2_mixer`.\
-Compile with CMake; tested with GCC 10, Clang 11.\
-To cross-compile for Windows, install a 64-bit version of mingw and its `SDL2` and `SDL2_mixer` distributions, then use the `mingwcc.cmake` toolchain.
-
-[![Packaging status](https://repology.org/badge/tiny-repos/spacecadetpinball.svg)](https://repology.org/project/spacecadetpinball/versions) 
-
-Some distributions provide a package in their repository. You can use those for easier dependency management and updates.
-
-This project is available as Flatpak on [Flathub](https://flathub.org/apps/details/com.github.k4zmu2a.spacecadetpinball).
-
-### On macOS
-
-Install XCode (or at least Xcode Command Line Tools with `xcode-select --install`) and CMake.
-
-**HomeBrew**
-
-You can easily install the build artifact by using `brew`.
+From a checkout with the build dependencies installed (`cmake`, `ninja`, a C++ compiler, SDL2 and SDL2_mixer development files):
 
 ```sh
-brew tap draftbrew/tap
-brew install --no-quarantine space-cadet-pinball
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
+cmake --build build --parallel
+ctest --test-dir build --output-on-failure
 ```
 
-Be aware that the flag `--no-quarantime` will disable macOS's Gatekeeper during installation.
+For a package, use the local recipe:
 
-**Manual compilation:**
+```sh
+cd packaging
+makepkg -si
+```
 
-* **Homebrew**: Install the `SDL2`, `SDL2_mixer` homebrew packages.
-* **MacPorts**: Install the `libSDL2`, `libSDL2_mixer` macports packages.
+The package uses the enclosing checkout. Review the source first. It is not yet an official repository package.
 
-Compile with CMake. Ensure that `CMAKE_OSX_ARCHITECTURES` variable is set for either `x86_64` Apple Intel or `arm64` for Apple Silicon.
+## First launch
 
-Tested with: macOS Big Sur (Intel) with Xcode 13 & macOS Montery Beta (Apple Silicon) with Xcode 13.
+Open **Omarchy Space Cadet** from the application launcher and select your existing Space Cadet resource folder. Keep the DAT file together with the original sound/music resources and subdirectories.
 
-**Automated compilation:**
+Or select the folder explicitly:
 
-Run the `build-mac-app.sh` script from the root of the repository. The app will be available in a DMG file named `SpaceCadetPinball-<version>-mac.dmg`.
+```sh
+omarchy-spacecadet --data-dir /path/to/game-data
+```
 
-Tested with: macOS Ventura (Apple Silicon) with Xcode Command Line Tools 14 & macOS Big Sur on GitHub Runner (Intel) with XCode 13.
+Supported data filenames include PINBALL.DAT and CADET.DAT (also lowercase). The folder is remembered. Use `--choose-data` or the launcher's **Choose game data folder** action to change it.
 
-## Plans
+To run a build before installation, launch the absolute path to `bin/omarchy-spacecadet-game` with your resource folder as its working directory. The installed launcher performs this setup for you.
 
-* ~~Decompile original game~~
-* ~~Resizable window, scaled graphics~~
-* ~~Loader for high-res sprites from CADET.DAT~~
-* ~~Cross-platform port using SDL2, SDL2_mixer, ImGui~~
-* Full Tilt Cadet features
-* Localization support
-* Maybe: Support for the other two tables - Dragon and Pirate
-* Maybe: Game data editor
+## Appearance
 
-## On 64-bit bug that killed the game
+The **Appearance** menu offers Follow Omarchy, Midnight, Amber and Original table colours. Preferences persist independently of the upstream app.
 
-I did not find it, decompiled game worked in x64 mode on the first try.\
-It was either lost in decompilation or introduced in x64 port/not present in x86 build.\
-Based on public description of the bug (no ball collision), I guess that the bug was in `TEdgeManager::TestGridBox`
+Follow Omarchy reads `${XDG_CONFIG_HOME:-~/.config}/omarchy/current/theme/colors.toml` and notices changes within about two seconds. Set `SPACECADET_THEME_FILE` to read another colours file. Missing/invalid assignments retain the fallback palette. The app does not execute theme files or write to Omarchy configuration.
+
+## Controls and resources
+
+Use Game > New Game to start, and the Options menu to inspect/change key bindings. Existing pause, fullscreen, sound and controller options remain available. `-sw` requests software rendering; `-noaudio` disables audio initialization.
+
+No original external game resources are downloaded or bundled. The source retains upstream embedded resources; see [UPSTREAM.md](UPSTREAM.md) and [README.upstream.md](README.upstream.md) for provenance and original build instructions.
+
+## Verification
+
+CI builds on Ubuntu, runs palette and launcher tests, validates the desktop entry and stages installation. Its tarball is a development build, not a portable cross-distribution release. Gameplay and Omarchy package acceptance still require a real desktop with game data.

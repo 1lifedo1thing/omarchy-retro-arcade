@@ -1,0 +1,72 @@
+#!/usr/bin/env python3
+"""Locate user-provided resources and launch the native game without a shell."""
+import argparse
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+
+DATA_FILES = ("PINBALL.DAT", "pinball.dat", "CADET.DAT", "cadet.dat", "DEMO.DAT", "demo.dat")
+
+def valid(path):
+    return path.is_dir() and any((path / name).is_file() for name in DATA_FILES)
+
+def main():
+    parser = argparse.ArgumentParser(description="Omarchy Space Cadet")
+    parser.add_argument("--data-dir", type=Path, help="Folder containing your game data and sounds")
+    parser.add_argument("--choose-data", action="store_true", help="Choose a different game data folder")
+    parser.add_argument("--version", action="store_true")
+    args, game_args = parser.parse_known_args()
+    if args.version:
+        print("omarchy-spacecadet 0.1.0-dev")
+        return 0
+    config = Path(os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config") / "omarchy-spacecadet"
+    saved = config / "data-directory"
+    candidates = []
+    explicit = args.data_dir or os.environ.get("SPACECADET_DATA_DIR")
+    if explicit:
+        candidates.append(Path(explicit).expanduser())
+    elif not args.choose_data:
+        try:
+            candidates.append(Path(saved.read_text().strip()))
+        except OSError:
+            pass
+        candidates += [Path(os.environ.get("XDG_DATA_HOME") or Path.home() / ".local/share") / "omarchy-spacecadet",
+                       Path("/usr/share/SpaceCadetPinball"), Path("/usr/local/share/SpaceCadetPinball")]
+    directory = next((p.resolve() for p in candidates if valid(p)), None)
+    if not directory and explicit:
+        print("No PINBALL.DAT or CADET.DAT found in the selected folder.", file=sys.stderr)
+        return 2
+    if not directory and shutil.which("zenity"):
+        subprocess.run(["zenity", "--info", "--title=Omarchy Space Cadet",
+                        "--text=Choose the folder containing your Space Cadet game resources, including its DAT file and sounds.\n\nGame resources are not bundled with this development preview."], check=False)
+        result = subprocess.run(["zenity", "--file-selection", "--directory", "--title=Choose Space Cadet data"],
+                                capture_output=True, text=True, check=False)
+        if result.returncode:
+            return 0
+        candidate = Path(result.stdout.strip())
+        if valid(candidate):
+            directory = candidate.resolve()
+    if not directory:
+        message = "Game data not found. Run: omarchy-spacecadet --data-dir /path/to/game-data"
+        print(message, file=sys.stderr)
+        if shutil.which("zenity"):
+            subprocess.run(["zenity", "--error", "--title=Omarchy Space Cadet", "--text=" + message], check=False)
+        return 2
+    binary = Path("@CMAKE_INSTALL_FULL_LIBEXECDIR@/omarchy-spacecadet/omarchy-spacecadet-game")
+    if not binary.is_file():
+        print("Game executable missing. Reinstall omarchy-spacecadet.", file=sys.stderr)
+        return 1
+    try:
+        config.mkdir(parents=True, exist_ok=True)
+        temporary = config / ("data-directory." + str(os.getpid()))
+        temporary.write_text(str(directory) + "\n")
+        temporary.replace(saved)
+    except OSError as exc:
+        print("Could not save data folder: " + str(exc), file=sys.stderr)
+    os.chdir(directory)
+    os.execv(str(binary), [str(binary)] + game_args)
+
+if __name__ == "__main__":
+    sys.exit(main())

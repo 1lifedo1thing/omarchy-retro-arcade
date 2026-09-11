@@ -1,0 +1,22 @@
+pkgname=omarchy-spacecadet
+pkgver=0.1.0
+pkgrel=1
+pkgdesc='Space Cadet pinball with Omarchy appearance (development preview; game data required)'
+arch=('x86_64' 'aarch64')
+url='https://github.com/tcballard/omarchy-spacecadet'
+license=('MIT')
+depends=('sdl2' 'sdl2_mixer' 'python' 'zenity')
+makedepends=('cmake' 'ninja' 'gcc')
+# Local source recipe: invoke makepkg from a clean checkout's packaging directory.
+# It deliberately does not fetch or redistribute original game data.
+build() {
+  cmake -S "$startdir/.." -B "$srcdir/build" -G Ninja \
+    -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
+  cmake --build "$srcdir/build"
+}
+check() {
+  ctest --test-dir "$srcdir/build" --output-on-failure
+}
+package() {
+  DESTDIR="$pkgdir" cmake --install "$srcdir/build"
+}

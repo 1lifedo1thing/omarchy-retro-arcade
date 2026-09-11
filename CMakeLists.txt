@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0...3.5)
+cmake_minimum_required(VERSION 3.16)
 project(SpaceCadetPinball)
 
 set(CMAKE_CXX_STANDARD 11)
@@ -44,6 +44,8 @@ endforeach()
 
 
 set(SOURCE_FILES
+        SpaceCadetPinball/OmarchyTheme.cpp
+        SpaceCadetPinball/ThemePalette.cpp
         SpaceCadetPinball/control.cpp
         SpaceCadetPinball/control.h
         SpaceCadetPinball/EmbeddedData.cpp
@@ -195,6 +197,9 @@ if(WIN32)
 endif(WIN32)
 
 add_executable(SpaceCadetPinball ${SOURCE_FILES})
+if(UNIX AND NOT APPLE)
+    set_target_properties(SpaceCadetPinball PROPERTIES OUTPUT_NAME "omarchy-spacecadet-game")
+endif()
 
 # Skip pch on foreign code
 set_source_files_properties(
@@ -236,12 +241,17 @@ if(WIN32)
 endif()
 
 if(UNIX AND NOT APPLE)
-	include(GNUInstallDirs)
-	install(TARGETS "${PROJECT_NAME}" RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
-	install(FILES "${CMAKE_SOURCE_DIR}/Platform/Linux/${PROJECT_NAME}.desktop" DESTINATION "share/applications")
-	install(FILES "${CMAKE_SOURCE_DIR}/Platform/Linux/${PROJECT_NAME}.metainfo.xml" DESTINATION "share/metainfo")
-	foreach(S 16 32 48 128 192)
-		install(FILES "${CMAKE_SOURCE_DIR}/${PROJECT_NAME}/Icon_${S}x${S}.png" DESTINATION
-			"share/icons/hicolor/${S}x${S}/apps" RENAME "${PROJECT_NAME}.png")
-	endforeach(S)
+    include(GNUInstallDirs)
+    install(TARGETS SpaceCadetPinball RUNTIME DESTINATION "${CMAKE_INSTALL_LIBEXECDIR}/omarchy-spacecadet")
+    configure_file(Platform/Linux/omarchy-spacecadet.in omarchy-spacecadet @ONLY)
+    install(PROGRAMS "${CMAKE_CURRENT_BINARY_DIR}/omarchy-spacecadet" DESTINATION "${CMAKE_INSTALL_BINDIR}")
+    install(FILES Platform/Linux/omarchy-spacecadet.desktop DESTINATION "${CMAKE_INSTALL_DATADIR}/applications")
+    install(FILES Platform/Linux/omarchy-spacecadet.svg DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps")
+    install(FILES LICENSE DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/omarchy-spacecadet")
+endif()
+include(CTest)
+if(BUILD_TESTING)
+    add_executable(theme-tests tests/theme_test.cpp SpaceCadetPinball/ThemePalette.cpp)
+    target_include_directories(theme-tests PRIVATE SpaceCadetPinball)
+    add_test(NAME theme-palette COMMAND theme-tests)
 endif()

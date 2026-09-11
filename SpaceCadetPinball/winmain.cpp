@@ -11,6 +11,7 @@
 #include "Sound.h"
 #include "translations.h"
 #include "font_selection.h"
+#include "OmarchyTheme.h"
 
 constexpr const char* winmain::Version;
 
@@ -62,6 +63,8 @@ int winmain::WinMain(LPCSTR lpCmdLine)
 	printf(" SDL_mixer %d.%d.%d;", SDL_MIXER_MAJOR_VERSION, SDL_MIXER_MINOR_VERSION, SDL_MIXER_PATCHLEVEL);
 	printf(" ImGui %s %s\n", IMGUI_VERSION, ImGuiRender);
 
+	SDL_SetHint("SDL_VIDEO_X11_WMCLASS", "omarchy-spacecadet");
+	SDL_SetHint("SDL_APP_ID", "omarchy-spacecadet");
 	// SDL init
 	SDL_SetMainReady();
 	if (SDL_Init(SDL_INIT_TIMER | SDL_INIT_AUDIO | SDL_INIT_VIDEO |
@@ -76,7 +79,7 @@ int winmain::WinMain(LPCSTR lpCmdLine)
 	// SDL window
 	SDL_Window* window = SDL_CreateWindow
 	(
-		pb::get_rc_string(Msg::STRING139),
+		"Omarchy Space Cadet",
 		SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
 		800, 556,
 		SDL_WINDOW_HIDDEN | SDL_WINDOW_RESIZABLE
@@ -111,7 +114,7 @@ int winmain::WinMain(LPCSTR lpCmdLine)
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
 
-	auto prefPath = SDL_GetPrefPath("", "SpaceCadetPinball");
+	auto prefPath = SDL_GetPrefPath("", "omarchy-spacecadet");
 	auto basePath = SDL_GetBasePath();
 
 	// SDL mixer init
@@ -198,7 +201,7 @@ int winmain::WinMain(LPCSTR lpCmdLine)
 			io.Fonts->Build();
 		}
 		ImGui_Render_Init(renderer);
-		ImGui::StyleColorsDark();
+		OmarchyTheme::Init(prefPath);
 
 		ImGui_ImplSDL2_InitForSDLRenderer(window, Renderer);
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_NavEnableGamepad;
@@ -374,6 +377,7 @@ void winmain::MainLoop()
 			{
 				if (Options.HideCursor && CursorIdleCounter <= 0)
 					ImGui::SetMouseCursor(ImGuiMouseCursor_None);
+				OmarchyTheme::Update();
 				ImGui_ImplSDL2_NewFrame();
 				ImGui_Render_NewFrame();
 				ImGui::NewFrame();
@@ -510,6 +514,8 @@ void winmain::RenderUi()
 			ImGuiMenuItemWShortcut(GameBindings::Exit);
 			ImGui::EndMenu();
 		}
+
+		OmarchyTheme::Menu();
 
 		if (ImGui::BeginMenu(pb::get_rc_string(Msg::Menu1_Options)))
 		{
@@ -932,7 +938,7 @@ int winmain::event_handler(const SDL_Event* event)
 			}
 			break;
 		case SDLK_y:
-			SDL_SetWindowTitle(MainWindow, "Pinball");
+			SDL_SetWindowTitle(MainWindow, "Omarchy Space Cadet");
 			DispFrameRate ^= true;
 			break;
 		case SDLK_F1:
@@ -1098,9 +1104,10 @@ void winmain::a_dialog()
 	{
 		if (ImGui::BeginTabBar("AboutTabBar", ImGuiTabBarFlags_None))
 		{
-			if (ImGui::BeginTabItem("3DPB"))
+			if (ImGui::BeginTabItem("Omarchy Space Cadet"))
 			{
-				ImGui::TextUnformatted(pb::get_rc_string(Msg::STRING139));
+				ImGui::TextUnformatted("Omarchy Space Cadet / development preview");
+				ImGui::TextUnformatted("Independent community app. Based on SpaceCadetPinball.");
 				ImGui::TextUnformatted("Original game by Cinematronics, Microsoft");
 				ImGui::Separator();
 
