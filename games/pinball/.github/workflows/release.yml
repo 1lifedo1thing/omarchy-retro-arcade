@@ -1,0 +1,34 @@
+name: Versioned Arch release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  package:
+    runs-on: ubuntu-24.04
+    container: archlinux:base-devel
+    steps:
+      - run: pacman -Syu --noconfirm cmake ninja sdl2 sdl2_mixer sdl2_image pkgconf python zenity git github-cli
+      - uses: actions/checkout@v4
+      - name: Verify tag matches package
+        shell: bash
+        run: |
+          source packaging/PKGBUILD
+          test "$GITHUB_REF_NAME" = "v$pkgver"
+      - name: Build and install
+        run: |
+          useradd -m builder
+          chown -R builder:builder "$GITHUB_WORKSPACE"
+          cd packaging
+          runuser -u builder -- makepkg --noconfirm
+          pacman -U --noconfirm *.pkg.tar.zst
+          python ../tests/upstream_table_test.py /usr/libexec/omarchy-spacecadet/omarchy-spacecadet-game
+          SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy omarchy-spacecadet --experimental --smoke 600
+      - name: Publish package and checksum
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd packaging
+          sha256sum *.pkg.tar.zst > SHA256SUMS
+          gh release create "$GITHUB_REF_NAME" *.pkg.tar.zst SHA256SUMS --repo "$GITHUB_REPOSITORY" --verify-tag --generate-notes --prerelease

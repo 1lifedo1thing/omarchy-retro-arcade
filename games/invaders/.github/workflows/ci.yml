@@ -1,0 +1,62 @@
+name: Verify Invaders
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: invaders-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: '1.98.1'
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: sudo apt-get update && sudo apt-get install -y libxkbcommon-dev libxkbcommon-x11-0 libegl1-mesa-dev libgl1-mesa-dri xvfb xauth desktop-file-utils libxtst6 imagemagick
+      - run: |
+          cargo fmt --check
+          cargo clippy --locked --all-targets -- -D warnings
+          cargo test --locked
+          desktop-file-validate packaging/omarchy-invaders.desktop
+          cargo build --locked --release --features screenshot
+          target/release/omarchy-invaders --version
+          timeout 30s xvfb-run -a env LIBGL_ALWAYS_SOFTWARE=1 EFRAME_SCREENSHOT_TO="$GITHUB_WORKSPACE/preview.png" target/release/omarchy-invaders
+      - name: Native keyboard and persistence checks
+        run: |
+          rustc tools/xprobe.rs -o /tmp/invaders-xprobe
+          INVADERS_BINARY="$GITHUB_WORKSPACE/target/release/omarchy-invaders" node tools/native-check.mjs
+          INVADERS_BINARY="$GITHUB_WORKSPACE/target/release/omarchy-invaders" node tools/artwork-check.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: invaders-linux-preview
+          path: |
+            target/release/omarchy-invaders
+            docs/preview.png
+            docs/compact.png
+            docs/light.png
+            LICENSE
+            THIRD_PARTY.md
+  arch:
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+    steps:
+      - run: |
+          pacman -Syu --noconfirm git rust pkgconf libxcb libxkbcommon libxkbcommon-x11 libglvnd wayland libpulse sudo
+          useradd -m builder
+      - uses: actions/checkout@v4
+      - run: |
+          chown -R builder:builder "$GITHUB_WORKSPACE"
+          sudo -u builder ./packaging/build-arch.sh
+          pacman -U --noconfirm dist/arch/*.pkg.tar.zst
+          omarchy-invaders --version
+      - uses: actions/upload-artifact@v4
+        with:
+          name: invaders-arch-preview
+          path: dist/arch/*.pkg.tar.zst

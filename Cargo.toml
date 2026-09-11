@@ -1,0 +1,9 @@
+[workspace]
+members = ["arcade", "games/chess", "games/solitaire", "games/scram", "games/invaders"]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+
+[profile.release]
+strip = true

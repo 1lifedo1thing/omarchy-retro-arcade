@@ -1,0 +1,80 @@
+name: Verify Rust chess
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: rust-chess-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  rust:
+    runs-on: ubuntu-latest
+    env:
+      OMARCHY_CHESS_ENGINE: /usr/games/stockfish
+      REQUIRE_STOCKFISH: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: '1.98.1'
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Native runtime and test engine
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y stockfish pkg-config libxkbcommon-dev libxkbcommon-x11-0 libegl1-mesa-dev libgl1-mesa-dri xvfb xauth desktop-file-utils
+      - name: Check and test Rust
+        run: |
+          cargo fmt --check
+          cargo clippy --locked --all-targets -- -D warnings
+          cargo test --locked --all-targets
+          desktop-file-validate packaging/omarchy-chess.desktop
+      - name: Build and render native Rust application
+        run: |
+          cargo build --locked --release --features screenshot
+          target/release/omarchy-chess --version
+          timeout 30s xvfb-run -a env LIBGL_ALWAYS_SOFTWARE=1 EFRAME_SCREENSHOT_TO="$GITHUB_WORKSPACE/rust-preview.png" target/release/omarchy-chess
+      - name: Render compact light palette
+        run: |
+          mkdir -p "$RUNNER_TEMP/chess-light/omarchy/current/theme"
+          printf 'background="#fafafa"\nforeground="#181818"\naccent="#244c38"\n' > "$RUNNER_TEMP/chess-light/omarchy/current/theme/colors.toml"
+          timeout 30s xvfb-run -a env XDG_STATE_HOME="$RUNNER_TEMP/chess-light" OMARCHY_CHESS_PREVIEW_SIZE=compact LIBGL_ALWAYS_SOFTWARE=1 EFRAME_SCREENSHOT_TO="$GITHUB_WORKSPACE/rust-light.png" target/release/omarchy-chess
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rust-linux-preview
+          path: |
+            target/release/omarchy-chess
+            rust-preview.png
+            rust-light.png
+            THIRD_PARTY.md
+            LICENSE
+  arch-package:
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+    steps:
+      - name: Install native dependencies
+        run: |
+          pacman -Syu --noconfirm git rust pkgconf libxcb libxkbcommon libxkbcommon-x11 libglvnd wayland xdg-desktop-portal libpulse sudo
+          useradd -m builder
+      - uses: actions/checkout@v4
+      - name: Build and install native package
+        run: |
+          chown -R builder:builder "$GITHUB_WORKSPACE"
+          sudo -u builder ./packaging/build-arch.sh
+          pacman -U --noconfirm dist/arch/*.pkg.tar.zst
+          /usr/bin/omarchy-chess --version
+          test -x /usr/lib/omarchy-chess/stockfish
+          /usr/lib/omarchy-chess/stockfish bench 16 1 4 default depth >/dev/null 2>&1
+          ! pacman -Ql omarchy-chess | grep -E '\.(py|pyc)$'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rust-arch-preview
+          path: dist/arch/*.pkg.tar.zst
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stockfish-and-app-source
+          path: dist/arch/sources/
