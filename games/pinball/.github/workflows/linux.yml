@@ -1,0 +1,77 @@
+name: Linux build
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dependencies
+        run: sudo apt-get update && sudo apt-get install -y cmake ninja-build libsdl2-dev libsdl2-mixer-dev libsdl2-image-dev pkg-config desktop-file-utils
+      - name: Build
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr && cmake --build build --parallel 2
+      - name: Verify
+        run: |
+          ctest --test-dir build --output-on-failure
+          python3 -m py_compile Platform/Linux/omarchy-spacecadet.in
+          python3 tests/launcher_test.py
+          desktop-file-validate Platform/Linux/omarchy-spacecadet.desktop
+          bin/omarchy-spacecadet-game --version
+          SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy bin/omarchy-pinball --smoke 600 --screenshot native-smoke.bmp
+      - name: Stage install
+        run: |
+          DESTDIR="$PWD/stage" cmake --install build
+          test -x stage/usr/libexec/omarchy-spacecadet/omarchy-spacecadet-game
+          test -x stage/usr/libexec/omarchy-spacecadet/omarchy-pinball
+          test -x stage/usr/bin/omarchy-spacecadet
+          stage/usr/bin/omarchy-spacecadet --version
+          tar -C stage -czf omarchy-spacecadet-linux-x86_64.tar.gz .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: omarchy-spacecadet-linux-x86_64
+          path: omarchy-spacecadet-linux-x86_64.tar.gz
+          if-no-files-found: error
+  arch-package:
+    runs-on: ubuntu-24.04
+    container: archlinux:base-devel
+    timeout-minutes: 20
+    steps:
+      - name: Dependencies
+        run: pacman -Syu --noconfirm cmake ninja sdl2 sdl2_mixer sdl2_image pkgconf python zenity git
+      - uses: actions/checkout@v4
+      - name: Install previous version and seed its saved game
+        run: |
+          git -c safe.directory="$GITHUB_WORKSPACE" fetch --depth=1 origin 11194f53e2898ca3dd50442c94916a4a7b875d67
+          mkdir /tmp/previous
+          git -c safe.directory="$GITHUB_WORKSPACE" archive FETCH_HEAD | tar -x -C /tmp/previous
+          useradd -m previous
+          chown -R previous:previous /tmp/previous
+          cd /tmp/previous/packaging
+          runuser -u previous -- makepkg --noconfirm
+          pacman -U --noconfirm /tmp/previous/packaging/*.pkg.tar.zst
+          cd "$GITHUB_WORKSPACE"
+          python tests/upgrade_test.py seed /tmp/arcade-upgrade
+      - name: Build Arch package as an unprivileged user
+        run: |
+          useradd -m builder
+          chown -R builder:builder "$GITHUB_WORKSPACE"
+          cd packaging
+          runuser -u builder -- makepkg --noconfirm
+      - name: Install and inspect
+        run: |
+          pacman -U --noconfirm packaging/*.pkg.tar.zst
+          omarchy-spacecadet --version
+          python tests/launcher_test.py
+          python tests/upstream_table_test.py /usr/libexec/omarchy-spacecadet/omarchy-spacecadet-game
+          python tests/upgrade_test.py verify /tmp/arcade-upgrade /usr/libexec/omarchy-spacecadet/omarchy-pinball
+          SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy omarchy-spacecadet --experimental --smoke 600
+      - uses: actions/upload-artifact@v4
+        with:
+          name: omarchy-spacecadet-arch-x86_64
+          path: packaging/*.pkg.tar.zst
+          if-no-files-found: error

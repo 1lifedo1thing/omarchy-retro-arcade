@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=Application
+Name=Omarchy Space Cadet
+Comment=Omarchy Circuit pinball powered by the Space Cadet engine
+Exec=omarchy-spacecadet
+Icon=omarchy-spacecadet
+Terminal=false
+Categories=Game;ArcadeGame;
+Keywords=pinball;space;cadet;
+StartupWMClass=omarchy-spacecadet
+Actions=ChooseData;
+
+[Desktop Action ChooseData]
+Name=Choose game resource folder
+Exec=omarchy-spacecadet --choose-data
