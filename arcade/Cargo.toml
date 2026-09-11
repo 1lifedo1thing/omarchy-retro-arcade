@@ -13,6 +13,7 @@ omarchy-chess = { path = "../games/chess" }
 omarchy-solitaire = { path = "../games/solitaire" }
 omarchy-scram = { path = "../games/scram" }
 omarchy-invaders = { path = "../games/invaders" }
+omarchy-snake = { path = "../games/snake" }
 fs2 = "0.4"
 
 [dev-dependencies]

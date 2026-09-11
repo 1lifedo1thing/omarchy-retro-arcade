@@ -1,0 +1,16 @@
+[package]
+name = "omarchy-snake"
+version.workspace = true
+edition = "2021"
+license = "GPL-3.0-or-later"
+
+[features]
+default = ["ui"]
+ui = ["dep:eframe", "dep:omarchy-chess", "dep:tempfile"]
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+eframe = { version = "=0.31.1", default-features = false, features = ["default_fonts", "glow", "wayland", "x11", "accesskit"], optional = true }
+omarchy-chess = { path = "../chess", optional = true }
+tempfile = { version = "3", optional = true }

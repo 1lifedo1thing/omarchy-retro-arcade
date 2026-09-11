@@ -1,5 +1,5 @@
 [workspace]
-members = ["arcade", "games/chess", "games/solitaire", "games/scram", "games/invaders"]
+members = ["arcade", "games/chess", "games/solitaire", "games/scram", "games/invaders", "games/snake"]
 resolver = "2"
 
 [workspace.package]

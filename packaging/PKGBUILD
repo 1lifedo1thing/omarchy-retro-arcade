@@ -2,7 +2,7 @@
 pkgname=omarchy-retro-arcade
 pkgver=0.1.0
 pkgrel=1
-pkgdesc='Five native games in one Omarchy Arcade application'
+pkgdesc='Native games in one Omarchy Arcade application'
 arch=('x86_64')
 url='https://github.com/tcballard/omarchy-retro-arcade'
 license=('GPL-3.0-or-later')
