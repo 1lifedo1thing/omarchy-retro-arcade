@@ -1,5 +1,5 @@
 pkgname=omarchy-spacecadet
-pkgver=0.3.0
+pkgver=0.4.0
 pkgrel=1
 pkgdesc='Space Cadet source port with Omarchy appearance'
 arch=('x86_64' 'aarch64')

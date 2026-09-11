@@ -1,51 +1,42 @@
 # Omarchy Space Cadet
 
-The original Space Cadet source port, with Omarchy appearance and Arcade desktop integration. The default now runs the upstream physics, table logic and missions.
+**Omarchy Circuit** is a self-contained pinball table powered by the SpaceCadetPinball engine. It uses upstream ball physics, collision handling, flippers, bumpers, plunger and drain, with newly authored geometry, artwork and scoring rules.
 
-**Original game resources are required.** The executable does not contain the Windows table data, artwork or sounds.
+No Windows game files are needed for default play. This is an original table, not a reconstruction of Space Cadet's table or missions.
+
+![Actual authored table running in the upstream engine](docs/upstream-circuit.png)
 
 ## Install and play
 
-Download the Arch package from a successful [Linux build](https://github.com/tcballard/omarchy-spacecadet/actions/workflows/linux.yml), unzip it, and install its package with:
+Download an Arch package from a successful [Linux build](https://github.com/tcballard/omarchy-spacecadet/actions/workflows/linux.yml), unzip it, and install:
 
     sudo pacman -U /path/to/omarchy-spacecadet-package.pkg.tar.zst
 
-Or run makepkg -si from the checkout's packaging directory.
+Or run makepkg -si from the checkout's packaging directory. Open Omarchy Space Cadet from the app menu.
 
-Open Omarchy Space Cadet from the app menu. On first launch, choose your original Space Cadet resource folder. Keep the complete folder, including PINBALL.DAT and its sounds/music, together. The folder selection is remembered. Full Tilt CADET.DAT and demo data remain supported by upstream.
+A/D operate the flippers. Hold Space, then release to launch. P pauses, Escape pauses, F2 starts a new game, and F11 toggles fullscreen. Controls are configurable in Settings. This table is single-player; it has three balls, 100-point bumper hits and a 1,000-point bonus for every ten hits.
 
-You can also select the folder explicitly:
+Settings contains Appearance and Sound. Follow Omarchy uses the active desktop palette. Mute controls the synthesized bumper effect. Circuit has no background music; that option is disabled. The official logo stays unchanged.
 
-    omarchy-spacecadet --data-dir /path/to/game-resources
+## Local data and updates
 
-The app does not download or bundle the original resources. Once configured, it opens the original engine directly. Missing data never silently launches a different pinball game.
+Update with pacman -U using the newer package. Circuit settings and high scores are separate from classic settings, normally under ~/.local/share/omarchy-spacecadet/circuit/ (respecting XDG_DATA_HOME).
 
-## Controls and appearance
+Circuit uses the upstream game's session handling: high scores and settings persist, but an unfinished game does not resume after closing. Previous experimental saves remain untouched.
 
-Fresh settings use A/D for flippers, Space for the plunger, P for pause, F2 for new game and F11 for fullscreen. Escape pauses. Controller shoulders, A and Start remain available. Settings includes configurable controls, Appearance and Sound. Existing custom bindings are preserved.
+## Other modes
 
-Follow Omarchy reads the active palette, including the current state-directory location and older configuration fallback. Original table colours are available for comparison. The colour transformation changes rendered pixels, not collision geometry, physical constants or mission logic.
-
-The launcher/window icon and About screen identify this independent Omarchy Arcade application. Official Omarchy assets retain their owner's rights; the source port and application code are MIT.
-
-## Updates and local state
-
-Install a newer package with the same pacman -U command. High scores and engine settings are local, normally under ~/.local/share/omarchy-spacecadet/ (respecting XDG_DATA_HOME). The remembered resource path is under the user's configuration directory.
-
-The original engine does not implement the experimental table's mid-game save/resume. Its scores and rules are different, so those saved games are not converted. Experimental saves remain untouched.
-
-## Experimental table
-
-The separately authored table is retained explicitly for existing users:
-
+    omarchy-spacecadet --classic --data-dir /path/to/original-resources
     omarchy-spacecadet --experimental
 
-It uses different physics/rules and retains its own save/resume. It is not a fallback or a reproduction of Space Cadet. Screenshots in docs/native-table*.png show that experimental table, not the original engine.
+Classic mode loads your original Space Cadet or Full Tilt resources. Experimental mode preserves the earlier separate physics prototype and its saves. Neither is used for default play.
 
-## Verification and rebranding
+## Implementation and verification
 
-CI compiles both engines, tests launcher routing and builds/installs the Arch package. Its resource-free gameplay smoke test and saved-game upgrade test exercise only the experimental table. They do not verify original-engine gameplay.
+Authored component records and indexed artwork are built in memory using the upstream DatFile representation. No downloaded original assets are used. A small separate scoring controller handles Circuit events; Space Cadet's mission controller is retained for classic mode.
 
-See [resource and rebranding plan](docs/ORIGINAL_ENGINE.md) for the remaining data-dependent work, and [Arcade standard](docs/ARCADE_STANDARD.md) for the collection target.
+The default-engine integration test runs 180 simulated seconds through the actual executable, requires bumper scoring and drains, checks finite ball state, and uses no external DAT. CI builds and installs the Arch package and repeats that test against the installed engine. Experimental save-upgrade tests remain separately labelled.
 
-Version tags matching the package version build GitHub prereleases with packages and checksums. No release is implied by a development PR.
+See [table design](docs/ORIGINAL_ENGINE.md), [decisions](DECISIONS.md) and [Arcade standard](docs/ARCADE_STANDARD.md). Real Omarchy desktop checks and hands-on tuning remain. Game code is MIT; official branding retains its owner's rights.
+
+Version tags matching the package version build GitHub prereleases with packages and checksums. A development PR is not a release.

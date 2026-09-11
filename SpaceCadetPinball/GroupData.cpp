@@ -35,6 +35,7 @@ GroupData::GroupData(int groupId)
 void GroupData::AddEntry(EntryData* entry)
 {
 	auto addEntry = true;
+	if(!Entries.empty() && Entries.back()->EntryType > entry->EntryType) NeedsSort=true;
 	switch (entry->EntryType)
 	{
 	case FieldTypes::GroupName:
@@ -81,7 +82,7 @@ void GroupData::FinalizeGroup()
 		// Entries within a group are sorted by EntryType, in ascending order.
 		// Dat files follow this rule, zMaps inserted in the middle break it.
 		NeedsSort = false;
-		std::sort(Entries.begin(), Entries.end(), [](const EntryData* lhs, const EntryData* rhs)
+		std::stable_sort(Entries.begin(), Entries.end(), [](const EntryData* lhs, const EntryData* rhs)
 		{
 			return lhs->EntryType < rhs->EntryType;
 		});

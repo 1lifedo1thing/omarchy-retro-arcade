@@ -23,6 +23,7 @@ jobs:
           cd packaging
           runuser -u builder -- makepkg --noconfirm
           pacman -U --noconfirm *.pkg.tar.zst
+          python ../tests/upstream_table_test.py /usr/libexec/omarchy-spacecadet/omarchy-spacecadet-game
           SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy omarchy-spacecadet --experimental --smoke 600
       - name: Publish package and checksum
         env:

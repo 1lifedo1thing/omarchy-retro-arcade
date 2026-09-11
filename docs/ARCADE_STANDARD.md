@@ -14,10 +14,10 @@ Agreed collection baseline, 11 September 2026. These are acceptance criteria, no
 | Data | Local per-user saves/settings outside package-owned files. Automatic saves, validated recovery, clear write errors and save compatibility or migration across updates. |
 | Updates | Stable package names, increasing versions and durable versioned package downloads. Document pacman installation/update. No separate in-game updater required. CI artifacts remain development downloads. |
 
-## Pinball assessment after original-engine restoration
+## Pinball assessment at 0.4.0
 
-Version 0.3.0 defaults to the original engine, requiring one-time resource selection. Settings/Appearance/Sound, Help/About and the Arcade window/launcher icon are integrated. Fresh controls use A/D, P, F2 and F11; existing configured bindings remain.
+Default play is the self-contained Omarchy Circuit table running on upstream physics/components. Game/Settings/Help menus, theme following, mute, Arcade icon/About and local high scores/settings are present.
 
-The original engine preserves settings and high scores, but not the experimental table's in-progress saves. The experimental table and its saves remain available through --experimental. Its package upgrade test is not evidence of original-engine save/resume or gameplay.
+The default integration test runs the actual upstream executable with authored data and no DAT. Classic and experimental modes remain explicit options.
 
-The direct-play target is met after resource configuration. Full original gameplay, artwork replacement and remaining Arcade interaction parity require original resources and desktop acceptance. See [restoration plan](ORIGINAL_ENGINE.md). Other games are maintained separately.
+Remaining collection gaps: Circuit has no mid-game save/resume, and real desktop and hands-on play acceptance remain. Its single-player bumper rules differ from Space Cadet missions. See [table implementation](ORIGINAL_ENGINE.md).

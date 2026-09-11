@@ -14,14 +14,14 @@ def valid(path):
 
 def main():
     parser = argparse.ArgumentParser(description="Omarchy Space Cadet")
-    parser.add_argument("--classic", action="store_true", help="Use the original engine (the default)")
+    parser.add_argument("--classic", action="store_true", help="Play the original Space Cadet table using your resources")
     parser.add_argument("--experimental", action="store_true", help="Play the separate experimental Omarchy table")
     parser.add_argument("--data-dir", type=Path, help="Folder containing your game data and sounds")
     parser.add_argument("--choose-data", action="store_true", help="Choose a different game data folder")
     parser.add_argument("--version", action="store_true")
     args, game_args = parser.parse_known_args()
     if args.version:
-        print("omarchy-spacecadet 0.3.0")
+        print("omarchy-spacecadet 0.4.0")
         return 0
     if args.experimental and (args.classic or args.choose_data or args.data_dir):
         parser.error("--experimental cannot be combined with original-engine data options")
@@ -31,6 +31,12 @@ def main():
             print("Experimental table executable missing. Reinstall omarchy-spacecadet.", file=sys.stderr)
             return 1
         os.execv(str(binary), [str(binary)] + game_args)
+    if not (args.classic or args.choose_data or args.data_dir or os.environ.get("SPACECADET_DATA_DIR")):
+        binary = Path("@CMAKE_INSTALL_FULL_LIBEXECDIR@/omarchy-spacecadet/omarchy-spacecadet-game")
+        if not binary.is_file():
+            print("Game executable missing. Reinstall omarchy-spacecadet.", file=sys.stderr)
+            return 1
+        os.execv(str(binary), [str(binary), "--omarchy-table"] + game_args)
     config = Path(os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config") / "omarchy-spacecadet"
     saved = config / "data-directory"
     candidates = []

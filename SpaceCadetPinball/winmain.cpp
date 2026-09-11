@@ -2,6 +2,9 @@
 #include "winmain.h"
 
 #include "control.h"
+#include "TPinballTable.h"
+#include "TBall.h"
+#include "../native/BrandLogo.h"
 #include "EmbeddedData.h"
 #include "fullscrn.h"
 #include "midi.h"
@@ -12,9 +15,11 @@
 #include "translations.h"
 #include "font_selection.h"
 #include "OmarchyTheme.h"
+#include "OmarchyTable.h"
 #include "../native/ArcadeIcon.h"
 
 constexpr const char* winmain::Version;
+static SDL_Texture* circuitLogo=nullptr;
 
 SDL_Window* winmain::MainWindow = nullptr;
 SDL_Renderer* winmain::Renderer = nullptr;
@@ -117,8 +122,10 @@ int winmain::WinMain(LPCSTR lpCmdLine)
 		printf("Using SDL renderer: %s\n", rendererInfo.name);
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
+    auto logoSurface=SDL_CreateRGBSurfaceWithFormatFrom((void*)BrandLogo,128,128,32,128*4,SDL_PIXELFORMAT_RGBA32);
+    if(logoSurface){circuitLogo=SDL_CreateTextureFromSurface(renderer,logoSurface);SDL_FreeSurface(logoSurface);}
 
-	auto prefPath = SDL_GetPrefPath("", "omarchy-spacecadet");
+	auto prefPath = SDL_GetPrefPath("", strstr(lpCmdLine,"--omarchy-table") ? "omarchy-spacecadet/circuit" : "omarchy-spacecadet");
 	auto basePath = SDL_GetBasePath();
 
 	// SDL mixer init
@@ -220,7 +227,8 @@ int winmain::WinMain(LPCSTR lpCmdLine)
 			}
 		};
 		searchPaths.insert(searchPaths.end(), std::begin(PlatformDataPaths), std::end(PlatformDataPaths));
-		pb::SelectDatFile(searchPaths);
+		OmarchyTable::Enabled = strstr(lpCmdLine,"--omarchy-table") != nullptr;
+		if(OmarchyTable::Enabled){pb::DatFileName="OMARCHY";pb::FullTiltMode=false;pb::FullTiltDemoMode=false;}else pb::SelectDatFile(searchPaths);
 
 		// Second step: run updates that depend on .DAT file selection
 		options::InitSecondary();
@@ -268,12 +276,16 @@ int winmain::WinMain(LPCSTR lpCmdLine)
 		if (strstr(lpCmdLine, "-demo"))
 			pb::toggle_demo();
 		else
+		{
+            if(OmarchyTable::Enabled) Options.Players=1;
 			pb::replay_level(false);
+        }
 
 		MainLoop();
 
 		options::uninit();
 		midi::music_shutdown();
+		OmarchyTable::Shutdown();
 		Sound::Close();
 		pb::uninit();
 
@@ -292,6 +304,7 @@ int winmain::WinMain(LPCSTR lpCmdLine)
 
 	SDL_free(basePath);
 	SDL_free(prefPath);
+	SDL_DestroyTexture(circuitLogo);circuitLogo=nullptr;
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
@@ -307,9 +320,29 @@ void winmain::MainLoop()
 	double UpdateToFrameCounter = 0;
 	DurationMs sleepRemainder(0), frameDuration(TargetFrameTime);
 	auto prevTime = frameStart;
+	const int probeLimit=OmarchyTable::Enabled && getenv("OMARCHY_TEST_TICKS") ? atoi(getenv("OMARCHY_TEST_TICKS")) : 0;
+	int probeTick=0;
+	if(probeLimit)std::srand(1);
 
 	while (true)
 	{
+        if(probeLimit){
+            if(probeTick>=probeLimit){
+                if(const char* path=getenv("OMARCHY_TEST_SCREENSHOT")){
+                    int w,h;SDL_GetRendererOutputSize(Renderer,&w,&h);auto image=SDL_CreateRGBSurfaceWithFormat(0,w,h,32,SDL_PIXELFORMAT_ARGB8888);
+                    SDL_RenderReadPixels(Renderer,nullptr,image->format->format,image->pixels,image->pitch);SDL_SaveBMP(image,path);SDL_FreeSurface(image);
+                }
+                printf("UPSTREAM_TABLE ticks=%d score=%d balls=%d\n",probeTick,pb::MainTable->CurScore,pb::MainTable->BallCount);
+                break;
+            }
+            if(probeTick%240==30)pb::InputDown({InputTypes::Keyboard,SDLK_SPACE});
+            if(probeTick%240==150)pb::InputUp({InputTypes::Keyboard,SDLK_SPACE});
+            if(probeTick%90==0)pb::InputDown({InputTypes::Keyboard,SDLK_a});
+            if(probeTick%90==40)pb::InputUp({InputTypes::Keyboard,SDLK_a});
+            if(probeTick%110==0)pb::InputDown({InputTypes::Keyboard,SDLK_d});
+            if(probeTick%110==50)pb::InputUp({InputTypes::Keyboard,SDLK_d});
+            ++probeTick;has_focus=true;
+        }
 		if (DispFrameRate)
 		{
 			auto curTime = Clock::now();
@@ -360,8 +393,11 @@ void winmain::MainLoop()
 			}
 			if (!single_step && !no_time_loss)
 			{
-				auto dt = static_cast<float>(frameDuration.count());
+				auto dt = probeLimit ? 1000.f/120 : static_cast<float>(frameDuration.count());
 				pb::frame(dt);
+                if(probeLimit)for(auto ball:pb::MainTable->BallList){
+                    if(!std::isfinite(ball->Position.X)||!std::isfinite(ball->Position.Y)||!std::isfinite(ball->Speed)){return_value=2;return;}
+                }
 				if (DispGRhistory)
 				{
 					auto targetSize = static_cast<unsigned>(static_cast<float>(Options.UpdatesPerSecond) * gfrWindow);
@@ -430,7 +466,7 @@ void winmain::MainLoop()
 			auto targetTimeDelta = TargetFrameTime - DurationMs(updateEnd - frameStart) - sleepRemainder;
 
 			TimePoint frameEnd;
-			if (targetTimeDelta > DurationMs::zero() && !Options.UncappedUpdatesPerSecond)
+			if (!probeLimit && targetTimeDelta > DurationMs::zero() && !Options.UncappedUpdatesPerSecond)
 			{
 				if (Options.HybridSleep)
 					HybridSleep(targetTimeDelta);
@@ -510,7 +546,7 @@ void winmain::RenderUi()
 				pause(false);
 				pb::high_scores();
 			}
-			if (ImGui::MenuItem(pb::get_rc_string(Msg::Menu1_Demo), nullptr, DemoActive))
+			if (ImGui::MenuItem(pb::get_rc_string(Msg::Menu1_Demo), nullptr, DemoActive, !OmarchyTable::Enabled))
 			{
 				end_pause();
 				pb::toggle_demo();
@@ -525,7 +561,7 @@ void winmain::RenderUi()
 			OmarchyTheme::Menu();
 			ImGuiMenuItemWShortcut(GameBindings::ToggleMenuDisplay, Options.ShowMenu);
 			ImGuiMenuItemWShortcut(GameBindings::ToggleFullScreen, Options.FullScreen);
-			if (ImGui::BeginMenu(pb::get_rc_string(Msg::Menu1_Select_Players)))
+			if (ImGui::BeginMenu(pb::get_rc_string(Msg::Menu1_Select_Players), !OmarchyTable::Enabled))
 			{
 				if (ImGui::MenuItem(pb::get_rc_string(Msg::Menu1_1Player), nullptr, Options.Players == 1))
 				{
@@ -590,7 +626,7 @@ void winmain::RenderUi()
 				}
 				ImGui::Separator();
 
-				if(ImGui::MenuItem("Music", nullptr, Options.Music)) options::toggle(Menu1::Music);
+				if(ImGui::MenuItem("Music", nullptr, Options.Music, !OmarchyTable::Enabled)) options::toggle(Menu1::Music);
 				ImGui::TextUnformatted("Music Volume");
 				if (ImGui::SliderInt("##Music Volume", &Options.MusicVolume.V, options::MinVolume, options::MaxVolume,
 				                     "%d",
@@ -765,7 +801,7 @@ void winmain::RenderUi()
 					Options.DebugOverlayCollisionMask ^= true;
 				ImGui::EndMenu();
 			}
-			if (ImGui::BeginMenu("Cheats"))
+			if (!OmarchyTable::Enabled && ImGui::BeginMenu("Cheats"))
 			{
 				if (ImGui::MenuItem("hidden test", nullptr, pb::cheat_mode))
 					pb::PushCheat("hidden test");
@@ -843,6 +879,14 @@ void winmain::RenderUi()
 
 	// Print game texts on the sidebar
 	gdrv::grtext_draw_ttext_in_box();
+    if(OmarchyTable::Enabled){
+        auto d=ImGui::GetBackgroundDrawList();
+        auto pos=[](float x,float y){return ImVec2(fullscrn::OffsetX+x*fullscrn::ScaleX,fullscrn::OffsetY+(options::Options.ShowMenu ? MainMenuHeight : 0)+y*fullscrn::ScaleY);};
+        if(circuitLogo)d->AddImage((ImTextureID)circuitLogo,pos(168,190),pos(232,254));
+        d->AddText(pos(415,28),ImGui::GetColorU32(ImGuiCol_Text),"OMARCHY CIRCUIT");
+        d->AddText(pos(415,50),ImGui::GetColorU32(ImGuiCol_Text),"SCORE");
+        d->AddText(pos(415,94),ImGui::GetColorU32(ImGuiCol_Text),"BALL");
+    }
 }
 
 int winmain::event_handler(const SDL_Event* event)
@@ -1088,7 +1132,8 @@ int winmain::ProcessWindowMessages()
 void winmain::memalloc_failure()
 {
 	midi::music_stop();
-	Sound::Close();
+	OmarchyTable::Shutdown();
+		Sound::Close();
 	const char* caption = pb::get_rc_string(Msg::STRING270);
 	const char* text = pb::get_rc_string(Msg::STRING279);
 	pb::ShowMessageBox(SDL_MESSAGEBOX_ERROR, caption, text);
@@ -1111,7 +1156,7 @@ void winmain::a_dialog()
 		{
 			if (ImGui::BeginTabItem("Omarchy Space Cadet"))
 			{
-				ImGui::TextUnformatted("Omarchy Space Cadet 0.3.0");
+				ImGui::TextUnformatted("Omarchy Space Cadet 0.4.0");
 				ImGui::TextUnformatted("Omarchy Arcade");
 				if(ImGui::SmallButton("Project and support")) SDL_OpenURL("https://github.com/tcballard/omarchy-spacecadet");
 				ImGui::TextWrapped("Source port and app: MIT. Dear ImGui: MIT. SDL: zlib. Original game resources retain their separate rights.");

@@ -62,3 +62,11 @@ The user explicitly chose to return to the original engine. Default launch now s
 Carry the Arcade window icon, Settings/Appearance/Sound grouping, About attribution and fresh-install P/F11/A/D defaults into the original engine. Keep existing bindings. Preserve experimental saves, but do not claim compatible mid-game saves in the original engine.
 
 Original gameplay and artwork replacement require the user's resource folder. See docs/ORIGINAL_ENGINE.md. Build/launcher tests must distinguish engine routing from experimental gameplay smoke coverage.
+
+## Self-contained table on the upstream engine (0.4.0)
+
+The user chose to author an Omarchy table for the original engine, rather than reconstruct the exact original table. OmarchyTable builds compatible in-memory records, geometry and artwork; upstream component constructors, pb::frame and collision systems perform gameplay. A separate scoring controller implements three balls and bumper/circuit bonuses. No original resource retrieval is needed.
+
+The default now launches --omarchy-table internally. --classic retains user-supplied resources; --experimental retains the old independent model. Circuit has its own settings/high-score directory. Do not imply mid-game saves or original missions. Multiplayer/demo/mission cheats are disabled for this table.
+
+A real executable integration test checks 180 simulated seconds, bumper scoring, drains and finite ball state without an external DAT.

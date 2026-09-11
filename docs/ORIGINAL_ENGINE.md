@@ -1,37 +1,38 @@
-# Original engine restoration
+# Omarchy Circuit: authored data, upstream engine
 
-The original engine is again the default as of 0.3.0. The custom table is available only through --experimental. This supersedes the earlier decision to replace default gameplay.
+Version 0.4.0 implements the user's chosen route: a self-contained Omarchy table using the original engine's physics and components.
 
-## What is reused
+## Architecture
 
-The default uses upstream ball integration, collision handling, moving flippers, component behaviour, scoring and mission control. The Omarchy framebuffer colour transform and interface do not replace these systems.
+OmarchyTable::Build constructs a DatFile object with authored groups, physical parameters, bitmaps and z-maps. pb::init passes it through the same loader and TPinballTable constructors as loaded resources. Classic mode still uses partman::load_records.
 
-## Required resource boundary
+The table instantiates TBall, TTableLayer, TWall, TFlipper/TFlipperEdge, TPlunger, TBumper, TDrain and TTextBox. The normal pb::frame loop, spatial edge grid and collision resolution run unchanged.
 
-The repository's partman.cpp reads a PARTOUT(4.0)RESOURCE DAT container. It contains more than images:
+control.cpp routes authored-table events to OmarchyTable's small scoring controller. Classic mode retains the original mission controller. This is not a claim to Space Cadet's geometry, tuning or missions.
 
-| Resource | Role | Rebranding constraint |
-| --- | --- | --- |
-| Group names, IDs and attributes | Components and their references | Preserve identity and ordering expected by control.cpp |
-| Short and float fields | Table/component parameters, materials and kickers | Preserve physical values and relationships |
-| Indexed bitmaps and palette | Table artwork and component animation | Replace visual content while preserving dimensions, offsets, transparency and animation states |
-| Z maps | Depth/occlusion during sprite rendering | Preserve matching depths and geometry |
-| Sound references and external WAV/music | Audio cues and playback | Preserve cue mapping; replacement audio can be independently authored |
+## Authored data
 
-Relevant code: partman.cpp decodes records; loader.cpp queries materials, kickers, visual states and sound references; render.cpp exposes the Sprite Viewer. Data selection supports PINBALL.DAT, CADET.DAT and DEMO.DAT, including lowercase variants.
+- Flat projected playfield, side rails, angled returns and shooter lane.
+- Two moving flippers with nine rendered states matching their authored sweep.
+- Three circular bumpers with a kick response and lit animation.
+- Charged upstream plunger, drain and three-ball session.
+- 100 points per bumper; 1,000-point bonus after ten hits.
+- Procedural indexed artwork, z-maps and digits; regular UI font for messages.
+- Original synthesized bumper sound; no background music.
+- Official mark composited outside the palette transform to preserve its exact colours.
 
-## Next data-dependent work
+All table dimensions and physical parameters in OmarchyTable.cpp are newly authored. No original DAT or Windows game artwork/audio is embedded. The former embedded resource-font finalization step is deliberately not used for authored data.
 
-1. Obtain the complete original resource folder from the user. No files are present in the workspace. Earlier resource retrieval was blocked, so no alternate download route is used.
-2. Run the restored engine with those resources. Verify launch, flippers, ramps, collisions, scoring/missions, sound, menu pause and restart.
-3. Use Help / Sprite Viewer to inventory exact bitmap groups, dimensions, offsets and visual states for that resource version.
-4. Author Omarchy artwork for those exact visual slots. Keep physics attributes and z-map relationships unchanged; prefer a separate override layer over modifying the source DAT.
-5. Compare the original-colour baseline and themed rendering with the same gameplay setup. Verify every animation state and occlusion boundary before distributing an artwork pack.
+The generic GroupData builder now detects unsorted insertions and sorts stably, preserving multiple same-type attribute records. Original on-disk groups were already ordered.
 
-The current deliverable restores the engine and provides live palette colouring. It does not claim a finished replacement artwork pack or eliminate the original data requirement. Replacing all visual assets alone would not replace the DAT's table definitions.
+## Isolation
 
-## State and verification
+Circuit stores settings/high scores in a separate directory. Original mode and experimental prototype remain explicit launch options. Prototype saves cannot be converted to the upstream session format. Circuit does not yet have mid-game save/resume.
 
-The source port has local settings/high scores but does not provide the experimental model's in-progress save format. Existing experimental files are preserved separately. No fake migration is attempted.
+Demo, multiplayer and original mission cheats are disabled for Circuit because its controller does not implement them.
 
-Automated builds and launcher tests are useful evidence but cannot establish working original gameplay without its data. Real original-engine gameplay and a complete artwork inventory remain blocked on that input.
+## Verification
+
+tests/upstream_table_test.py launches the actual engine in an isolated directory, simulates 180 seconds, checks finite ball state, requires scoring and drains, and verifies no external DAT was introduced. Its deterministic scripted controls exercise real upstream component collisions; this is not a substitute physics model.
+
+Manual rendering inspection checks sprite orientation, transparent depth masks, flipper states and exact-logo compositing. Hands-on play feel and real Omarchy/Hyprland acceptance remain.

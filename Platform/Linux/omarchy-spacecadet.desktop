@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
 Name=Omarchy Space Cadet
-Comment=Original Space Cadet engine with Omarchy appearance
+Comment=Omarchy Circuit pinball powered by the Space Cadet engine
 Exec=omarchy-spacecadet
 Icon=omarchy-spacecadet
 Terminal=false

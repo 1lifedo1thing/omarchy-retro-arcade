@@ -44,6 +44,7 @@ endforeach()
 
 
 set(SOURCE_FILES
+        SpaceCadetPinball/OmarchyTable.cpp
         SpaceCadetPinball/OmarchyTheme.cpp
         SpaceCadetPinball/ThemePalette.cpp
         SpaceCadetPinball/control.cpp
@@ -255,7 +256,7 @@ if(BUILD_TESTING)
     add_test(NAME theme-palette COMMAND theme-tests)
 endif()
 
-# Original Omarchy table: no legacy game resources or SDL_mixer dependency.
+# Experimental standalone prototype; default play uses SpaceCadetPinball.
 add_executable(OmarchyPinball
     native/NativeApp.cpp native/PinballModel.cpp
     SpaceCadetPinball/ThemePalette.cpp
@@ -278,4 +279,8 @@ if(BUILD_TESTING)
 endif()
 if(BUILD_TESTING)
     add_test(NAME theme-path COMMAND python3 "${CMAKE_CURRENT_SOURCE_DIR}/tests/theme_path_test.py" $<TARGET_FILE:theme-tests>)
+endif()
+
+if(BUILD_TESTING)
+    add_test(NAME authored-upstream-table COMMAND python3 "${CMAKE_CURRENT_SOURCE_DIR}/tests/upstream_table_test.py" $<TARGET_FILE:SpaceCadetPinball>)
 endif()

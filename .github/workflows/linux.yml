@@ -67,6 +67,7 @@ jobs:
           pacman -U --noconfirm packaging/*.pkg.tar.zst
           omarchy-spacecadet --version
           python tests/launcher_test.py
+          python tests/upstream_table_test.py /usr/libexec/omarchy-spacecadet/omarchy-spacecadet-game
           python tests/upgrade_test.py verify /tmp/arcade-upgrade /usr/libexec/omarchy-spacecadet/omarchy-pinball
           SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy omarchy-spacecadet --experimental --smoke 600
       - uses: actions/upload-artifact@v4
