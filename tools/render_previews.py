@@ -12,6 +12,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--binary', type=Path, default=Path('target/release/omarchy-solitaire'))
     parser.add_argument('--output-dir', type=Path, default=Path('docs/screenshots'))
+    parser.add_argument('--deck-binary', type=Path)
     args = parser.parse_args()
     binary = args.binary.resolve()
     output = args.output_dir.resolve()
@@ -39,6 +40,14 @@ def main():
             if not (output / f'{name}.png').read_bytes().startswith(b'\x89PNG\r\n\x1a\n'):
                 raise RuntimeError(f'{name}: screenshot was not written')
             print(f'Captured {name}: {width} × {height}')
+
+    if args.deck_binary:
+        for name, extra in [('deck-artwork', []), ('deck-all-faces', ['--all']), ('deck-artwork-light', ['--light'])]:
+            target = output / f'{name}.png'
+            subprocess.run([str(args.deck_binary.resolve()), str(target), *extra], check=True, timeout=30)
+            if not target.read_bytes().startswith(b'\x89PNG\r\n\x1a\n'):
+                raise RuntimeError(f'{name}: screenshot was not written')
+            print(f'Captured {name}')
 
 
 if __name__ == '__main__':

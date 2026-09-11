@@ -49,3 +49,22 @@ Before promoting a release, check on an Omarchy machine:
 
 No real Omarchy, fractional Wayland scaling, portal UI or screen-reader pass is
 claimed. No public release or distribution submission has been made.
+
+## Engraved deck integration
+
+- All 26 existing rules, persistence and egui input tests pass after integration.
+- Formatting, strict all-target Clippy and release builds pass.
+- Native Xvfb/Mesa renders inspected: all 52 faces at 80 px; three backs at
+  80 and 200 px; light/dark artwork sheets; 800 × 600 and 1120 × 800 games;
+  progressed table and compact Deck / Help dialogs.
+- Native XTest checks pass for stock click, undo, modal shortcut blocking,
+  keyboard draw after closing a modal and clean keyboard exit.
+- Fixed fine-detail aliasing with mipmap filtering; clipped/repositioned border
+  foliage; darkened low-contrast back grounds in light themes.
+- Court texture and outlined font provenance are recorded in
+  `assets/deck/README.md`; notices are included in the package's license text.
+- CI now also renders the production deck proof and every face using the native
+  painter. These screenshots are not generated mockups.
+- Real Omarchy/Hyprland display scaling, portal interaction and hardware
+  performance remain desktop acceptance checks; no new claim of hardware
+  testing is made by this artwork change.

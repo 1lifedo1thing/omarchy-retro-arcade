@@ -5,6 +5,11 @@ Omarchy decal, and a table that follows your desktop theme.
 
 ![Native Omarchy Solitaire window](docs/screenshots/table.png)
 
+![Engraved deck artwork](docs/screenshots/deck-artwork.png)
+
+Illustrated courts and ivory serif faces, with Tilework, Engraved and Foil
+backs that follow your Omarchy palette.
+
 ## Play
 
 - Draw one or three; unlimited stock recycling.

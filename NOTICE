@@ -13,7 +13,10 @@ The Omarchy brand page states: "Omarchy is a pending trademark. All rights
 reserved." These marks are not relicensed under this project's MIT license.
 This is a community application; it does not claim Foundation endorsement.
 
-The playing-card faces and back patterns are original Rust vector artwork.
+The playing-card faces combine original generated court illustrations with
+Rust-authored SVG faces and back patterns. Rank outlines derive from DejaVu
+Serif; its license is included in THIRD_PARTY_LICENSES.txt and
+assets/deck/FONT-LICENSE.txt. See assets/deck/README.md for artwork provenance.
 No Microsoft card artwork, executables or game assets are included.
 
 Rust dependencies retain their respective licenses. See THIRD_PARTY.md and

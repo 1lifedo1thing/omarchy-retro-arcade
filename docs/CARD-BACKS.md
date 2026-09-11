@@ -1,7 +1,9 @@
 # Card-back artwork handoff
 
 The game is ready for special illustrated decks. The official Omarchy decal is
-already on all three built-in backs. Imported artwork replaces the entire back,
+already on all three built-in backs: **Tilework** (default), **Engraved**, and
+**Foil**. Foil is an engraved design; the optional Holographic finish can be
+applied to any back. Imported artwork replaces the entire back,
 so include the decal in the supplied design if you want it there.
 
 ## Deliverable
@@ -20,7 +22,8 @@ so include the decal in the supplied design if you want it there.
 
 Artwork is fit without stretching inside the card's five-pixel inset. Cards are
 rendered at roughly 96–124 logical pixels wide in normal window sizes, so check
-that fine detail survives at 100 pixels. SVG art is rasterized into a bounded 500 × 700 texture; the built-in card drawings scale with the display.
+that fine detail survives at 100 pixels. SVG art is rasterized into a bounded 500 × 700 texture; built-in backs use the same resolution with mipmap filtering. Faces use cached
+250 × 350 textures with separate illustrated courts.
 
 SVG supports svg, g, path, rect, circle, ellipse, line, polyline, polygon, defs,
 linearGradient, radialGradient, stop, clipPath, title and desc. Internal

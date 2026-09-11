@@ -462,3 +462,10 @@ The accompanying `THIRD_PARTY_LICENSES.txt` preserves license and copyright
 files supplied in the dependency source distributions, including bundled fonts.
 Crates without a separate license file declare the expression above in Cargo.toml.
 The official Omarchy mark is covered separately by NOTICE.
+
+## Playing-card typography
+
+The outlined rank glyphs use DejaVu Serif. Its Bitstream Vera / DejaVu license
+is included in `assets/deck/FONT-LICENSE.txt` and `THIRD_PARTY_LICENSES.txt`.
+This adds no runtime dependency. Court artwork provenance is documented in
+`assets/deck/README.md`.

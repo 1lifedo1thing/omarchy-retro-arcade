@@ -18,10 +18,11 @@ jobs:
       - run: cargo clippy --locked --all-targets -- -D warnings
       - run: cargo test --locked
       - run: cargo build --locked --release
+      - run: cargo build --locked --release --example deck-preview
       - run: desktop-file-validate packaging/io.github.tcballard.omarchy-solitaire.desktop
       - name: Capture the native application
         run: |
-          xvfb-run -a env LIBGL_ALWAYS_SOFTWARE=1 python tools/render_previews.py --binary target/release/omarchy-solitaire --output-dir native-previews
+          xvfb-run -a env LIBGL_ALWAYS_SOFTWARE=1 python tools/render_previews.py --binary target/release/omarchy-solitaire --output-dir native-previews --deck-binary target/release/examples/deck-preview
           test -s native-previews/table.png
           test -s native-previews/compact.png
       - uses: actions/upload-artifact@v4

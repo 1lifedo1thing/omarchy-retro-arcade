@@ -69,6 +69,7 @@ pub struct SolitaireApp {
     save_error: String,
     logo: TextureHandle,
     art: Option<TextureHandle>,
+    deck: crate::deck::DeckArt,
     visuals: [Option<Visual>; 52],
     drag: Option<Drag>,
     focus: (usize, usize),
@@ -109,7 +110,9 @@ impl SolitaireApp {
                 }
             }
         }
+        let deck = crate::deck::DeckArt::new(ctx, &theme.palette);
         let mut app = Self {
+            deck,
             session,
             theme,
             message: loaded.message.clone(),
@@ -167,6 +170,7 @@ impl SolitaireApp {
         Ok(ctx.load_texture("special-card-back", image, Default::default()))
     }
     fn refresh_art(&mut self, ctx: &Context) {
+        self.deck.refresh_backs(&self.theme.palette);
         self.art = None;
         let result = if self.session.preferences.pattern == 3
             && !self.session.preferences.custom_art.is_empty()
@@ -772,7 +776,7 @@ impl SolitaireApp {
             pattern: self.session.preferences.pattern.min(2),
             holographic: self.session.preferences.finish == "holographic",
             sheen,
-            logo: &self.logo,
+            deck: &self.deck,
             art: self.art.as_ref(),
         }
     }
@@ -871,7 +875,7 @@ impl SolitaireApp {
                     Dialog::Deck=>{
                         ui.label(egui::RichText::new("CARD BACK").monospace().size(11.));
                         ui.horizontal(|ui| {
-                            for (n,name) in ["Woven","Diamond","Minimal","Special"].iter().enumerate() {
+                            for (n,name) in ["Tilework","Engraved","Foil","Special"].iter().enumerate() {
                                 let enabled=n!=3||!self.session.preferences.custom_art.is_empty();
                                 if ui.add_enabled(enabled,egui::Button::new(*name).selected(self.session.preferences.pattern==n)).clicked(){self.session.preferences.pattern=n;self.refresh_art(ctx);self.persist();}
                             }

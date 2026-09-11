@@ -67,3 +67,14 @@ theme, replaces `~/.local/state/omarchy/current/theme`, and stores its name at
   launch and removal. A real Omarchy acceptance session remains a release gate.
 - This PR includes the root-PKGBUILD correction from PR #1, since migrating the
   package replaces that Python packaging path. Neither PR is merged automatically.
+
+## Approved engraved deck
+
+Replace the first geometric deck with the approved engraved direction. Pattern
+IDs stay 0/1/2/3: Tilework, Engraved, Foil, Special. Existing saves keep their
+selected slot and custom artwork. Horizontal serif indexes remain visible under
+tableau overlaps; lower indexes and court portraits rotate 180 degrees. The
+three generated rank portraits are shared across suits, with explicit suit
+medallions and indexes. Backs are authored SVG with theme-derived inks and the
+unchanged official mark. Mipmap filtering prevents fine artwork aliasing.
+All assets are embedded in the executable; there is no new runtime dependency.
