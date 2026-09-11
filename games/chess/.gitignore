@@ -1,0 +1,12 @@
+/target/
+/dist/
+/packaging/src/
+/packaging/pkg/
+*.pkg.tar.*
+# Historical Python build artifacts, not part of the Rust application.
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+build/
+.venv/
