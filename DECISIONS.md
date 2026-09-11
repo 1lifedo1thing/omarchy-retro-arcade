@@ -18,5 +18,13 @@
 - This is a theme-aware port, **not yet an entirely original Omarchy table**. Existing artwork, mission names and audio remain when using original data.
 - A distributable replacement resource pack requires original background, sprites, depth/occlusion data, table geometry/records, fonts, sound effects and music. An image alone cannot replace this pack. Embedded upstream icon/font/resource provenance also needs auditing.
 - Full gameplay, visual contrast across actual Omarchy themes, audio, controller input and Hyprland launch identity require a real desktop run with valid game resources.
-- Linux compilation and packaging are checked in CI. An Ubuntu build artifact is not a verified Arch package; run makepkg and install-test on Omarchy before release.
+- Linux compilation, staged installation and an actual Arch makepkg build/install passed in CI (run 34622571841). Interactive Omarchy desktop acceptance still remains.
 - No claim of official Omarchy affiliation. No automatic download of proprietary game resources.
+
+## Verification evidence
+
+- C++ palette parser/colour mapping tests: passed locally and in Linux/Arch builds.
+- Launcher tests: passed, including paths containing spaces and shell syntax, persistence and invalid-folder handling.
+- Ubuntu compilation, desktop entry validation and staged install: passed.
+- Arch package build, installation and executable version probe: passed.
+- Original-data retrieval for local gameplay testing was unavailable in this environment. No gameplay or screenshot claim is made.

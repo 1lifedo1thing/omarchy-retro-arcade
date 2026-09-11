@@ -62,4 +62,4 @@ No original external game resources are downloaded or bundled. The source retain
 
 ## Verification
 
-CI builds on Ubuntu, runs palette and launcher tests, validates the desktop entry and stages installation. Its tarball is a development build, not a portable cross-distribution release. Gameplay and Omarchy package acceptance still require a real desktop with game data.
+CI builds on Ubuntu, runs palette and launcher tests, validates the desktop entry and stages installation. A second job builds and installs an Arch package, available as the `omarchy-spacecadet-arch-x86_64` workflow artifact. Both jobs have passed. The Ubuntu tarball is not a portable cross-distribution release. Gameplay and Omarchy desktop acceptance still require a real desktop with game data.

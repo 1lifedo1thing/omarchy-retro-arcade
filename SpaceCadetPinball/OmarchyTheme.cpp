@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "OmarchyTheme.h"
 #include "ThemePalette.h"
+#include "winmain.h"
 #include <fstream>
 #include <sstream>
 #include <cstdlib>
@@ -35,6 +36,8 @@ static void apply() {
     s.Colors[ImGuiCol_CheckMark]=colour(palette.accent);
     s.Colors[ImGuiCol_SliderGrab]=colour(palette.accent);
     s.Colors[ImGuiCol_NavHighlight]=colour(palette.accent);
+    SDL_SetRenderDrawColor(winmain::Renderer, (palette.background>>16)&255,
+                          (palette.background>>8)&255, palette.background&255, 255);
     for (unsigned i=0;i<32768;++i) {
         unsigned r=(i>>10)&31,g=(i>>5)&31,b=i&31;
         lookup[i]=cadet::tint(((r*255/31)<<16)|((g*255/31)<<8)|(b*255/31),palette);
