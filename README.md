@@ -10,7 +10,7 @@ Open Arcade, choose a game and play in the same window. `Ctrl+H` returns to the 
 
 ## Install
 
-After the consolidated CI build passes, download the **arch-package** artifact from that build in this repository's Actions tab, extract it, then install the `.pkg.tar.zst` file:
+Download the verified [Arch package](https://github.com/tcballard/omarchy-retro-arcade/actions/runs/34657618469/artifacts/10286164667), extract the archive, then install the `.pkg.tar.zst` file:
 
 ```sh
 sudo pacman -U ./omarchy-retro-arcade-*.pkg.tar.zst
