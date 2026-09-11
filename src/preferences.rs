@@ -1,11 +1,28 @@
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
+#[derive(Clone, Copy, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum PieceStyle {
+    #[default]
+    AfterHours,
+    Chisel,
+}
+impl PieceStyle {
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::AfterHours => "After Hours",
+            Self::Chisel => "Chisel",
+        }
+    }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(default)]
 pub struct Preferences {
     pub version: u32,
     pub sound: bool,
+    pub piece_style: PieceStyle,
     pub follow_omarchy: bool,
     pub engine_path: Option<PathBuf>,
 }
@@ -14,6 +31,7 @@ impl Default for Preferences {
         Self {
             version: 1,
             sound: false,
+            piece_style: PieceStyle::default(),
             follow_omarchy: true,
             engine_path: None,
         }

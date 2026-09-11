@@ -75,3 +75,8 @@ Tom requested delivery of the polish milestone and supplied the shared four-poin
 - C02: Recolour only the single inlay fill token to the active Omarchy accent. Keep body, facet and outline colours fixed for side recognition. Invalidate all twelve cached images when the accent changes; use the SVG loader's size-aware rendering for window/display scaling.
 - C03: Chisel includes its own transparent margins. Remove the former extra 10% inset around board images and match the dragged piece's footprint to its square image; native renders showed that applying both margins made the pieces unnecessarily small.
 - C04: Replace the default artwork without adding a new style selector in this milestone. Previous Cburnett artwork remains recoverable in Git history. No changes to rules, saves, engine selection or package dependencies.
+
+## After Hours default
+
+- A01: Tom explicitly selected After Hours as the default. Existing settings without a piece style also receive After Hours; an explicit Chisel selection persists across updates.
+- A02: Keep Chisel selectable in Settings. Both sets retain their complete viewBox and original geometry, and only the isolated accent follows the theme. Style and accent changes refresh cached artwork for both board and drag rendering.

@@ -319,7 +319,13 @@ fn real_stockfish_move() {
 fn preferences_survive_updates_and_bad_settings_are_preserved() {
     use omarchy_chess::preferences::Preferences;
     let dir = tempfile::tempdir().unwrap();
+    let legacy: Preferences = serde_json::from_str(r#"{"version":1,"sound":true}"#).unwrap();
+    assert_eq!(
+        legacy.piece_style,
+        omarchy_chess::preferences::PieceStyle::AfterHours
+    );
     let p = Preferences {
+        piece_style: omarchy_chess::preferences::PieceStyle::Chisel,
         sound: true,
         follow_omarchy: false,
         ..Default::default()

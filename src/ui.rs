@@ -382,7 +382,8 @@ impl ChessApp {
             };
             self.theme_checked = Instant::now();
         }
-        self.pieces.refresh(ctx, self.theme.accent);
+        self.pieces
+            .refresh(ctx, self.theme.accent, self.preferences.piece_style);
         self.apply_style(ctx);
         self.shortcuts(ctx);
         ctx.request_repaint_after(if self.engine.busy {
@@ -932,6 +933,26 @@ impl ChessApp {
                 ui.label("Omarchy Arcade · Chess");
                 if ui.checkbox(&mut self.preferences.follow_omarchy, "Follow Omarchy colours").changed() {
                     self.theme = if self.preferences.follow_omarchy { Theme::load() } else { Theme::default() };
+                    self.save_preferences();
+                }
+                let previous_style = self.preferences.piece_style;
+                egui::ComboBox::from_label("Chess pieces")
+                    .selected_text(self.preferences.piece_style.label())
+                    .show_ui(ui, |ui| {
+                        for style in [
+                            crate::preferences::PieceStyle::AfterHours,
+                            crate::preferences::PieceStyle::Chisel,
+                        ] {
+                            ui.selectable_value(
+                                &mut self.preferences.piece_style,
+                                style,
+                                style.label(),
+                            );
+                        }
+                    });
+                if previous_style != self.preferences.piece_style {
+                    self.pieces
+                        .refresh(ctx, self.theme.accent, self.preferences.piece_style);
                     self.save_preferences();
                 }
                 if ui.checkbox(&mut self.preferences.sound, "Sound effects").changed() { self.save_preferences(); }

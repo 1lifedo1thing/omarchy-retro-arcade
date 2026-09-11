@@ -12,3 +12,5 @@ Omarchy Chess is GPL-3.0-or-later. Full license: LICENSE. Exact Rust dependency 
 The small app icon in packaging/ is original project artwork, GPL-3.0-or-later. The app reads user-installed Omarchy theme colours but does not redistribute Omarchy branding or theme files.
 
 Rust dependencies are linked into the binary. Distributors must retain applicable copyright/license notices and provide required corresponding source, including dependencies. `cargo vendor --locked` can collect the locked dependency sources and their license files for a source distribution; Cargo.lock alone is not a source offer. This preview does not publish a combined installer or stable binary release.
+
+- **Midnight Operators: After Hours artwork**: original project SVG interpretation of the selected generated concept, distributed under the project GPL-3.0-or-later licence. Default piece set; the original handoff is preserved in assets/pieces/after-hours/IMPLEMENTATION.md. Its pre-integration verification notes describe the asset delivery, not the current application.
