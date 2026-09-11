@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Omarchy Chess
+Comment=Play chess offline against Stockfish or a friend
+Exec=omarchy-chess
+Icon=omarchy-chess
+Terminal=false
+Categories=Game;BoardGame;
+Keywords=chess;stockfish;board;
+StartupNotify=true
+StartupWMClass=omarchy-chess

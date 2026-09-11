@@ -1,4 +1,5 @@
 """Read colours as data, never execute theme files."""
+
 import os
 import re
 import tomllib
@@ -8,7 +9,10 @@ DEFAULT = {"background": "#171c1a", "foreground": "#e4e8df", "accent": "#b3cb92"
 
 
 def theme_path() -> Path:
-    return Path(os.environ.get("XDG_CONFIG_HOME", str(Path.home() / ".config"))) / "omarchy/current/theme/colors.toml"
+    return (
+        Path(os.environ.get("XDG_CONFIG_HOME", str(Path.home() / ".config")))
+        / "omarchy/current/theme/colors.toml"
+    )
 
 
 def read_theme(path: Path | None = None) -> dict[str, str]:

@@ -1,0 +1,21 @@
+# Local fallback recipe, independent of AUR availability.
+pkgname=python-chess
+pkgver=1.11.2
+pkgrel=1
+pkgdesc='Chess rules, PGN, SVG and UCI support for Python'
+arch=('any')
+url='https://github.com/niklasf/python-chess'
+license=('GPL-3.0-or-later')
+depends=('python')
+makedepends=('python-build' 'python-installer' 'python-setuptools' 'python-wheel')
+source=("https://files.pythonhosted.org/packages/source/c/chess/chess-$pkgver.tar.gz")
+sha256sums=('a8b43e5678fdb3000695bdaa573117ad683761e5ca38e591c4826eba6d25bb39')
+build() {
+  cd "$srcdir/chess-$pkgver"
+  python -m build --wheel --no-isolation
+}
+package() {
+  cd "$srcdir/chess-$pkgver"
+  python -m installer --destdir="$pkgdir" dist/*.whl
+  install -Dm644 LICENSE.txt "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

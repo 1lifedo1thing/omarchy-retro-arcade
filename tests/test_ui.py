@@ -1,12 +1,14 @@
 import os
+
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 import time
+
 import chess
 import pytest
-from PySide6.QtCore import QPointF, Qt
+from PySide6.QtCore import QPointF, Qt, QTimer
 from PySide6.QtTest import QTest
-from PySide6.QtWidgets import QApplication, QDialog, QComboBox
-from PySide6.QtCore import QTimer
+from PySide6.QtWidgets import QApplication, QComboBox, QDialog
+
 from omarchy_chess.app import Window
 from omarchy_chess.engine import EngineJob, find_engine
 from omarchy_chess.game import Game
@@ -29,7 +31,7 @@ def window(app, tmp_path):
     until = time.monotonic() + 6
     while widget.jobs and time.monotonic() < until:
         app.processEvents()
-        time.sleep(.01)
+        time.sleep(0.01)
     assert not widget.jobs
 
 
@@ -37,7 +39,7 @@ def wait_for(app, predicate, seconds=8):
     deadline = time.monotonic() + seconds
     while not predicate() and time.monotonic() < deadline:
         app.processEvents()
-        time.sleep(.01)
+        time.sleep(0.01)
     assert predicate()
 
 
@@ -74,11 +76,13 @@ def test_keyboard_move_and_flip_geometry(window):
 def test_promotion_dialog_supports_knight(window, app):
     window.game = Game(mode="local", board=chess.Board("7k/P7/8/8/8/8/8/7K w - - 0 1"))
     window.refresh()
+
     def choose():
         dialog = app.activeModalWidget()
         assert isinstance(dialog, QDialog)
         dialog.findChild(QComboBox).setCurrentIndex(3)
         dialog.accept()
+
     QTimer.singleShot(50, choose)
     window.board_move(chess.A7, chess.A8)
     assert window.game.board.piece_at(chess.A8).piece_type == chess.KNIGHT
@@ -139,3 +143,44 @@ def test_resume_preserves_unfinished_game(app, tmp_path):
     assert second.game.board.peek().uci() == "e2e4"
     assert second.game.mode == "local"
     second.close()
+
+
+def test_engine_timeout_does_not_hang_ui(window, app, tmp_path, monkeypatch):
+    executable = tmp_path / "silent-engine"
+    executable.write_text("#!/usr/bin/env python3\nimport time\ntime.sleep(60)\n")
+    executable.chmod(0o755)
+    monkeypatch.setenv("OMARCHY_CHESS_ENGINE", str(executable))
+    window.game = Game(human=False)
+    window.refresh()
+    window.maybe_engine()
+    pulses = []
+    timer = QTimer()
+    timer.timeout.connect(lambda: pulses.append(True))
+    timer.start(20)
+    wait_for(app, lambda: bool(window.engine_error), seconds=6)
+    timer.stop()
+    assert len(pulses) > 5
+    assert not window.game.board.move_stack
+
+
+@pytest.mark.skipif(find_engine() is None, reason="Stockfish not installed")
+def test_takeback_during_actual_search_ignores_reply(window, app):
+    window.game = Game(difficulty="Strong")
+    window.accept_move(chess.Move.from_uci("e2e4"))
+    assert window.active_job is not None
+    window.takeback()
+    wait_for(app, lambda: not window.jobs)
+    assert window.game.board.fen() == chess.STARTING_FEN
+    assert window.active_job is None
+
+
+def test_corrupt_saved_session_stays_untouched(app, tmp_path, monkeypatch):
+    path = tmp_path / "session.json"
+    original = b"not JSON\xff"
+    path.write_bytes(original)
+    monkeypatch.setattr(Window, "error", lambda *args: None)
+    widget = Window(tmp_path)
+    widget.accept_move(chess.Move.from_uci("e2e4"))
+    widget.close()
+    wait_for(app, lambda: not widget.jobs)
+    assert path.read_bytes() == original

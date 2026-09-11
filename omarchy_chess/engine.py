@@ -1,4 +1,5 @@
 """Bounded, cancellable UCI work outside the UI thread."""
+
 import os
 import shutil
 import threading
@@ -16,8 +17,10 @@ def find_engine() -> str | None:
     if configured:
         # One executable, not a shell command or a list of arguments.
         return shutil.which(configured)
-    return shutil.which("stockfish") or next((str(p) for p in
-        (Path("/usr/games/stockfish"), Path("/usr/bin/stockfish")) if os.access(p, os.X_OK)), None)
+    return shutil.which("stockfish") or next(
+        (str(p) for p in (Path("/usr/games/stockfish"), Path("/usr/bin/stockfish")) if os.access(p, os.X_OK)),
+        None,
+    )
 
 
 class EngineJob(QThread):
@@ -42,7 +45,9 @@ class EngineJob(QThread):
         try:
             path = find_engine()
             if not path:
-                raise RuntimeError("Stockfish was not found. Install the stockfish package, then choose Retry engine. Local two-player games still work.")
+                raise RuntimeError(
+                    "Stockfish was not found. Install the stockfish package, then choose Retry engine. Local two-player games still work."
+                )
             if self.cancelled.is_set():
                 return
             engine = chess.engine.SimpleEngine.popen_uci(path, timeout=3.0)
@@ -60,7 +65,9 @@ class EngineJob(QThread):
                 self.answer.emit(self.revision, answer.move, "")
         except Exception as error:
             if not self.cancelled.is_set():
-                self.answer.emit(self.revision, None, str(error) or "The engine stopped unexpectedly. Choose Retry engine.")
+                self.answer.emit(
+                    self.revision, None, str(error) or "The engine stopped unexpectedly. Choose Retry engine."
+                )
         finally:
             if engine is not None:
                 engine.close()

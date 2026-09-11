@@ -1,22 +1,23 @@
 """Atomic session persistence. Malformed sessions never replace live state."""
+
 import json
 import os
 import tempfile
 from pathlib import Path
 
-from .game import DIFFICULTIES, Game, MAX_PGN_BYTES
+from .game import DIFFICULTIES, MAX_PGN_BYTES, Game
 
 
 def state_directory() -> Path:
     return Path(os.environ.get("XDG_STATE_HOME", str(Path.home() / ".local/state"))) / "omarchy-chess"
 
 
-def atomic_write(path: Path, text: str) -> None:
+def atomic_write(path: Path, text: str | bytes) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, name = tempfile.mkstemp(prefix=".chess-", dir=path.parent)
     try:
-        with os.fdopen(fd, "w", encoding="utf-8") as file:
-            file.write(text)
+        with os.fdopen(fd, "wb") as file:
+            file.write(text.encode("utf-8") if isinstance(text, str) else text)
             file.flush()
             os.fsync(file.fileno())
         os.replace(name, path)
@@ -26,9 +27,22 @@ def atomic_write(path: Path, text: str) -> None:
 
 
 def save(path: Path, game: Game, flipped: bool, guides: bool) -> None:
-    atomic_write(path, json.dumps({"version": 1, "pgn": game.pgn(), "mode": game.mode,
-        "human": game.human, "difficulty": game.difficulty, "ending": game.ending,
-        "flipped": flipped, "guides": guides}, indent=2))
+    atomic_write(
+        path,
+        json.dumps(
+            {
+                "version": 1,
+                "pgn": game.pgn(),
+                "mode": game.mode,
+                "human": game.human,
+                "difficulty": game.difficulty,
+                "ending": game.ending,
+                "flipped": flipped,
+                "guides": guides,
+            },
+            indent=2,
+        ),
+    )
 
 
 def load(path: Path) -> tuple[Game, bool, bool]:

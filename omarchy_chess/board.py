@@ -1,7 +1,8 @@
 """A scalable chess board with mouse, drag and keyboard input."""
+
 import chess
 import chess.svg
-from PySide6.QtCore import QByteArray, QPointF, QRectF, Qt, Signal
+from PySide6.QtCore import QByteArray, QRectF, Qt, Signal
 from PySide6.QtGui import QColor, QFont, QPainter, QPen
 from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtWidgets import QSizePolicy, QWidget
@@ -27,14 +28,19 @@ class BoardWidget(QWidget):
         self.dark = QColor("#697d68")
         self.light = QColor("#dce1cf")
         self.ink = QColor("#e4e8df")
-        self.pieces = {piece.symbol(): QSvgRenderer(QByteArray(chess.svg.piece(piece).encode()))
-                       for color in chess.COLORS for kind in chess.PIECE_TYPES
-                       for piece in [chess.Piece(kind, color)]}
+        self.pieces = {
+            piece.symbol(): QSvgRenderer(QByteArray(chess.svg.piece(piece).encode()))
+            for color in chess.COLORS
+            for kind in chess.PIECE_TYPES
+            for piece in [chess.Piece(kind, color)]
+        }
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.setMinimumSize(320, 320)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.setAccessibleName("Chess board")
-        self.setAccessibleDescription("Arrow keys move between squares. Enter selects a piece or destination. Escape clears selection. You can also enter moves in the move field.")
+        self.setAccessibleDescription(
+            "Arrow keys move between squares. Enter selects a piece or destination. Escape clears selection. You can also enter moves in the move field."
+        )
 
     def geometry_for_board(self):
         side = max(1, min(self.width(), self.height()) - 44)
@@ -64,7 +70,11 @@ class BoardWidget(QWidget):
     def focus_square(self, square):
         self.cursor = square
         piece = self.board.piece_at(square)
-        description = chess.square_name(square) + (f", {'white' if piece.color else 'black'} {chess.piece_name(piece.piece_type)}" if piece else ", empty")
+        description = chess.square_name(square) + (
+            f", {'white' if piece.color else 'black'} {chess.piece_name(piece.piece_type)}"
+            if piece
+            else ", empty"
+        )
         self.square_focused.emit(description)
         self.update()
 
@@ -92,7 +102,11 @@ class BoardWidget(QWidget):
         if self.press_square is None or not self.interactive:
             return
         piece = self.board.piece_at(self.press_square)
-        if piece and piece.color == self.board.turn and (event.position() - self.press_pos).manhattanLength() > 8:
+        if (
+            piece
+            and piece.color == self.board.turn
+            and (event.position() - self.press_pos).manhattanLength() > 8
+        ):
             self.selected = self.press_square
             self.drag_pos = event.position()
             self.update()
@@ -114,8 +128,12 @@ class BoardWidget(QWidget):
 
     def keyPressEvent(self, event):
         key = event.key()
-        moves = {Qt.Key.Key_Left: (-1, 0), Qt.Key.Key_Right: (1, 0),
-                 Qt.Key.Key_Up: (0, 1), Qt.Key.Key_Down: (0, -1)}
+        moves = {
+            Qt.Key.Key_Left: (-1, 0),
+            Qt.Key.Key_Right: (1, 0),
+            Qt.Key.Key_Up: (0, 1),
+            Qt.Key.Key_Down: (0, -1),
+        }
         if key in moves:
             dx, dy = moves[key]
             if self.flipped:
@@ -135,10 +153,17 @@ class BoardWidget(QWidget):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         last = self.board.peek() if self.board.move_stack else None
-        targets = {m.to_square for m in self.board.legal_moves if m.from_square == self.selected} if self.guides else set()
+        targets = (
+            {m.to_square for m in self.board.legal_moves if m.from_square == self.selected}
+            if self.guides
+            else set()
+        )
         for square in chess.SQUARES:
             rect = self.cell(square)
-            painter.fillRect(rect, self.dark if (chess.square_file(square) + chess.square_rank(square)) % 2 == 0 else self.light)
+            painter.fillRect(
+                rect,
+                self.dark if (chess.square_file(square) + chess.square_rank(square)) % 2 == 0 else self.light,
+            )
             if last and square in (last.from_square, last.to_square):
                 painter.fillRect(rect, QColor(220, 211, 106, 100))
             if self.board.is_check() and square == self.board.king(self.board.turn):
@@ -163,19 +188,29 @@ class BoardWidget(QWidget):
                 painter.drawRect(rect.adjusted(4, 4, -4, -4))
         if self.hint:
             painter.setPen(QPen(self.accent, 5))
-            painter.drawLine(self.cell(self.hint.from_square).center(), self.cell(self.hint.to_square).center())
+            painter.drawLine(
+                self.cell(self.hint.from_square).center(), self.cell(self.hint.to_square).center()
+            )
             painter.setBrush(self.accent)
             painter.drawEllipse(self.cell(self.hint.to_square).center(), 7, 7)
         if self.drag_pos is not None and self.selected is not None:
             piece = self.board.piece_at(self.selected)
             size = self.cell(self.selected).width()
             if piece:
-                self.pieces[piece.symbol()].render(painter, QRectF(self.drag_pos.x()-size/2, self.drag_pos.y()-size/2, size, size))
+                self.pieces[piece.symbol()].render(
+                    painter, QRectF(self.drag_pos.x() - size / 2, self.drag_pos.y() - size / 2, size, size)
+                )
         painter.setPen(self.ink)
         painter.setFont(QFont("sans-serif", 10))
         x, y, size = self.geometry_for_board()
         for index in range(8):
-            file = 7-index if self.flipped else index
-            rank = index+1 if self.flipped else 8-index
-            painter.drawText(QRectF(x+index*size, y+size*8+3, size, 18), Qt.AlignmentFlag.AlignCenter, chess.FILE_NAMES[file])
-            painter.drawText(QRectF(x-21, y+index*size, 17, size), Qt.AlignmentFlag.AlignCenter, str(rank))
+            file = 7 - index if self.flipped else index
+            rank = index + 1 if self.flipped else 8 - index
+            painter.drawText(
+                QRectF(x + index * size, y + size * 8 + 3, size, 18),
+                Qt.AlignmentFlag.AlignCenter,
+                chess.FILE_NAMES[file],
+            )
+            painter.drawText(
+                QRectF(x - 21, y + index * size, 17, size), Qt.AlignmentFlag.AlignCenter, str(rank)
+            )

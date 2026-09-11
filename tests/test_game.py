@@ -1,5 +1,6 @@
 import chess
 import pytest
+
 from omarchy_chess.game import Game
 from omarchy_chess.storage import load, save
 from omarchy_chess.theme import DEFAULT, read_theme
@@ -37,11 +38,14 @@ def test_underpromotion(promotion):
     assert game.board.piece_at(chess.A8).piece_type == promotion
 
 
-@pytest.mark.parametrize("fen,reason", [
-    ("7k/5Q2/6K1/8/8/8/8/8 b - - 0 1", "Stalemate"),
-    ("7k/8/6K1/8/8/8/8/8 w - - 0 1", "Insufficient material"),
-    ("7k/8/6K1/8/8/8/8/R7 w - - 150 90", "Seventyfive moves"),
-])
+@pytest.mark.parametrize(
+    "fen,reason",
+    [
+        ("7k/5Q2/6K1/8/8/8/8/8 b - - 0 1", "Stalemate"),
+        ("7k/8/6K1/8/8/8/8/8 w - - 0 1", "Insufficient material"),
+        ("7k/8/6K1/8/8/8/8/R7 w - - 150 90", "Seventyfive moves"),
+    ],
+)
 def test_automatic_draws(fen, reason):
     game = Game(board=chess.Board(fen))
     assert game.finished and reason in game.status()
@@ -98,9 +102,17 @@ def test_roundtrip_settings_and_custom_position(tmp_path):
     assert (restored.human, restored.difficulty, flipped, guides) == (False, "Club", True, False)
 
 
-@pytest.mark.parametrize("pgn", ["", '[FEN "8/8/8/8/8/8/8/8 w - - 0 1"]\n\n*',
-    '[Variant "Atomic"]\n\n1. e4 *', '1. e4 e5 2. Bh6 *',
-    '[Result "nonsense"]\n\n*', '1. e4 *\n\n[Event "Other"]\n\n1. d4 *'])
+@pytest.mark.parametrize(
+    "pgn",
+    [
+        "",
+        '[FEN "8/8/8/8/8/8/8/8 w - - 0 1"]\n\n*',
+        '[Variant "Atomic"]\n\n1. e4 *',
+        "1. e4 e5 2. Bh6 *",
+        '[Result "nonsense"]\n\n*',
+        '1. e4 *\n\n[Event "Other"]\n\n1. d4 *',
+    ],
+)
 def test_bad_import_rejected(pgn):
     with pytest.raises(ValueError):
         Game.from_pgn(pgn)
@@ -121,5 +133,5 @@ def test_theme_validation_and_partial_fallback(tmp_path):
     result = read_theme(path)
     assert result["accent"] == "#123456"
     assert result["background"] == DEFAULT["background"]
-    path.write_text('not valid toml')
+    path.write_text("not valid toml")
     assert read_theme(path) == DEFAULT

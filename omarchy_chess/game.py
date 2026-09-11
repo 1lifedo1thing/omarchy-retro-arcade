@@ -1,4 +1,5 @@
 """Game state, independent of Qt and the engine."""
+
 from __future__ import annotations
 
 import io
@@ -81,8 +82,12 @@ class Game:
         if game.headers.get("Date") == "????.??.??":
             game.headers["Date"] = date.today().strftime("%Y.%m.%d")
         game.headers["Event"] = self.headers.get("Event", "Omarchy Chess")
-        game.headers["White"] = self.headers.get("White", "Stockfish" if self.mode == "computer" and not self.human else "White")
-        game.headers["Black"] = self.headers.get("Black", "Stockfish" if self.mode == "computer" and self.human else "Black")
+        game.headers["White"] = self.headers.get(
+            "White", "Stockfish" if self.mode == "computer" and not self.human else "White"
+        )
+        game.headers["Black"] = self.headers.get(
+            "Black", "Stockfish" if self.mode == "computer" and self.human else "Black"
+        )
         game.headers["Result"] = self.result if self.result != "*" else self.board.result()
         # FEN and SetUp come from the actual board, never stale imported headers.
         if self.board.root().fen() != chess.STARTING_FEN:
@@ -117,5 +122,10 @@ class Game:
         outcome = board.outcome()
         if outcome and result not in ("*", outcome.result()):
             raise ValueError("PGN result contradicts the final position.")
-        return cls(board=board, mode="local", result=result,
-                   ending="Imported result" if result != "*" else "", headers=dict(parsed.headers))
+        return cls(
+            board=board,
+            mode="local",
+            result=result,
+            ending="Imported result" if result != "*" else "",
+            headers=dict(parsed.headers),
+        )

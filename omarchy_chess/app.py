@@ -1,22 +1,38 @@
 """Native desktop application. Run with python -m omarchy_chess."""
+
 from __future__ import annotations
 
 import argparse
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
-import sys
 
 import chess
-from PySide6.QtCore import QLockFile, QTimer, Qt
+from PySide6.QtCore import QLockFile, Qt, QTimer
 from PySide6.QtGui import QAction, QColor, QKeySequence
-from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDialog,
-    QDialogButtonBox, QFileDialog, QFormLayout, QHBoxLayout, QLabel, QLineEdit,
-    QListWidget, QMainWindow, QMessageBox, QPushButton, QSizePolicy, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (
+    QApplication,
+    QCheckBox,
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QFileDialog,
+    QFormLayout,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QListWidget,
+    QMainWindow,
+    QMessageBox,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 from . import __version__
 from .board import BoardWidget
 from .engine import EngineJob, find_engine
-from .game import DIFFICULTIES, Game, MAX_PGN_BYTES
+from .game import DIFFICULTIES, MAX_PGN_BYTES, Game
 from .storage import atomic_write, load, save, state_directory
 from .theme import read_theme
 
@@ -48,7 +64,9 @@ class Window(QMainWindow):
             except (OSError, ValueError, TypeError, KeyError) as error:
                 warning = f"Your saved game could not be loaded: {error}\nThe original file has been left untouched."
                 # Disable persistence until the user explicitly starts/imports a game.
-                self.save_error = "Previous save needs attention. Start a new game to archive it and continue."
+                self.save_error = (
+                    "Previous save needs attention. Start a new game to archive it and continue."
+                )
         self.guides.setChecked(self.board.guides)
         self.apply_theme()
         self.theme_timer = QTimer(self)
@@ -148,6 +166,7 @@ class Window(QMainWindow):
         game_menu = self.menuBar().addMenu("&Game")
         view_menu = self.menuBar().addMenu("&View")
         help_menu = self.menuBar().addMenu("&Help")
+
         def action(menu, name, shortcut, callback):
             item = QAction(name, self)
             if shortcut:
@@ -155,6 +174,7 @@ class Window(QMainWindow):
             item.triggered.connect(callback)
             menu.addAction(item)
             return item
+
         action(game_menu, "&New game…", "Ctrl+N", self.new_game)
         action(game_menu, "&Import PGN…", "Ctrl+O", self.import_pgn)
         action(game_menu, "&Export PGN…", "Ctrl+S", self.export_pgn)
@@ -196,8 +216,12 @@ class Window(QMainWindow):
         self.board.ink = QColor(fg)
         # Blend accent into stable light/dark squares. Piece contrast stays predictable.
         a = QColor(accent)
-        self.board.dark = QColor(int(a.red()*.35+45), int(a.green()*.35+45), int(a.blue()*.35+45))
-        self.board.light = QColor(int(a.red()*.12+195), int(a.green()*.12+195), int(a.blue()*.12+195))
+        self.board.dark = QColor(
+            int(a.red() * 0.35 + 45), int(a.green() * 0.35 + 45), int(a.blue() * 0.35 + 45)
+        )
+        self.board.light = QColor(
+            int(a.red() * 0.12 + 195), int(a.green() * 0.12 + 195), int(a.blue() * 0.12 + 195)
+        )
         self.board.update()
 
     def error(self, title, message):
@@ -216,7 +240,10 @@ class Window(QMainWindow):
     def archive(self):
         stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S.%fZ")
         if self.save_error and self.session_path.exists():
-            atomic_write(self.state_dir / "archive" / f"{stamp}-recovery.json", self.session_path.read_text(encoding="utf-8", errors="replace"))
+            atomic_write(
+                self.state_dir / "archive" / f"{stamp}-recovery.json",
+                self.session_path.read_bytes(),
+            )
         if self.game.board.move_stack:
             atomic_write(self.state_dir / "archive" / f"{stamp}.pgn", self.game.pgn())
         self.save_error = ""
@@ -225,20 +252,26 @@ class Window(QMainWindow):
         self.preview = False
         self.board.set_position(self.game.board, self.game.human_turn)
         self.status.setText(self.game.status())
-        self.opponent.setText(f"Stockfish · {self.game.difficulty}\nYou play {'white' if self.game.human else 'black'}" if self.game.mode == "computer" else "Two players · Shared board")
+        self.opponent.setText(
+            f"Stockfish · {self.game.difficulty}\nYou play {'white' if self.game.human else 'black'}"
+            if self.game.mode == "computer"
+            else "Two players · Shared board"
+        )
         self.history.blockSignals(True)
         self.history.clear()
         self.history.addItem("Starting position")
         for prefix, san in self.game.notation():
             self.history.addItem(f"{prefix:<6} {san}")
-        self.history.setCurrentRow(self.history.count()-1)
+        self.history.setCurrentRow(self.history.count() - 1)
         self.history.scrollToBottom()
         self.history.blockSignals(False)
         self.live_button.hide()
         self.undo_button.setEnabled(bool(self.game.board.move_stack))
         self.claim_button.setVisible(self.game.human_turn and self.game.board.can_claim_draw())
         self.retry_button.setVisible(bool(self.engine_error))
-        self.hint_button.setEnabled(self.game.human_turn and self.active_job is None and find_engine() is not None)
+        self.hint_button.setEnabled(
+            self.game.human_turn and self.active_job is None and find_engine() is not None
+        )
         self.move_input.setEnabled(self.game.human_turn)
         self.move_input.clear()
         captured = {True: [], False: []}
@@ -250,12 +283,28 @@ class Window(QMainWindow):
             if piece:
                 captured[replay.turn].append(piece.unicode_symbol())
             replay.push(move)
+
         def label(color):
-            player = "Stockfish" if self.game.mode == "computer" and color != self.game.human else ("White" if color else "Black")
+            player = (
+                "Stockfish"
+                if self.game.mode == "computer" and color != self.game.human
+                else ("White" if color else "Black")
+            )
             return f"{player}   {' '.join(captured[color])}"
+
         self.top_player.setText(label(chess.WHITE if self.board.flipped else chess.BLACK))
         self.bottom_player.setText(label(chess.BLACK if self.board.flipped else chess.WHITE))
-        self.message.setText(self.save_error or self.engine_error or ("Game finished. Start another, or take back a move to explore." if self.game.finished else "Your move." if self.game.human_turn else "Stockfish is thinking…"))
+        self.message.setText(
+            self.save_error
+            or self.engine_error
+            or (
+                "Game finished. Start another, or take back a move to explore."
+                if self.game.finished
+                else "Your move."
+                if self.game.human_turn
+                else "Stockfish is thinking…"
+            )
+        )
 
     def cancel_engine(self):
         self.revision += 1
@@ -326,7 +375,9 @@ class Window(QMainWindow):
     def board_move(self, source, target):
         if self.preview or not self.game.human_turn:
             return
-        candidates = [m for m in self.game.board.legal_moves if m.from_square == source and m.to_square == target]
+        candidates = [
+            m for m in self.game.board.legal_moves if m.from_square == source and m.to_square == target
+        ]
         if not candidates:
             self.message.setText("That move is not legal. Choose another square.")
             return
@@ -339,7 +390,9 @@ class Window(QMainWindow):
             for kind in (chess.QUEEN, chess.ROOK, chess.BISHOP, chess.KNIGHT):
                 choice.addItem(chess.piece_name(kind).capitalize(), kind)
             form.addRow("Promote to", choice)
-            buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+            buttons = QDialogButtonBox(
+                QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+            )
             buttons.accepted.connect(dialog.accept)
             buttons.rejected.connect(dialog.reject)
             form.addRow(buttons)
@@ -441,15 +494,21 @@ class Window(QMainWindow):
         form.addRow("Play against", mode)
         form.addRow("Your side", color)
         form.addRow("Difficulty", level)
-        note = QLabel("Untimed play. Your current game will be archived.\nGentle reduces engine strength; it is not a rated beginner bot.")
+        note = QLabel(
+            "Untimed play. Your current game will be archived.\nGentle reduces engine strength; it is not a rated beginner bot."
+        )
         note.setWordWrap(True)
         form.addRow(note)
+
         def update():
             color.setEnabled(mode.currentData() == "computer")
             level.setEnabled(mode.currentData() == "computer")
+
         mode.currentIndexChanged.connect(update)
         update()
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
         buttons.accepted.connect(dialog.accept)
         buttons.rejected.connect(dialog.reject)
         form.addRow(buttons)
@@ -469,7 +528,9 @@ class Window(QMainWindow):
         self.maybe_engine()
 
     def import_pgn(self):
-        filename, _ = QFileDialog.getOpenFileName(self, "Import one PGN game", "", "Chess games (*.pgn);;All files (*)")
+        filename, _ = QFileDialog.getOpenFileName(
+            self, "Import one PGN game", "", "Chess games (*.pgn);;All files (*)"
+        )
         if not filename:
             return
         try:
@@ -489,7 +550,9 @@ class Window(QMainWindow):
         self.message.setText("Imported main line for local play and review. Original file is unchanged.")
 
     def export_pgn(self):
-        filename, _ = QFileDialog.getSaveFileName(self, "Export PGN", "omarchy-chess.pgn", "Chess games (*.pgn)")
+        filename, _ = QFileDialog.getSaveFileName(
+            self, "Export PGN", "omarchy-chess.pgn", "Chess games (*.pgn)"
+        )
         if filename:
             try:
                 atomic_write(Path(filename), self.game.pgn())
@@ -498,10 +561,18 @@ class Window(QMainWindow):
                 self.error("Could not export PGN", error)
 
     def help(self):
-        QMessageBox.information(self, "Keyboard controls", "Board: arrows to navigate, Enter or Space to select, Escape to clear.\nTab: move between controls.\nMove field: e4, Nf3, O-O, e2e4 or e7e8n.\n\nCtrl+N: new game\nCtrl+O: import PGN\nCtrl+S: export PGN\nCtrl+Z: take back\nCtrl+H: hint\nCtrl+F: flip board\nCtrl+L: live board\nCtrl+Q: quit")
+        QMessageBox.information(
+            self,
+            "Keyboard controls",
+            "Board: arrows to navigate, Enter or Space to select, Escape to clear.\nTab: move between controls.\nMove field: e4, Nf3, O-O, e2e4 or e7e8n.\n\nCtrl+N: new game\nCtrl+O: import PGN\nCtrl+S: export PGN\nCtrl+Z: take back\nCtrl+H: hint\nCtrl+F: flip board\nCtrl+L: live board\nCtrl+Q: quit",
+        )
 
     def about(self):
-        QMessageBox.about(self, "About Omarchy Chess", f"Omarchy Chess {__version__}\n\nAn independent community app for Omarchy.\nPowered by Stockfish, python-chess and Qt.\nGPL-3.0-or-later.\n\nPiece artwork: python-chess, adapted from Wikimedia chess pieces by Cburnett (GPL).\nNo accounts, analytics or network services.")
+        QMessageBox.about(
+            self,
+            "About Omarchy Chess",
+            f"Omarchy Chess {__version__}\n\nAn independent community app for Omarchy.\nPowered by Stockfish, python-chess and Qt.\nGPL-3.0-or-later.\n\nPiece artwork: python-chess, adapted from Wikimedia chess pieces by Cburnett (GPL).\nNo accounts, analytics or network services.",
+        )
 
     def closeEvent(self, event):
         self.closing = True
@@ -532,7 +603,9 @@ def main():
     lock = QLockFile(str(state / "session.lock"))
     lock.setStaleLockTime(0)
     if not lock.tryLock(100):
-        QMessageBox.information(None, "Omarchy Chess", "Another Omarchy Chess window is already using this saved game.")
+        QMessageBox.information(
+            None, "Omarchy Chess", "Another Omarchy Chess window is already using this saved game."
+        )
         return 1
     window = Window(state)
     window.show()

@@ -9,3 +9,7 @@ dist/
 packaging/src/
 packaging/pkg/
 
+.ruff_cache/
+packaging/python-chess/src/
+packaging/python-chess/pkg/
+packaging/python-chess/*.tar.gz
