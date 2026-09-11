@@ -11,7 +11,7 @@
 #include "winmain.h"
 #include "options.h"
 #include "SDL_image.h"
-#include "../native/BrandLogo.h"
+#include "../native/BrandWordmark.h"
 #include <algorithm>
 #include <string>
 #ifndef CIRCUIT_SOURCE_DIR
@@ -22,7 +22,7 @@
 #endif
 namespace CircuitView {
 namespace {
-SDL_Texture *board=nullptr,*logo=nullptr;
+SDL_Texture *board=nullptr,*wordmark=nullptr;
 SDL_Surface* original=nullptr;
 SDL_Renderer* renderer=nullptr;
 uint32_t lastAccent=0;
@@ -76,16 +76,21 @@ bool Init(SDL_Renderer* r){
  for(const auto& dir:dirs){original=IMG_Load((dir+"/table.png").c_str());if(original)break;}
  if(!original){SDL_Log("Cannot load Circuit artwork: %s",IMG_GetError());return false;}
  SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY,"1");
- auto s=SDL_CreateRGBSurfaceWithFormatFrom((void*)BrandLogo,128,128,32,128*4,SDL_PIXELFORMAT_RGBA32);
- if(s){logo=SDL_CreateTextureFromSurface(r,s);SDL_FreeSurface(s);}updateTexture();return board&&logo;
+ auto surface=SDL_CreateRGBSurfaceWithFormat(0,4131,950,32,SDL_PIXELFORMAT_RGBA32);
+ if(!surface)return false;
+ SDL_FillRect(surface,nullptr,SDL_MapRGBA(surface->format,0,0,0,0));
+ for(const auto& r:BrandWordmark){SDL_Rect rect={r[0],r[1],r[2],r[3]};SDL_FillRect(surface,&rect,SDL_MapRGBA(surface->format,158,206,106,255));}
+ wordmark=SDL_CreateTextureFromSurface(renderer,surface);SDL_FreeSurface(surface);
+ updateTexture();return board&&wordmark;
 }
 void Draw(){
  if(!board||!pb::MainTable)return;updateTexture();draw=ImGui::GetBackgroundDrawList();
  auto size=ImGui::GetIO().DisplaySize;float menu=options::Options.ShowMenu?winmain::MainMenuHeight:0;
  scale=std::min(size.x/1536.f,(size.y-menu)/1024.f);ox=(size.x-1536*scale)/2;oy=menu+(size.y-menu-1024*scale)/2;
  draw->AddRectFilled({0,menu},size,rgba(5,8,8));draw->AddImage((ImTextureID)board,p(0,0),p(1536,1024));
- // Exact official mark, composited after tinting; never recolour or redraw it.
- draw->AddImage((ImTextureID)logo,p(509,467),p(615,573));
+ // Exact official wordmark geometry, proportionally placed after material tinting.
+ const float wordScale=180.f/4131.f,wordX=562-90,wordY=520-950*wordScale/2;
+ draw->AddImage((ImTextureID)wordmark,p(wordX,wordY),p(wordX+180,wordY+950*wordScale));
  auto t=pb::MainTable;
  const float lamps[12][2]={{562,422},{626,438},{664,478},{674,525},{659,565},{618,599},{562,617},{507,599},{464,565},{450,526},{458,479},{498,439}};
  for(unsigned i=0;i<12;i++)lamp(lamps[i][0],lamps[i][1],i<OmarchyTable::Progress());
@@ -117,5 +122,5 @@ void Draw(){
  label(1080,950,"A / D FLIPPERS    SPACE LAUNCH",17);
  label(1110,48,"OMARCHY ARCADE  /  PINBALL",18);
 }
-void Shutdown(){SDL_DestroyTexture(board);SDL_DestroyTexture(logo);SDL_FreeSurface(original);board=logo=nullptr;original=nullptr;lastAccent=0;}
+void Shutdown(){SDL_DestroyTexture(board);SDL_DestroyTexture(wordmark);SDL_FreeSurface(original);board=wordmark=nullptr;original=nullptr;lastAccent=0;}
 }

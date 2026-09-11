@@ -20,7 +20,7 @@ Three balls, one player. Bumper hits score 100, with 2,500 for twelve hits. Each
 
 The packaged PNG is a cleaned production plate derived from the user-approved generated concept. It contains static rails, plastics, bumper caps and orbital illustration. Moving flippers and balls, circuit and target lamps, plunger indicator and dot-matrix displays are rendered separately. Material highlights and some decorative lamps are baked into the illustration; this is a fixed-camera 2D renderer, not a full 3D scene.
 
-Green glass and accents follow Omarchy while ivory, chrome and amber retain their material colours. The exact official logo is composited at the centre after recolouring and remains unchanged. The artwork provenance is in assets/circuit/README.md.
+Green glass and accents follow Omarchy while ivory, chrome and amber retain their material colours. The exact official wordmark is composited at the centre after recolouring and remains unchanged. The artwork provenance is in assets/circuit/README.md.
 
 ## Persistence and modes
 
