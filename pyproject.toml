@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "omarchy-solitaire"
+version = "0.1.0"
+description = "A native, theme-following Klondike card table for Omarchy"
+requires-python = ">=3.11"
+dependencies = ["PySide6>=6.8,<7"]
+license = {text = "MIT; Omarchy artwork excluded, see NOTICE"}
+
+[project.scripts]
+omarchy-solitaire = "omarchy_solitaire.app:main"
+
+[tool.setuptools.package-data]
+omarchy_solitaire = ["qml/*.qml", "assets/*.svg"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
