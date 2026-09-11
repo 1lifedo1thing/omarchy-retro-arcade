@@ -107,7 +107,7 @@ int main(int argc,char** argv){
  SDL_GameController* controller=nullptr;for(int i=0;i<SDL_NumJoysticks();++i)if(SDL_IsGameController(i)){controller=SDL_GameControllerOpen(i);if(controller)break;}
  bool running=true,confirm=false,dialog=false,full=false,saveError=false;int frames=0;double accumulator=0;Uint64 last=SDL_GetPerformanceCounter();Uint32 saveAt=SDL_GetTicks();oma::Input prior;
  auto save=[&](){if(smoke||folder.empty())return;std::ostringstream game;model.write(game);std::ostringstream config;config<<prefs.appearance<<' '<<prefs.best<<' '<<prefs.muted<<' '<<prefs.music<<'\n';saveError=!(atomicWrite(folder+"native-game",game.str())&&atomicWrite(folder+"native-preferences",config.str()));};
- while(running){SDL_Event e;while(SDL_PollEvent(&e)){ImGui_ImplSDL2_ProcessEvent(&e);if(e.type==SDL_QUIT)running=false;
+ while(running){Uint64 frameStarted=SDL_GetPerformanceCounter();SDL_Event e;while(SDL_PollEvent(&e)){ImGui_ImplSDL2_ProcessEvent(&e);if(e.type==SDL_QUIT)running=false;
    if(e.type==SDL_WINDOWEVENT&&e.window.event==SDL_WINDOWEVENT_FOCUS_LOST&&!smoke)model.paused=true;
    if(e.type==SDL_KEYDOWN&&!e.key.repeat){auto k=e.key.keysym.sym;if(k==SDLK_p&&!dialog)model.paused=!model.paused;
     if(k==SDLK_n&&!dialog){model.nudge();audio.event(model.tilted?oma::Event::Tilt:oma::Event::Flipper);}if(k==SDLK_F2){confirm=true;dialog=true;model.paused=true;}if(k==SDLK_ESCAPE){model.paused=true;}
@@ -148,7 +148,7 @@ int main(int argc,char** argv){
   if(confirm){ImGui::OpenPopup("Start a new game?");confirm=false;}if(ImGui::BeginPopupModal("Start a new game?",nullptr,ImGuiWindowFlags_AlwaysAutoResize)){ImGui::TextUnformatted("This replaces the current game.");if(ImGui::Button("Start new game")){model.newGame();restored=false;dialog=false;ImGui::CloseCurrentPopup();}ImGui::SameLine();if(ImGui::Button("Keep playing")){model.paused=false;dialog=false;ImGui::CloseCurrentPopup();}ImGui::EndPopup();}
   ImGui::Render();SDL_SetRenderDrawColor(renderer,theme.p.background>>16,(theme.p.background>>8)&255,theme.p.background&255,255);SDL_RenderClear(renderer);ImGui_ImplSDLRenderer_RenderDrawData(ImGui::GetDrawData());
   ++frames;if(smoke&&frames>=smoke){if(!screenshot.empty()){int w,h;SDL_GetRendererOutputSize(renderer,&w,&h);auto surface=SDL_CreateRGBSurfaceWithFormat(0,w,h,32,SDL_PIXELFORMAT_ARGB8888);if(surface){SDL_RenderReadPixels(renderer,nullptr,SDL_PIXELFORMAT_ARGB8888,surface->pixels,surface->pitch);SDL_SaveBMP(surface,screenshot.c_str());SDL_FreeSurface(surface);}}running=false;}
-  SDL_RenderPresent(renderer);if(!smoke&&SDL_GetTicks()-saveAt>5000){save();saveAt=SDL_GetTicks();}if(!smoke)SDL_Delay(1);
+  SDL_RenderPresent(renderer);if(!smoke&&SDL_GetTicks()-saveAt>5000){save();saveAt=SDL_GetTicks();}if(!smoke){double workMs=1000.*double(SDL_GetPerformanceCounter()-frameStarted)/SDL_GetPerformanceFrequency();if(workMs<1000./60)SDL_Delay(Uint32(std::ceil(1000./60-workMs)));}
  }
  save();std::printf("frames=%d score=%d balls=%d circuits=%d restored=%d\n",frames,model.score,model.balls,model.circuits,restored);
  if(controller)SDL_GameControllerClose(controller);SDL_DestroyTexture(logo);ImGui_ImplSDLRenderer_Shutdown();ImGui_ImplSDL2_Shutdown();ImGui::DestroyContext();SDL_DestroyRenderer(renderer);SDL_DestroyWindow(window);

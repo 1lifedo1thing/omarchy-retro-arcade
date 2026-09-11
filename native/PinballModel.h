@@ -30,7 +30,7 @@ struct Model {
     Vec leftTip()const; Vec rightTip()const;
 private:
     bool wasPlunger=false;
-    void collideSegment(Vec a,Vec b,double restitution,Vec surface={});
+    void collideSegment(Vec a,Vec b,double restitution,Vec surface={},double radius=13);
     void collideCircle(Vec center,double radius,double restitution,double boost);
     void addScore(int points);
     void drain();

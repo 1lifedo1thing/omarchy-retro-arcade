@@ -27,12 +27,12 @@ Vec Model::rightTip()const{return Vec{395,785}+Vec{std::cos(rightAngle),std::sin
 void Model::newGame(){*this=Model{};}
 void Model::addScore(int points){score=std::min(999999999,score+points*multiplier);}
 void Model::launch(double power){if(!waiting||gameOver||paused)return;power=std::max(.2,std::min(1.,power));waiting=false;velocity={-10,-1100-power*360};saveTime=9;charge=0;events.push_back(Event::Launch);message="Light three lanes and three targets.";}
-void Model::collideSegment(Vec a,Vec b,double restitution,Vec surface){
+void Model::collideSegment(Vec a,Vec b,double restitution,Vec surface,double radius){
  Vec ab=b-a; double ll=dot(ab,ab);if(ll==0)return;
  double t=std::max(0.,std::min(1.,dot(ball-a,ab)/ll));Vec nearest=a+ab*t,n=ball-nearest;double d=length(n);
- if(d>=13)return;
+ if(d>=radius)return;
  if(d<.0001){n={-ab.y,ab.x};d=length(n);}n=n*(1./d);
- ball=nearest+n*13.01;double approach=dot(velocity-surface,n);
+ ball=nearest+n*(radius+.01);double approach=dot(velocity-surface,n);
  if(approach<0)velocity=velocity-n*((1+restitution)*approach);
 }
 void Model::collideCircle(Vec center,double radius,double restitution,double boost){
@@ -69,7 +69,7 @@ void Model::step(double dt,Input input){
   for(int i=0;i<3;++i){auto p=bumpers()[i];if(length(ball-p)<38){collideCircle(p,29,.95,120);if(bumperGlow[i]<=0&&!tilted){addScore(100);events.push_back(Event::Bumper);bumperGlow[i]=.12;}}}
   for(int i=0;i<3;++i){if(length(ball-lanePositions()[i])<22&&!lanes[i]&&!tilted){lanes[i]=true;addScore(250);events.push_back(Event::Target);}}
   for(int i=0;i<3;++i){auto p=targetPositions()[i];if(length(ball-p)<25){collideCircle(p,16,.8,35);if(!targets[i]&&!tilted){targets[i]=true;targetGlow[i]=.3;addScore(400);events.push_back(Event::Target);}}}
-  auto flipper=[&](Vec pivot,Vec tip,double angular){Vec edge=tip-pivot;double t=std::max(0.,std::min(1.,dot(ball-pivot,edge)/dot(edge,edge)));Vec arm=edge*t;collideSegment(pivot,tip,.9,{-angular*arm.y,angular*arm.x});};
+  auto flipper=[&](Vec pivot,Vec tip,double angular){Vec edge=tip-pivot;double t=std::max(0.,std::min(1.,dot(ball-pivot,edge)/dot(edge,edge)));Vec arm=edge*t;collideSegment(pivot,tip,.9,{-angular*arm.y,angular*arm.x},17);};
   if(h>0){flipper({205,785},leftTip(),(leftAngle-la)/h);flipper({395,785},rightTip(),(rightAngle-ra)/h);}
   if(std::all_of(lanes.begin(),lanes.end(),[](bool x){return x;})&&std::all_of(targets.begin(),targets.end(),[](bool x){return x;})){
    addScore(2500);++circuits;multiplier=std::min(5,multiplier+1);lanes.fill(false);targets.fill(false);events.push_back(Event::Mission);message="CIRCUIT COMPLETE. Multiplier increased.";
