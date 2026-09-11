@@ -1,0 +1,38 @@
+name: Package release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+    steps:
+      - run: pacman -Syu --noconfirm git python python-build python-installer python-setuptools python-wheel pyside6 qt6-declarative qt6-svg qt6-wayland ttf-dejavu
+      - uses: actions/checkout@v4
+      - name: Verify version agrees with tag
+        shell: bash
+        run: |
+          version=$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
+          test "${GITHUB_REF_NAME}" = "v${version}"
+      - run: |
+          useradd -m builder
+          chown -R builder:builder "$GITHUB_WORKSPACE"
+          su builder -c "cd '$GITHUB_WORKSPACE' && makepkg -p packaging/PKGBUILD --noconfirm"
+          sha256sum *.pkg.tar.zst > SHA256SUMS
+      - uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          files: |
+            *.pkg.tar.zst
+            SHA256SUMS
+          body: |
+            Native Klondike for Omarchy. Download the Arch package and run:
+            `sudo pacman -U ./omarchy-solitaire-*.pkg.tar.zst`
+
+            Includes draw-one/draw-three, undo, hints, resume, theme-following
+            official Omarchy card backs, custom artwork and an optional holographic finish.
+
+            Desktop acceptance on a real Omarchy session is required before
+            this draft is promoted to a public release.
