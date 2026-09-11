@@ -22,6 +22,16 @@ x.XFree.argtypes=[C.c_void_p]
 x.XKeysymToKeycode.argtypes=[C.c_void_p,C.c_ulong]; x.XKeysymToKeycode.restype=C.c_uint
 x.XFlush.argtypes=[C.c_void_p]
 x.XCloseDisplay.argtypes=[C.c_void_p]
+class WindowAttributes(C.Structure):
+    _fields_ = [(name, C.c_int) for name in ('x', 'y', 'width', 'height', 'border_width', 'depth')] + [
+        ('visual', C.c_void_p), ('root', C.c_ulong), ('window_class', C.c_int),
+        ('bit_gravity', C.c_int), ('win_gravity', C.c_int), ('backing_store', C.c_int),
+        ('backing_planes', C.c_ulong), ('backing_pixel', C.c_ulong),
+        ('save_under', C.c_int), ('colormap', C.c_ulong), ('map_installed', C.c_int),
+        ('map_state', C.c_int), ('all_event_masks', C.c_long),
+        ('your_event_mask', C.c_long), ('do_not_propagate_mask', C.c_long),
+        ('override_redirect', C.c_int), ('screen', C.c_void_p)]
+x.XGetWindowAttributes.argtypes=[C.c_void_p,C.c_ulong,C.POINTER(WindowAttributes)]
 xt.XTestFakeKeyEvent.argtypes=[C.c_void_p,C.c_uint,C.c_int,C.c_ulong]
 xt.XTestFakeButtonEvent.argtypes=[C.c_void_p,C.c_uint,C.c_int,C.c_ulong]
 xt.XTestFakeMotionEvent.argtypes=[C.c_void_p,C.c_int,C.c_int,C.c_int,C.c_ulong]
@@ -35,7 +45,11 @@ def windows():
         name=C.c_void_p();x.XFetchName(display,children[i],C.byref(name))
         if name.value:
             text=C.string_at(name).decode(errors='replace');x.XFree(name)
-            if 'Omarchy' in text:result.append(children[i])
+            attributes=WindowAttributes()
+            if ('Omarchy' in text and
+                    x.XGetWindowAttributes(display,children[i],C.byref(attributes)) and
+                    attributes.map_state==2):
+                result.append(children[i])
     if children:x.XFree(children)
     return result
 
