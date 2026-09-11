@@ -6,6 +6,9 @@ pkgdesc='Native games in one Omarchy Arcade application'
 arch=('x86_64')
 url='https://github.com/tcballard/omarchy-retro-arcade'
 license=('GPL-3.0-or-later')
+# ring's bundled C objects cannot use GCC LTO with Rust's LLVM linker.
+# https://wiki.archlinux.org/title/Rust_package_guidelines#Package
+options=('!lto')
 depends=('gcc-libs' 'glibc' 'libxcb' 'libxkbcommon' 'libxkbcommon-x11' 'libglvnd' 'wayland' 'xdg-desktop-portal' 'libpulse' 'sdl2' 'sdl2_image' 'sdl2_mixer')
 conflicts=('omarchy-chess' 'omarchy-solitaire' 'omarchy-scram' 'omarchy-munch' 'omarchy-invaders' 'omarchy-spacecadet')
 optdepends=('xdg-desktop-portal-gtk: file chooser fallback')
