@@ -116,6 +116,10 @@ with tempfile.TemporaryDirectory(prefix='arcade-native-') as tmp:
         assert len(json.loads(chess_path.read_text())['moves'])>=2, 'Stockfish did not answer the native move'
         home()
         assert (state/'omarchy-chess/session.json').is_file()
+        # Stack is another embedded game with a separate resumable run.
+        key(0xff53);enter('Stack');key(0xff0d);key(0xff53);key(0x20);home()
+        stack=json.loads((state/'omarchy-stack/session.json').read_text())
+        assert stack['marathon']['locks']>=1
         # Pinball runs within the SAME native window; no SDL desktop window.
         key(0xff53);enter('Circuit Pinball');time.sleep(.7)
         assert windows()==[window],windows()
@@ -129,7 +133,7 @@ with tempfile.TemporaryDirectory(prefix='arcade-native-') as tmp:
         # Close from the app-level shortcut.
         key(ord('q'),True);app.wait(timeout=8);assert app.returncode==0
         assert json.loads(save.read_text())['game']==first['game']
-        print('PASS: singleton; one window across five games; Solitaire draw/save/reopen; legacy save paths; Stockfish replies to native move; native keys; clean shutdown.')
+        print('PASS: singleton; one window across six games; Solitaire draw/save/reopen; legacy save paths; Stockfish replies to native move; native keys; clean shutdown.')
     finally:
         if app.poll() is None:app.kill();app.wait()
 x.XCloseDisplay(display)

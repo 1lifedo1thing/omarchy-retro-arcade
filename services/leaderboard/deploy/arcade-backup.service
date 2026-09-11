@@ -1,0 +1,15 @@
+[Unit]
+Description=Encrypted Arcade database backup
+After=network-online.target
+[Service]
+Type=oneshot
+User=arcade-scores
+Group=arcade-scores
+EnvironmentFile=/etc/arcade-scores/backup.env
+ExecStart=/usr/local/libexec/arcade-backup
+UMask=0077
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/arcade-scores
+Environment=RESTIC_CACHE_DIR=/var/lib/arcade-scores/restic-cache

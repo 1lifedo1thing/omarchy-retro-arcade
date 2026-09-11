@@ -14,17 +14,20 @@ enum Game {
     Scram,
     Invaders,
     Pinball,
+    Stack,
 }
 impl Game {
-    const ALL: [Self; 5] = [
+    const ALL: [Self; 6] = [
         Self::Pinball,
         Self::Solitaire,
         Self::Scram,
         Self::Invaders,
         Self::Chess,
+        Self::Stack,
     ];
     fn id(self) -> &'static str {
         match self {
+            Self::Stack => "stack",
             Self::Chess => "chess",
             Self::Solitaire => "solitaire",
             Self::Scram => "scram",
@@ -34,6 +37,7 @@ impl Game {
     }
     fn name(self) -> &'static str {
         match self {
+            Self::Stack => "Stack",
             Self::Chess => "Chess",
             Self::Solitaire => "Solitaire",
             Self::Scram => "Scram",
@@ -43,6 +47,7 @@ impl Game {
     }
     fn line(self) -> &'static str {
         match self {
+            Self::Stack => "Make room. Go again.",
             Self::Chess => "Take your time. Make your move.",
             Self::Solitaire => "A quiet hand of Klondike.",
             Self::Scram => "Keep moving. They are behind you.",
@@ -52,6 +57,7 @@ impl Game {
     }
     fn image(self) -> egui::ImageSource<'static> {
         match self {
+            Self::Stack => egui::include_image!("../../games/stack/docs/stack-game.png"),
             Self::Chess => egui::include_image!("../../games/chess/docs/preview.png"),
             Self::Solitaire => {
                 egui::include_image!("../../games/solitaire/docs/screenshots/table.png")
@@ -66,6 +72,14 @@ trait ArcadeGame: eframe::App {
     fn suspend(&mut self) {}
     fn finished(&mut self) -> bool {
         false
+    }
+}
+impl ArcadeGame for omarchy_stack::app::StackApp {
+    fn suspend(&mut self) {
+        self.suspend();
+    }
+    fn finished(&mut self) -> bool {
+        omarchy_stack::app::StackApp::finished(self)
     }
 }
 impl ArcadeGame for omarchy_chess::ui::ChessApp {}
@@ -108,6 +122,7 @@ impl Arcade {
         let result = (|| -> Result<Active, String> {
             let mut lock: Option<Box<dyn std::any::Any>> = None;
             let app: Box<dyn ArcadeGame> = match game {
+                Game::Stack => Box::new(omarchy_stack::app::StackApp::new()),
                 Game::Chess => {
                     let dir = omarchy_chess::storage::state_dir();
                     lock = Some(Box::new(omarchy_chess::storage::SessionLock::acquire(
@@ -184,12 +199,12 @@ impl Arcade {
             if i.consume_key(egui::Modifiers::NONE, Key::ArrowRight)
                 || i.consume_key(egui::Modifiers::NONE, Key::ArrowDown)
             {
-                self.selected = (self.selected + 1) % 5;
+                self.selected = (self.selected + 1) % Game::ALL.len();
             }
             if i.consume_key(egui::Modifiers::NONE, Key::ArrowLeft)
                 || i.consume_key(egui::Modifiers::NONE, Key::ArrowUp)
             {
-                self.selected = (self.selected + 4) % 5;
+                self.selected = (self.selected + Game::ALL.len() - 1) % Game::ALL.len();
             }
             play = i.consume_key(egui::Modifiers::NONE, Key::Enter);
         });
@@ -223,7 +238,7 @@ impl Arcade {
             )
             .show(ctx, |ui| {
                 ui.label(
-                    RichText::new("OMARCHY / FIVE GOOD WAYS TO WASTE AN EVENING")
+                    RichText::new("OMARCHY / SIX GOOD WAYS TO WASTE AN EVENING")
                         .monospace()
                         .size(11.)
                         .color(self.theme.accent),
@@ -252,7 +267,7 @@ impl Arcade {
                     ui.vertical(|ui| {
                         ui.add_space(height * 0.16);
                         ui.label(
-                            RichText::new(format!("0{} / 05", self.selected + 1))
+                            RichText::new(format!("0{} / 06", self.selected + 1))
                                 .monospace()
                                 .color(self.theme.accent),
                         );
@@ -279,7 +294,7 @@ impl Arcade {
                     });
                 });
                 ui.add_space(18.);
-                ui.columns(5, |cols| {
+                ui.columns(Game::ALL.len(), |cols| {
                     for (i, col) in cols.iter_mut().enumerate() {
                         let g = Game::ALL[i];
                         let stroke = egui::Stroke::new(
@@ -397,7 +412,7 @@ impl eframe::App for Arcade {
         }
         if self.about {
             egui::Window::new("About Omarchy Arcade").open(&mut self.about).show(ctx,|ui|{
-            ui.heading("Omarchy Arcade");ui.label(concat!("Version ",env!("CARGO_PKG_VERSION")));ui.label("Five native games. A community project for Omarchy.");
+            ui.heading("Omarchy Arcade");ui.label(concat!("Version ",env!("CARGO_PKG_VERSION")));ui.label("Six native games. A community project for Omarchy.");
             ui.label("Original game artwork and engines; credits and licences are included with the app.");ui.label("Ctrl+H returns to Arcade. Each game keeps its own controls and saves.");
         });
         }
@@ -443,7 +458,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 return Ok(());
             }
             "--help" | "-h" => {
-                println!("Omarchy Arcade\n--game chess|solitaire|scram|invaders|pinball\n--screenshot PATH\n--compact\n--version\nCtrl+H: return to Arcade. Ctrl+Q: quit.");
+                println!("Omarchy Arcade\n--game chess|solitaire|scram|invaders|pinball|stack\n--screenshot PATH\n--compact\n--version\nCtrl+H: return to Arcade. Ctrl+Q: quit.");
                 return Ok(());
             }
             "--game" => {
