@@ -18,7 +18,7 @@ impl Game {
     }
     fn crop(self) -> Rect {
         let (a, b) = match self {
-            Self::Pinball => ([0.10, 0.025], [0.66, 0.99]),
+            Self::Pinball => ([0.0, 0.03], [1.0, 1.0]),
             Self::Solitaire => ([0.0, 0.16], [1.0, 0.86]),
             Self::Scram => ([0.22, 0.21], [0.78, 0.90]),
             Self::Invaders => ([0.10, 0.16], [0.90, 0.94]),
@@ -62,6 +62,7 @@ impl Arcade {
         let mut play = false;
         // Arrow navigation selects, Enter launches. Tab remains standard widget navigation.
         let widget_focused = ctx.wants_keyboard_input();
+        let previous_selection = self.selected;
         {
             ctx.input_mut(|i| {
                 if i.consume_key(egui::Modifiers::NONE, Key::ArrowDown)
@@ -75,6 +76,13 @@ impl Arcade {
                     self.selected = (self.selected + Game::ALL.len() - 1) % Game::ALL.len();
                 }
                 play = !widget_focused && i.consume_key(egui::Modifiers::NONE, Key::Enter);
+            });
+        }
+        if self.selected != previous_selection {
+            ctx.memory_mut(|m| {
+                if let Some(id) = m.focused() {
+                    m.surrender_focus(id);
+                }
             });
         }
         egui::CentralPanel::default()
@@ -265,13 +273,7 @@ impl Arcade {
                         muted,
                     );
                     if selected {
-                        p.text(
-                            Pos2::new(row.right() - 15., cy),
-                            Align2::RIGHT_CENTER,
-                            "●",
-                            FontId::proportional(9.),
-                            accent,
-                        );
+                        p.circle_filled(Pos2::new(row.right() - 18., cy), 2.5, accent);
                     }
                     if response.clicked()
                         || (response.has_focus() && ui.input(|i| i.key_pressed(Key::Space)))

@@ -257,7 +257,7 @@ impl eframe::App for Arcade {
                 )
                 .show(ctx, |ui| {
                     ui.horizontal(|ui| {
-                        home |= ui.button("←  Arcade    Ctrl+H").clicked();
+                        home |= ui.button("Arcade    Ctrl+H").clicked();
                         ui.separator();
                         ui.label(
                             egui::RichText::new(a.game.name())
