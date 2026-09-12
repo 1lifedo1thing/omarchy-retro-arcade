@@ -1,24 +1,32 @@
 # Omarchy Arcade
 
-Nine games. One native app. One more go.
+**Nine games. One native app. One more go.**
 
-**Circuit Pinball · Solitaire · Scram · Invaders · Chess · Stack · Snake · Bubble · Blast**
+A collection of classic games for Omarchy. Play pinball, cards, puzzles and arcade games in one native window, with offline play, local saves and an interface that follows your desktop theme.
 
-![The native Omarchy Arcade app](docs/polish/shelf.png)
+**[Try the preview](#install)** · [See every game](docs/PRESENTATION.md#actual-application-captures)
 
-Open Arcade, choose a game and play in the same window. `Ctrl+H` returns to the collection; `Ctrl+Q` closes Arcade. The games retain their approved artwork, settings, controls and local saves. Everything works offline.
+![Omarchy Arcade's opening collection, with a full Pinball preview and all nine games in the selector](docs/polish/shelf.png)
+
+Circuit Pinball · Solitaire · Scram · Invaders · Chess · Stack · Snake · Bubble · Blast
+
+**Development preview for x86_64 Omarchy.** The nine-game build passes native Linux and Arch installation checks. [Verification and remaining desktop playtesting](docs/VERIFICATION.md).
 
 ## Install
 
-Download the `arch-package` artifact from a successful [nine-game Arcade build](https://github.com/tcballard/omarchy-retro-arcade/pull/3/checks), extract the archive, then install the `.pkg.tar.zst` file. The collection is in review; earlier packages contain fewer games:
+1. [Download the verified nine-game preview](https://github.com/tcballard/omarchy-retro-arcade/actions/runs/34690454743/artifacts/10296419019) from GitHub Actions. Sign in to GitHub if prompted.
+2. Extract the ZIP and open a terminal in the extracted folder.
+3. Install the package:
 
 ```sh
 sudo pacman -U ./omarchy-retro-arcade-*.pkg.tar.zst
 ```
 
-The package includes every game and a private Stockfish engine. It replaces conflicting standalone game packages without deleting their user data. There is one desktop entry: **Omarchy Arcade**. No account or additional game downloads.
+Open **Omarchy Arcade** from your app launcher. Choose a game with the arrow keys and press `Enter`. `Ctrl+H` returns to the collection; `Ctrl+Q` quits.
 
-Development preview. See the [presentation and native screenshots](docs/PRESENTATION.md); real Omarchy desktop acceptance is tracked in [verification](docs/VERIFICATION.md).
+The package includes all nine games and a bundled Stockfish engine for Chess. It replaces conflicting standalone game packages while retaining their existing save files and settings. The app works offline and needs no account.
+
+This is a tested development build from 12 September 2026, not a stable release or an official Omarchy package. The download supports **x86_64**; an ARM package is not available yet. GitHub's artifact expires on 11 December 2026. After that, use a newer successful build from [Actions](https://github.com/tcballard/omarchy-retro-arcade/actions/workflows/arcade.yml) or [build from source](#build).
 
 ## Build
 
