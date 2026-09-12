@@ -81,3 +81,16 @@
 - Keep classic merging, spawning, score, win/continue and the current source's 20-move undo. Preserve the latest rapid-move fix's intent: animations have no independent mutable board and completion renders authoritative state. Reduced motion is optional. No audio is added to the silent source game.
 - Use a versioned `omarchy-retro-arcade/2048.json` save, private atomic writes and bounded loading. Save all moves, undo, best score and preferences; invalid/future files remain untouched and play continues with an explicit unsaved-state message. No existing game data or standalone Tauri/browser localStorage is migrated or removed.
 - Append 2048 to the shelf. Existing ordering and commands remain intact. Mouse direction buttons and board dragging supplement arrows/WASD. Keep headless X11 results distinct from hands-on Omarchy/Wayland acceptance.
+
+## FreeSki first human tuning revision (12 September 2026)
+
+- Tyler reported low top speed and steering that looked like leaning. Rules 2
+  raises the cap from 22 to 50 m/s with gradual acceleration, permits ±90° turns,
+  and retains keyboard heading on release. Ski/foot orientation turns while the
+  standing body stays upright. Turn rate is 1.6 rad/s; no uphill movement is added.
+- The fixed view becomes 96 × 96 m with the skier at 12%, giving 84.48 m ahead.
+  Course 1, collision, jumps and crash allowances remain intact. Human acceptance
+  of the faster speed and shorter reaction window is still required.
+- Explicit rules-1 migration retains the complete run, records and preferences,
+  restores paused, and backs up the original file before the next atomic write.
+  Schema/course versions remain 1; invalid/future saves retain existing recovery.

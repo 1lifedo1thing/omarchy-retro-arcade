@@ -85,8 +85,41 @@ pub fn load(path: &Path, obstacles: &[Obstacle]) -> Result<Save, String> {
     }
     let mut save: Save = serde_json::from_slice(&bytes)
         .map_err(|_| "Unreadable FreeSki save. Original retained.".to_string())?;
+    let legacy = save.rules_version == 1;
+    if legacy {
+        // Rules 2 widens the old numeric bounds without changing state shape.
+        // Validate the old limits before accepting this explicit migration.
+        if save.run.speed > 22. || save.run.heading.abs() > 1.35 {
+            return Err("Invalid rules-1 FreeSki save. Original retained.".into());
+        }
+        save.rules_version = RULES_VERSION;
+    }
     if !save.valid(obstacles) {
         return Err("Incompatible or invalid FreeSki save. Original retained.".into());
+    }
+    if legacy {
+        // Preserve the original inode before a later atomic save replaces it.
+        // Reopening without a write reuses the matching backup.
+        let mut retained = false;
+        for n in 1..=10000 {
+            let backup = path.with_extension(format!("rules-1-{n}.json"));
+            match fs::hard_link(path, &backup) {
+                Ok(()) => {
+                    retained = true;
+                    break;
+                }
+                Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
+                    if fs::read(&backup).ok().as_deref() == Some(bytes.as_slice()) {
+                        retained = true;
+                        break;
+                    }
+                }
+                Err(e) => return Err(format!("Could not retain rules-1 save: {e}")),
+            }
+        }
+        if !retained {
+            return Err("No free migration backup filename; original retained.".into());
+        }
     }
     save.run.pause();
     save.record_result();

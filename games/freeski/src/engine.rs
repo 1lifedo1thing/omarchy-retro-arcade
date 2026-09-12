@@ -3,11 +3,12 @@ use crate::{
     world::{self, Kind, Obstacle},
 };
 use serde::{Deserialize, Serialize};
-pub const RULES_VERSION: u32 = 1;
+pub const RULES_VERSION: u32 = 2;
 pub const HZ: u32 = 60;
 pub const DT: f64 = 1. / HZ as f64;
-pub const MAX_SPEED: f64 = 22.;
-pub const MAX_HEADING: f64 = 1.35;
+pub const MAX_SPEED: f64 = 50.;
+pub const MAX_HEADING: f64 = std::f64::consts::FRAC_PI_2;
+pub const TURN_RATE: f64 = 1.6;
 pub const RADIUS: f64 = 0.65;
 pub const JUMP_DURATION: f64 = 1.2;
 pub const JUMP_HEIGHT: f64 = 2.5;
@@ -142,10 +143,10 @@ impl Sim {
         } else {
             0.
         };
-        let turn = 2.4 * DT * if self.jump.is_some() { 0.4 } else { 1. };
+        let turn = TURN_RATE * DT * if self.jump.is_some() { 0.4 } else { 1. };
         self.heading += (desired - self.heading).clamp(-turn, turn);
         let accel = 6.5 * self.heading.cos()
-            - 0.10 * self.speed
+            - 0.05 * self.speed
             - 4.5 * self.heading.sin().abs()
             - if input.brake { 18. } else { 0. };
         self.speed = (self.speed + accel * DT).clamp(0., MAX_SPEED);

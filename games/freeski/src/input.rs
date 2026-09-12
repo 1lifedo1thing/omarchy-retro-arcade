@@ -17,6 +17,7 @@ impl Controls {
         field: Rect,
         skier: Pos2,
         brake_button: bool,
+        current_heading: f64,
     ) -> (Input, bool) {
         let keys = [
             Key::A,
@@ -32,7 +33,13 @@ impl Controls {
             if !keys.iter().any(|k| i.key_down(*k)) && !i.pointer.any_down() {
                 self.armed = true;
             }
-            return (Input::default(), false);
+            return (
+                Input {
+                    heading: current_heading,
+                    brake: false,
+                },
+                false,
+            );
         }
         let mut intentional = false;
         for event in &i.events {
@@ -75,6 +82,8 @@ impl Controls {
         let left = i.key_down(Key::A) || i.key_down(Key::ArrowLeft);
         let heading = if self.mouse {
             self.target
+        } else if right == left {
+            current_heading
         } else {
             (i32::from(right) - i32::from(left)) as f64 * MAX_HEADING
         };
@@ -109,7 +118,7 @@ mod tests {
                     focused: true,
                     ..Default::default()
                 },
-                |ctx| result = ctx.input(|i| controls.sample(i, field, skier, false)),
+                |ctx| result = ctx.input(|i| controls.sample(i, field, skier, false, 0.4)),
             );
             result.0
         };
@@ -125,13 +134,13 @@ mod tests {
         };
         assert!(sample(vec![key(true)], &mut c).heading < 0.);
         assert!(sample(vec![], &mut c).heading < 0.);
-        assert_eq!(sample(vec![key(false)], &mut c).heading, 0.);
+        assert_eq!(sample(vec![key(false)], &mut c).heading, 0.4);
         sample(vec![Event::PointerMoved(Pos2::new(450., 250.))], &mut c);
         let outside = sample(vec![Event::PointerMoved(Pos2::new(550., 250.))], &mut c);
         assert!(outside.heading > 0.);
         sample(vec![key(true)], &mut c);
         c.clear();
-        assert_eq!(sample(vec![], &mut c).heading, 0.);
+        assert_eq!(sample(vec![], &mut c).heading, 0.4);
         sample(vec![key(false)], &mut c);
         assert!(sample(vec![key(true)], &mut c).heading < 0.);
     }

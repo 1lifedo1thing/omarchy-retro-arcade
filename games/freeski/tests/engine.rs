@@ -31,7 +31,7 @@ fn acceleration_braking_bounded_turning_and_no_uphill() {
         },
         &[],
     );
-    assert!((s.heading - 2.4 * DT).abs() < 1e-10);
+    assert!((s.heading - TURN_RATE * DT).abs() < 1e-10);
     for _ in 0..180 {
         let y = s.position.y;
         s.step(
@@ -316,4 +316,83 @@ fn practice_reference_run_finishes_using_only_production_controls() {
         s.ticks as f64 / 60.,
         s.crashes
     );
+}
+
+#[test]
+fn speed_builds_gradually_and_quarter_turn_traverses_without_downhill_drift() {
+    let mut s = running();
+    for _ in 0..60 {
+        s.step(Input::default(), &[]);
+    }
+    assert!((6.0..6.5).contains(&s.speed));
+    for _ in 60..300 {
+        s.step(Input::default(), &[]);
+    }
+    assert!((28.0..30.0).contains(&s.speed));
+    for _ in 300..600 {
+        s.step(Input::default(), &[]);
+    }
+    assert_eq!(s.speed, 50.);
+    for side in [-1., 1.] {
+        let mut turn = running();
+        turn.speed = 10.;
+        let input = Input {
+            heading: side * MAX_HEADING,
+            brake: false,
+        };
+        for _ in 0..60 {
+            turn.step(input, &[]);
+        }
+        assert_eq!(turn.heading, side * std::f64::consts::FRAC_PI_2);
+        let at = turn.position;
+        for _ in 0..30 {
+            turn.step(input, &[]);
+        }
+        assert!((turn.position.y - at.y).abs() < 1e-10);
+        assert!((turn.position.x - at.x) * side > 1.);
+        for _ in 0..60 {
+            turn.step(Input::default(), &[]);
+        }
+        assert_eq!(turn.heading, 0.);
+        assert!(turn.position.y > at.y);
+    }
+}
+
+#[test]
+fn rules_one_migration_retains_original_run_records_and_preferences() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("freeski.json");
+    let items = world::practice();
+    let mut old = Save {
+        rules_version: 1,
+        best_distance: world::FINISH,
+        completions: 3,
+        reduced_effects: true,
+        ..Save::default()
+    };
+    old.run = running();
+    old.run.speed = 22.;
+    old.run.heading = 1.35;
+    old.run.jump = Some(0.4);
+    let bytes = serde_json::to_vec(&old).unwrap();
+    std::fs::write(&path, &bytes).unwrap();
+    let migrated = storage::load(&path, &items).unwrap();
+    old.rules_version = RULES_VERSION;
+    old.run.pause();
+    assert_eq!(migrated, old);
+    assert_eq!(storage::load(&path, &items).unwrap(), migrated);
+    assert!(!path.with_extension("rules-1-2.json").exists());
+    assert_eq!(std::fs::read(&path).unwrap(), bytes);
+    storage::write(&path, &migrated, &items).unwrap();
+    assert_eq!(
+        std::fs::read(path.with_extension("rules-1-1.json")).unwrap(),
+        bytes
+    );
+    assert_eq!(storage::load(&path, &items).unwrap(), migrated);
+    old.rules_version = 1;
+    old.run.speed = 30.;
+    let invalid = serde_json::to_vec(&old).unwrap();
+    std::fs::write(&path, &invalid).unwrap();
+    assert!(storage::load(&path, &items).is_err());
+    assert_eq!(std::fs::read(&path).unwrap(), invalid);
 }

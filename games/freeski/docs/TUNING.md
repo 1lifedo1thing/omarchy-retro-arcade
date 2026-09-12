@@ -1,7 +1,7 @@
 # FreeSki tuning register
 
-Initial implementation values for practice rules/course v1. These have automated
-reference evidence; they have not yet been calibrated by a human playtest.
+Initial implementation values for practice rules/course v1. Retained as the initial baseline; the first human feedback and rules-2 revision
+are recorded below.
 
 | Parameter | Initial value | Reason / evidence |
 | --- | --- | --- |
@@ -41,4 +41,25 @@ run passed. Keep this behavior visible; do not hide slow frames by skipping tick
 
 Record date, commit, parameter old/new values and units, course/seed, input method,
 display conditions, observed problem, evidence and next hypothesis.
-No human tuning sessions have been recorded yet.
+### 2026-09-12: speed and steering (rules 2, course 1)
+
+Tyler tested the initial native build (implementation `acf6286`, playtest checkout
+`cef046c`) and reported that top speed was much too low. He wanted gradual buildup
+to a much higher speed, and A/D to turn the skier through 90° rather than make him
+lean. Keyboard input is confirmed by the feedback; exact display size/rate and
+elapsed play time were not reported.
+
+| Parameter | Old → new | Reason |
+| --- | --- | --- |
+| Speed cap | 22 → 50 m/s | 2.27× maximum speed; straight buildup about 9.7 s |
+| Linear drag | 0.10 → 0.05 /s | Same initial acceleration, sustained buildup |
+| Turn rate / limit | 2.4 → 1.6 rad/s; ±1.35 → ±π/2 rad | Deliberate quarter-turn in about 0.98 s |
+| Keyboard release | Return downhill → retain heading | Turning sets direction; opposite key turns back |
+| View / skier anchor | 96 × 72 → 96 × 96 m; 24% → 12% | 84.48 m ahead, 1.69 s at new maximum speed |
+| Skier geometry | Whole-body rotation → ski yaw and upright body | Sideways traverse reads as a turn; goggles show profile |
+
+Acceleration 6.5 m/s², carving friction, brakes, obstacles, jump arc and crash
+rules are unchanged. Production reference: 1,714 ticks / 28.57 s, three jumps,
+zero crashes. Rules-1 save migration preserves the attempt and records with a
+retained original. This revision still needs Tyler's feel/readability acceptance;
+1.69 s is measured visibility, not proof of comfortable human reaction time.

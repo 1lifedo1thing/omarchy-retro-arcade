@@ -1,6 +1,6 @@
 # FreeSki delivery plan
 
-Status: milestone 1 implemented and under acceptance; human feel/difficulty playtesting remains pending.
+Status: milestone 1 implemented and under acceptance; first human feedback implemented; revised feel/difficulty acceptance remains pending.
 Tracking issue: [#14](https://github.com/tcballard/omarchy-retro-arcade/issues/14).
 Working branch: `feat/freeski`.
 

@@ -96,3 +96,34 @@ Assess turn commitment, braking, hazard reaction time, jump and crash readabilit
 difficulty and resume behavior. Record findings and resulting numerical changes
 in [TUNING.md](TUNING.md). Until that evidence exists, milestone 1 is implemented
 but not fully accepted.
+
+## Rules 2: first human feedback revision (12 September 2026)
+
+Revision: the `fix(freeski): build speed and turn through full sideways headings`
+commit following `cef046c` on `feat/freeski`. Tyler's initial keyboard playtest
+requested much higher top speed and turning through 90° instead of leaning.
+The resulting parameters and remaining human acceptance are in TUNING.md.
+
+- PASS: workspace formatting, strict Clippy, all 234 workspace tests with
+  Stockfish 17.1, and release Rust/native build. FreeSki has 21 frontend/engine/
+  storage tests; its separate UI-free build passes all 14 engine/storage tests.
+- PASS: production reference finishes in 1,714 ticks / 28.57 seconds with three
+  jumps and zero crashes. Tests measure gradual speed buildup, true left/right
+  traverses, keyboard release retaining heading, and legacy-save migration.
+- PASS: native X11 dark, light, compact and 200% runs: visible start, mouse/keyboard
+  handover, full 90° turn and retained heading after release/resume, pause/focus/
+  help isolation, same-window shelf switching, close/reopen, mid-jump/recovery
+  fixtures and corrupt-file retention. Actual captures were inspected at
+  `/tmp/freeski-captures/v2-{dark,light,compact,200}/quarter-turn.png`.
+- Native harness correction: at the faster speed its old five-second opening
+  entered the tree section during the input test, causing a crash/reset in the
+  compact run. The handover sequence now begins on open snow after 2.3 seconds;
+  the compact rerun passes. No collision behavior was bypassed or relaxed.
+- PASS: updated build opened as a native Wayland window. The actual user's save
+  migrated exactly (only rules version changed; restored paused), and its
+  original was verified in the migration backup. Revised human feel/readability
+  acceptance remains pending.
+- Packaging files are unchanged. The previous staged install/upgrade checks
+  remain baseline evidence; package build remains blocked by the missing system
+  `rust>=1.98` prerequisite documented above. Packaging and unchanged Pinball
+  C++ tests were not repeated for this tuning-only revision.

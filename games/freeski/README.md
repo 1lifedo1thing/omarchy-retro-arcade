@@ -5,7 +5,8 @@ An original SkiFree-inspired downhill skiing game inside Omarchy Arcade.
 **Milestone 1 is playable:** one 1,200-metre practice slope with carving, braking,
 ramps, low rocks, trees, three crash allowances, local records and suspended runs.
 Endless skiing, creature pursuit and the five Slalom courses are later milestones.
-Human acceptance of the initial control feel and difficulty is still pending.
+The first human playtest led to faster speed and full sideways turns; acceptance
+of the revised feel and difficulty is still pending.
 
 Build with `scripts/build.sh`, choose FreeSki at the end of the Arcade shelf, or run:
 
@@ -13,7 +14,7 @@ Build with `scripts/build.sh`, choose FreeSki at the end of the Arcade shelf, or
 ./target/release/omarchy-retro-arcade --game freeski
 ```
 
-Enter starts. A/D or Left/Right carve; release to point downhill. Moving the mouse
+Enter starts. Hold A/D or Left/Right to turn up to 90°; release to keep your heading. Moving the mouse
 left/right of the skier selects pointer steering. Hold S, Down, Space, the right
 mouse button on the slope, or the visible brake button to slow down. Ramps launch
 automatically. Esc pauses/resumes; Ctrl+H returns to Arcade. Settings: Ctrl+,.

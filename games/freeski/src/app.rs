@@ -279,7 +279,10 @@ impl App {
             && matches!(self.state.run.phase, Phase::Ready | Phase::Running)
         {
             let skier = render::point(field, &self.state.run, self.state.run.position);
-            let (input, intentional) = ctx.input(|i| self.controls.sample(i, field, skier, brake));
+            let (input, intentional) = ctx.input(|i| {
+                self.controls
+                    .sample(i, field, skier, brake, self.state.run.heading)
+            });
             if intentional && self.state.run.phase == Phase::Ready {
                 self.state.run.start();
                 self.flush();
@@ -344,7 +347,7 @@ impl App {
                 ui.set_max_width(430.);
                 if self.help {
                     ui.heading("Leave your first tracks");
-                    ui.label("A / D or Left / Right carve. Release to point downhill. Move the pointer left or right of the skier to aim your turns. The last steering input takes control.");
+                    ui.label("Hold A / D or Left / Right to turn up to 90°. Release to keep your direction; turn the opposite way to point downhill. Move the pointer left or right of the skier to aim your turns. The last steering input takes control.");
                     ui.label("Hold S, Down, Space, the right mouse button on the slope, or Hold to brake. Striped ramps launch you automatically. Jump over low rocks; trees still cause a crash.");
                     ui.label("Three crashes end your run. The gold ring marks protection after recovery. Cross the finish flags to complete the 1,200 m practice slope.");
                     ui.label("Esc pauses or resumes. Ctrl+H returns to Arcade. Runs save automatically and reopen paused. Ctrl+, opens settings.");
@@ -612,6 +615,35 @@ mod tests {
         h.frame(vec![Harness::key_event(Key::D, true)], DT);
         h.key(Key::Escape);
         assert_eq!(h.app.state.run, saved);
+    }
+    #[test]
+    fn keyboard_turns_to_traverse_and_release_keeps_heading() {
+        let mut h = Harness::new();
+        h.key(Key::Enter);
+        h.frame(vec![Harness::key_event(Key::D, true)], DT);
+        for _ in 0..65 {
+            h.frame(vec![], DT);
+        }
+        assert_eq!(h.app.state.run.heading, crate::engine::MAX_HEADING);
+        let y = h.app.state.run.position.y;
+        h.frame(vec![Harness::key_event(Key::D, false)], DT);
+        for _ in 0..20 {
+            h.frame(vec![], DT);
+        }
+        assert_eq!(h.app.state.run.heading, crate::engine::MAX_HEADING);
+        assert!((h.app.state.run.position.y - y).abs() < 1e-10);
+        h.frame(vec![Harness::key_event(Key::A, true)], DT);
+        for _ in 0..30 {
+            h.frame(vec![], DT);
+        }
+        h.frame(vec![Harness::key_event(Key::A, false)], DT);
+        let heading = h.app.state.run.heading;
+        assert!(heading > 0. && heading < 0.9);
+        for _ in 0..20 {
+            h.frame(vec![], DT);
+        }
+        assert_eq!(h.app.state.run.heading, heading);
+        assert!(h.app.state.run.position.y > y);
     }
     #[test]
     fn render_schedule_and_resize_leave_tick_simulation_equivalent() {

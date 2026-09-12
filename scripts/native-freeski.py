@@ -34,10 +34,11 @@ with tempfile.TemporaryDirectory(prefix='arcade-freeski-') as tmp:
     app,w=launch()
     try:
         assert read()['run']['phase']=='Ready';capture('ready')
-        # Start with the ordinary visible button. The toolbar has a fixed logical origin.
-        click(90*scale,175*scale);time.sleep(5.3)
+        # Start with the ordinary visible button; test input handover on the open snow
+        # before the faster run reaches trees. The toolbar has a fixed logical origin.
+        click(90*scale,175*scale);time.sleep(2.3)
         key(ord('d'),hold=.25);capture('skiing')
-        key(0xff1b);paused=read();assert paused['run']['phase']=='Paused';assert paused['run']['distance']>40
+        key(0xff1b);paused=read();assert paused['run']['phase']=='Paused';assert paused['run']['distance']>10
         capture('paused');time.sleep(.3);assert read()==paused
         key(ord('a'),hold=.1);assert read()==paused
         # Returning focus must not resume, even with a held steering key.
@@ -48,9 +49,9 @@ with tempfile.TemporaryDirectory(prefix='arcade-freeski-') as tmp:
         key(0xff0d)
         # Mouse aim changes heading through the same engine, then fresh keyboard takes over.
         width=900 if variant in ['compact','200'] else 1280
-        move(width/2+80,450);time.sleep(.25);key(0xff1b)
-        assert read()['run']['heading']>0
-        key(0xff0d);key(ord('a'),hold=.35);key(0xff1b);assert read()['run']['heading']<0
+        move(width/2-100,450);time.sleep(.25);key(0xff1b)
+        assert read()['run']['heading']<0
+        key(0xff0d);key(ord('d'),hold=1.1);key(0xff1b);assert read()['run']['heading']>0
         key(0xff0d);key(0xffbe);help_save=read();capture('help');key(ord('d'));assert read()==help_save
         key(0xff1b);assert read()==help_save
         # Same window and exact suspended attempt survive shelf exit and normal close/reopen.
@@ -72,6 +73,15 @@ with tempfile.TemporaryDirectory(prefix='arcade-freeski-') as tmp:
                 time.sleep(.3);assert read()==loaded
                 key(ord('q'),True);app.wait(timeout=8)
                 assert read()==loaded
+        save.unlink()  # Only this script's disposable state, after closing the app.
+        app,w=launch();click(90*scale,175*scale);time.sleep(2.)
+        key(ord('d'),hold=1.1);time.sleep(.2);capture('quarter-turn')
+        key(0xff1b);turned=read()
+        assert abs(turned['run']['heading']-3.141592653589793/2)<1e-10
+        key(0xff0d);time.sleep(.3);key(0xff1b);released=read()
+        assert released['run']['heading']==turned['run']['heading']
+        assert abs(released['run']['position']['y']-turned['run']['position']['y'])<1e-10
+        key(ord('q'),True);app.wait(timeout=8)
         save.write_text('future-save-do-not-replace')
         app,w=launch();capture('save-error');key(0xff0d);key(ord('q'),True);app.wait(timeout=8)
         assert save.read_text()=='future-save-do-not-replace'

@@ -4,16 +4,16 @@ use crate::{
 };
 use eframe::egui::{self, Align2, Color32, FontId, Pos2, Rect, Shape, Stroke, Vec2};
 pub const VIEW_WIDTH: f64 = 96.;
-pub const VIEW_HEIGHT: f64 = 72.;
+pub const VIEW_HEIGHT: f64 = 96.;
 pub fn field(area: Rect) -> Rect {
-    let w = area.width().min(area.height() * 4. / 3.);
-    Rect::from_center_size(area.center(), Vec2::new(w, w * 0.75))
+    let w = area.width().min(area.height());
+    Rect::from_center_size(area.center(), Vec2::splat(w))
 }
 pub fn point(field: Rect, sim: &Sim, p: Point) -> Pos2 {
     Pos2::new(
         field.center().x + (p.x / VIEW_WIDTH) as f32 * field.width(),
         field.top()
-            + field.height() * 0.24
+            + field.height() * 0.12
             + ((p.y - sim.position.y) / VIEW_HEIGHT) as f32 * field.height(),
     )
 }
@@ -194,26 +194,36 @@ pub fn draw(
             Stroke::new(0.27 * scale, ink),
         );
     }
+    // Yaw belongs to the skis/feet. Keep the standing body vertical in the
+    // oblique view so a traverse reads as turning, rather than falling over.
+    let body = |v: Vec2| if sim.tumble > 0 { rotate(v) } else { v };
     let jacket = Color32::from_rgb(206, 89, 49);
+    let hip = skier - body(Vec2::new(0., 0.65)) * scale;
+    for dx in [-0.55, 0.55] {
+        let boot = skier + rotate(Vec2::new(dx, 0.)) * scale;
+        p.line_segment([hip, boot], Stroke::new(0.38 * scale, ink));
+    }
+    let shoulder = skier - body(Vec2::new(0., 1.65)) * scale;
+    p.line_segment([hip, shoulder], Stroke::new(1.25 * scale, jacket));
+    let head = skier - body(Vec2::new(0., 2.25)) * scale;
+    p.circle_filled(head, 0.65 * scale, Color32::from_rgb(248, 224, 174));
+    // Goggles shift toward the direction of travel, showing left/right profile.
+    let facing = sim.heading.sin() as f32;
     p.line_segment(
         [
-            skier - rotate(Vec2::new(0., 1.)) * scale,
-            skier + rotate(Vec2::new(0., 0.35)) * scale,
+            head + Vec2::new(facing * 0.35 - 0.3, 0.15) * scale,
+            head + Vec2::new(facing * 0.35 + 0.3, 0.15) * scale,
         ],
-        Stroke::new(1.35 * scale, jacket),
+        Stroke::new(0.22 * scale, ink),
     );
-    p.circle_filled(
-        skier - rotate(Vec2::new(0., 1.3)) * scale,
-        0.65 * scale,
-        Color32::from_rgb(248, 224, 174),
-    );
-    p.line_segment(
-        [
-            skier + rotate(Vec2::new(-1.15, -0.1)) * scale,
-            skier + rotate(Vec2::new(1.15, -0.1)) * scale,
-        ],
-        Stroke::new(0.28 * scale, jacket),
-    );
+    for side in [-1., 1.] {
+        let hand = shoulder + body(Vec2::new(side * 0.95, 0.65)) * scale;
+        p.line_segment([shoulder, hand], Stroke::new(0.3 * scale, jacket));
+        p.line_segment(
+            [hand, hand + rotate(Vec2::new(0., -1.5)) * scale],
+            Stroke::new(0.12 * scale, ink),
+        );
+    }
     if sim.phase == Phase::Ready {
         p.text(
             ground + Vec2::new(0., 5. * scale),

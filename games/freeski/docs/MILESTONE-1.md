@@ -5,7 +5,7 @@ readability and difficulty remains pending; this milestone is not marked accepte
 
 The user authorized implementation on 12 September 2026. Initial choices and
 reference evidence are in [TUNING.md](TUNING.md); actual behavior is in
-[RULES.md](RULES.md). The agenda below now guides the first human playtest.
+[RULES.md](RULES.md). The agenda below now guides follow-up human playtesting.
 
 ## Outcome
 
@@ -43,20 +43,23 @@ and reliable pause/save/resume. Use the production engine from the first build.
 - [ ] Playtest keyboard and mouse separately, then input handover; revise the
   same slope until steering, braking and hazard visibility feel coherent.
 - [x] Record focused engine/storage checks, native flows, actual app captures
-  in [VERIFICATION.md](VERIFICATION.md); human playtest findings remain pending.
+  in [VERIFICATION.md](VERIFICATION.md); first human findings and the resulting retune are recorded.
 
 ## Exit checklist
 
 - [x] Both input methods support an understandable skiing flow in Arcade.
-- [x] The compact view preserves 54.72 m of look-ahead at maximum speed; human
+- [x] The compact view preserves 84.48 m of look-ahead at maximum speed; human
   reaction-time validation remains pending.
 - [x] Braking reliably slows the skier; movement never teleports or goes uphill.
 - [x] Jumps clear only appropriate hazards; one impact causes one crash and a
   safe recovery. The final crash presents results rather than silently restarting.
 - [x] Pause/focus loss stops simulation; overlays consume input; resume is deliberate.
 - [x] Leaving/reopening preserves the attempt, including a jump or recovery.
-- [ ] A human playtest records what feels good, what remains awkward and the
+- [x] A human playtest records what feels good, what remains awkward and the
   resulting tuning changes. Headless checks alone do not pass this milestone.
+
+Tyler’s first playtest requested much higher top speed and true 90° turns. Rules 2
+implements that feedback; acceptance of the revised feel remains open.
 
 The initial playable uses one authored practice slope. Endless generation,
 creature pursuit and the five-course Slalom progression follow after its movement
