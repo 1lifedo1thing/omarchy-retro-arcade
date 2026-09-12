@@ -79,6 +79,8 @@ with tempfile.TemporaryDirectory(prefix='arcade-mouse-') as tmp:
                 home()
         # Invaders: resume with the mouse, steer and fire, then verify the saved state.
         select(3); play('Invaders')
+        save = state/'omarchy-invaders/session.json'
+        initial = json.loads(save.read_text())['game']
         # Use the board's visible Resume button (geometry is authored in game units).
         # Native capture below records the exact layout for review.
         shot('invaders-paused')
@@ -88,12 +90,17 @@ with tempfile.TemporaryDirectory(prefix='arcade-mouse-') as tmp:
         move(w*.72,h*.7)
         xt.XTestFakeButtonEvent(display,1,1,0); x.XFlush(display); time.sleep(.3)
         xt.XTestFakeButtonEvent(display,1,0,0); x.XFlush(display)
+        key(ord('p'))  # Freeze the evidence before screenshot and shelf navigation.
         shot('invaders-mouse')
         home()
-        data=json.loads((state/'omarchy-invaders/session.json').read_text())
+        data=json.loads(save.read_text())
         assert data['game']['ship'] > 430, data['game']['ship']
         assert data['game']['tick'] > 0
-        assert data['game']['shots'], 'Held primary button did not fire'
+        # Shots can already have struck a bunker by the time we save. Only firing
+        # resets the cooldown; without firing it falls by exactly one dt per tick.
+        elapsed = (data['game']['tick'] - initial['tick']) / 120
+        assert data['game']['cooldown'] + elapsed > initial['cooldown'] + .1, \
+            ('Held primary button did not fire', initial, data['game'])
         # Arrow input takes control back after mouse input.
         play('Invaders'); key(ord('p')); key(0xff51,hold=.5); home()
         later=json.loads((state/'omarchy-invaders/session.json').read_text())
