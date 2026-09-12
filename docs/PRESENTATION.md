@@ -53,3 +53,9 @@ Captured from the native executable at revision `4e7da43023191548a410c50e09e7947
 | Blast | [Open screenshot](polish/blast.png) |
 
 [Light collection](polish/shelf-light.png) · [Compact collection](polish/shelf-compact.png)
+
+## FreeSki practice slope
+
+The eleventh source-build game uses an original snowy practice slope and geometric
+skier/obstacles inside the existing cabinet.
+[Actual app captures and acceptance notes](../games/freeski/docs/VERIFICATION.md#actual-app-captures).

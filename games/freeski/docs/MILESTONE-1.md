@@ -1,7 +1,11 @@
 # Milestone 1: the playable practice slope
 
-Status: discussion brief. No movement model, numerical tuning or visual design
-has been implemented or accepted yet.
+Status: implemented with automated evidence. Human acceptance of skiing feel,
+readability and difficulty remains pending; this milestone is not marked accepted.
+
+The user authorized implementation on 12 September 2026. Initial choices and
+reference evidence are in [TUNING.md](TUNING.md); actual behavior is in
+[RULES.md](RULES.md). The agenda below now guides the first human playtest.
 
 ## Outcome
 
@@ -9,7 +13,7 @@ Open FreeSki from the Arcade shelf and ski a short authored practice slope with
 readable hazards, satisfying steering and braking, ramps, understandable crashes,
 and reliable pause/save/resume. Use the production engine from the first build.
 
-## Discussion agenda
+## Human playtest agenda
 
 1. **Skiing feel:** how much momentum and turn commitment should carving have?
    How forgiving should braking and recovery feel to a first-time player?
@@ -23,33 +27,34 @@ and reliable pause/save/resume. Use the production engine from the first build.
 5. **Visual direction:** original skier and obstacle silhouettes; snow values,
    shadow treatment and active-theme accents inside the shared cabinet.
 
-## Implementation sequence after discussion
+## Implementation checklist
 
-- [ ] Record the chosen initial feel, camera and practice flow; fill initial
+- [x] Record the chosen initial feel, camera and practice flow; fill initial
   values in [TUNING.md](TUNING.md).
-- [ ] Register the Rust library and build serializable simulation state,
+- [x] Register the Rust library and build serializable simulation state,
   normalized input, fixed stepping and a minimal native playfield.
-- [ ] Integrate shelf entry, Ready/start, pause, deliberate resume, results,
+- [x] Integrate shelf entry, Ready/start, pause, deliberate resume, results,
   restart and return to Arcade; clear held input through overlays/switching.
-- [ ] Build movement and camera on open snow, then add swept collisions and
+- [x] Build movement and camera on open snow, then add swept collisions and
   validated single-crash recovery, followed by ramps and height-aware landing.
-- [ ] Add versioned bounded save loading and private atomic writing; restore
+- [x] Add versioned bounded save loading and private atomic writing; restore
   paused and preserve unsupported files. Save on lifecycle boundaries and at
   checkpoints. Confirm replacement of unfinished progress.
 - [ ] Playtest keyboard and mouse separately, then input handover; revise the
   same slope until steering, braking and hazard visibility feel coherent.
-- [ ] Record focused engine/storage checks, native flows, actual app captures
-  and human playtest findings in [VERIFICATION.md](VERIFICATION.md).
+- [x] Record focused engine/storage checks, native flows, actual app captures
+  in [VERIFICATION.md](VERIFICATION.md); human playtest findings remain pending.
 
 ## Exit checklist
 
-- [ ] Both input methods support an understandable skiing flow in Arcade.
-- [ ] Maximum-speed hazards are visible early enough to react in compact view.
-- [ ] Braking reliably slows the skier; movement never teleports or goes uphill.
-- [ ] Jumps clear only appropriate hazards; one impact causes one crash and a
+- [x] Both input methods support an understandable skiing flow in Arcade.
+- [x] The compact view preserves 54.72 m of look-ahead at maximum speed; human
+  reaction-time validation remains pending.
+- [x] Braking reliably slows the skier; movement never teleports or goes uphill.
+- [x] Jumps clear only appropriate hazards; one impact causes one crash and a
   safe recovery. The final crash presents results rather than silently restarting.
-- [ ] Pause/focus loss stops simulation; overlays consume input; resume is deliberate.
-- [ ] Leaving/reopening preserves the attempt, including a jump or recovery.
+- [x] Pause/focus loss stops simulation; overlays consume input; resume is deliberate.
+- [x] Leaving/reopening preserves the attempt, including a jump or recovery.
 - [ ] A human playtest records what feels good, what remains awkward and the
   resulting tuning changes. Headless checks alone do not pass this milestone.
 

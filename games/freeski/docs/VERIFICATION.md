@@ -1,51 +1,98 @@
 # FreeSki acceptance and evidence
 
-Status: documentation setup only. No FreeSki runtime checks or playtests have run.
-This table follows all acceptance bullets in the [issue snapshot](REQUIREMENTS.md).
+Milestone 1 is implemented. Automated practice-slope checks pass; human control
+feel and difficulty acceptance remains pending. Later milestones are not complete.
+The full issue #14 remains open.
 
-| ID | Acceptance area | Milestones | Required evidence | Status |
-| --- | --- | --- | --- | --- |
-| A1 | Deterministic movement/braking, continuous collisions, jump clearance, single-event safe recovery | 1–2 | Focused production-engine scenarios including high-speed and overlapping hazards | Not run |
-| A2 | Gate direction/order/misses, finish precedence, timer boundaries, exactly-once records | 2, 4 | Event-order and result persistence tests; fatal event at/before finish case | Not run |
-| A3 | Connected traversable seeds, safe recovery, bounded generation/memory | 3 | Versioned seed corpus, production-engine traversal including chunk seams, bounded retries/fallback and long-run measurements | Not run |
-| A4 | Chase warning/spawn/catch, chase-off isolation, pause/resume | 3 | Deterministic pursuit cases and human evasion evidence | Not run |
-| A5 | Five completable Slalom courses and calibrated medals/chase | 3–4 | Five repeatable production-engine completions and human playtest notes | Not run |
-| A6 | Mouse-only/keyboard-only flows, handover, overlays, focus, compact targets | 1, 5 | Native input scenarios and hands-on flows through start, pause, settings, restart, results and shelf | Not run |
-| A7 | Faithful save/reopen for jumps, recovery, pursuit and Slalom | 1–4 | Compare continuous and restored outcomes; records/unlocks preserved; corrupt/future/incompatible files retained; lifecycle flush checks | Not run |
-| A8 | Render-rate equivalence and resize independence | 2 | Same tick inputs under multiple render schedules and sizes; backlog pauses instead of skipping simulation | Not run |
-| A9 | Actual light/dark, compact and 200% app captures | 1, 5 | Captures from the built app, visually reviewed with commit and display details | Not run |
-| A10 | Workspace quality, native switching, install/upgrade and desktop acceptance | 5 | CI/local check results, installed package run and save preservation; separate Omarchy/Wayland report | Not run |
-| A11 | Shelf/help/About, original provenance, rules/controls and decisions | 1, 5 | Content/link review and actual app inspection | Not run |
+## Acceptance tracker
 
-## Checks to run when implementation exists
+| ID | Acceptance area | Current evidence / status |
+| --- | --- | --- |
+| A1 | Movement/braking, continuous collision, jumping and single-event recovery | Practice engine tests pass, including high-speed sweeps, overlapping hazards, descent into a rock and safe recovery at every authored hazard |
+| A2 | Gates, penalties, finish ordering and exactly-once records | Practice fatal-crash precedence and records tests pass; Slalom gates/timing remain later work |
+| A3 | Connected seeds, recovery and bounded generation/memory | Authored practice recovery checked; 240-segment trail cap; endless generator/corpus not implemented |
+| A4 | Creature warning, spawn, catch and isolation | Not implemented |
+| A5 | Five complete courses and calibrated medals/chase | Practice reference completes; Slalom and human calibration not implemented |
+| A6 | Mouse/keyboard flows, handover, overlays, focus and compact targets | Frontend and native scenarios pass; human feel evaluation pending |
+| A7 | Save/reopen during jumps, recovery, pursuit and Slalom | Practice jump/recovery continuation and native restoration pass; unsupported saves retained; pursuit/Slalom not implemented |
+| A8 | Render-rate equivalence and resize independence | Frontend replay at 30/60/120 Hz and alternating window sizes produces identical tick state; backlog pause tested |
+| A9 | Actual theme/size/scale captures | Dark, light, compact, 200% X11 and local Wayland captures inspected |
+| A10 | Workspace, native switching, package/upgrade and desktop acceptance | Workspace/build/native/staged reinstall checks pass; actual Arch package build/install acceptance and human Wayland playtest pending |
+| A11 | Shelf/help/About, provenance, rules, controls and decisions | Added and reviewed for the practice milestone; later-mode help/assets remain later work |
 
-Use the current repository [contribution checks](../../../CONTRIBUTING.md#build-and-check):
-workspace fmt, strict Clippy, all-target tests with real Stockfish, release build,
-Pinball engine tests and desktop-entry validation. Add focused FreeSki engine,
-storage, replay and native checks as the relevant milestones land, including an
-engine build without UI features. Extend existing switching/render/package jobs.
+Implementation source commit: `acf6286` (`feat/freeski`). Later documentation
+commits add evidence without changing gameplay.
 
-Runtime checks are not applicable to this documentation-only setup. They must
-not be reported as passing FreeSki gameplay or release acceptance.
+## 12 September 2026 implementation evidence
 
-## Evidence entry format
+Environment: local x86_64 Omarchy 4.0.3; Rust 1.98.1. Native automation uses
+Xvfb and Mesa software rendering. Desktop capture uses the actual Wayland backend.
+The Rust toolchain was installed user-locally; Xvfb, Python test dependencies and
+Stockfish were held in temporary/user-local test locations, with no privileged
+system package installation.
 
-For every execution record:
+| Check | Result |
+| --- | --- |
+| `cargo fmt --all --check` | Passed |
+| `cargo clippy --workspace --locked --all-targets -- -D warnings` | Passed |
+| `REQUIRE_STOCKFISH=1 cargo test --workspace --locked --all-targets` | Passed with a real Stockfish 17.1 executable; 231 tests including 18 FreeSki tests |
+| `cargo test -p omarchy-freeski --locked --no-default-features` | Passed: 12 engine/storage tests; no desktop dependencies |
+| `scripts/build.sh` | Passed: optimized Arcade and preserved C++ Pinball engine |
+| Pinball `theme-palette`, `theme-path`, `authored-upstream-table` | Passed: all three |
+| Desktop entry and script syntax | Passed |
+| `scripts/native-freeski.py` | Passed normal controls, focus/help isolation, input ownership, pause/reopen, same-window shelf return and invalid-save retention |
+| Production `practice-evidence` example + native fixture reopen | Passed mid-jump and crash-recovery restoration; inactive restored runs remain unchanged |
+| `scripts/native-check.py` against staged installation | Passed singleton, eleven games in one window, Stockfish response, existing saves and clean shutdown |
+| `scripts/install.sh` staging and reinstall | Passed: one desktop entry, all eleven game licences, FreeSki provenance; suspended mid-jump file unchanged across reinstall and reopen |
+| Actual local Wayland launch/capture | Passed rendering and clean capture exit; interactive playtesting remains separate |
+| `packaging/build-arch.sh` | Pending local attempt from the committed tree; staged installation is not an Arch package acceptance claim |
+| Hands-on human playtest | Pending; no human findings have been invented |
 
-- Date, exact commit, build/profile, platform and test command or manual steps.
-- Result: passed, failed, skipped or blocked; explain skipped/blocked checks.
-- Acceptance IDs covered and links to test code, logs, captures or replay fixtures.
-- Rules/course/generator versions, seed and input fixture for repeatable runs.
-- Findings, remaining gaps and follow-up tuning or fixes.
+The production reference in [engine tests](../tests/engine.rs) follows authored
+waypoints with ordinary steering targets. It finishes in **3,397 ticks / 56.62 s**,
+uses all three ramps and takes zero crashes. Separate tests compare uninterrupted
+and save-restored trajectories for 400 subsequent ticks during flight/recovery.
 
-Keep headless engine tests, native X11 automation and hands-on Omarchy/Wayland
-evidence distinct. A screenshot demonstrates rendering, not control feel or sound.
+Frontend checks in [app.rs](../src/app.rs) cover mouse start/pause/settings/restart,
+held brake, focus loss, overlay isolation, new-run records, backlog handling and
+render/resize equivalence. [Input tests](../src/input.rs) check intentional source
+handover and mandatory release of held controls after suspension.
+
+## Actual app captures
+
+- [Dark skiing](captures/dark.png)
+- [Light skiing](captures/light.png)
+- [Compact skiing](captures/compact.png)
+- [200% skiing](captures/200.png)
+- [Restored jump](captures/mid-jump.png)
+- [Restored crash recovery](captures/recovery.png)
+- [Local Wayland ready screen](captures/wayland.png)
+
+All are native application captures, not mockups. X11 layout captures show release
+builds at 1280 × 900, 900 × 760 and 1800 × 1520 (200%). The Wayland compositor chose
+a tiled 941 × 1030 window. Review checked unclipped controls, hazard silhouettes,
+contrast and separation of HUD from the slope. Paused restore captures intentionally
+show the resume overlay; the simulation state is verified separately.
+
+## Findings and practical limits
+
+- Concurrent debug software rendering at 200% during compilation triggered the
+  intended backlog pause. An isolated release run passed. This is not a low-end
+  performance certification; actual playing latency still needs a human check.
+- Stockfish 19 timed out in the existing full-suite engine handshake on this host,
+  while its isolated test passed. The full suite passed with Stockfish 17.1.
+  No Chess timeout or engine behavior was changed for FreeSki.
+- The existing all-game native harness assumed default Chess board colours but
+  picked up the real user's theme. It now writes the expected palette into its
+  temporary XDG state before making pixel assertions. User theme files are untouched.
+- Existing Pinball/SDL output included `triangle area overflow` warnings during
+  switching; its native checks and C++ tests passed. This is not FreeSki output.
+- This milestone has no sound. Endless skiing, chase and Slalom remain later scope.
 
 ## Human playtest record
 
-Record tester, revision, course/seed, input method, theme, window size/scale and
-desktop/backend. Note steering and braking feel, hazard reaction time, jump and
-crash readability, difficulty and chase evasion, audio, and resume behavior.
-Link resulting tuning changes in [TUNING.md](TUNING.md).
-
-No human playtests recorded yet.
+Record tester, revision, input method, theme, size/scale and desktop/backend.
+Assess turn commitment, braking, hazard reaction time, jump and crash readability,
+difficulty and resume behavior. Record findings and resulting numerical changes
+in [TUNING.md](TUNING.md). Until that evidence exists, milestone 1 is implemented
+but not fully accepted.

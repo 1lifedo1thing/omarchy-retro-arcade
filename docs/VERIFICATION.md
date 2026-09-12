@@ -1,5 +1,14 @@
 # Arcade verification
 
+## FreeSki practice milestone — 12 September 2026
+
+FreeSki is the eleventh game in the source build. Its authored practice slope has
+engine, storage, frontend and native evidence, plus an actual local Wayland
+render. Staged reinstall preserves suspended progress. See the
+[FreeSki verification report](../games/freeski/docs/VERIFICATION.md) for exact
+checks, screenshots, known test-environment findings and remaining human acceptance.
+The older nine-game preview release below is unchanged.
+
 ## Nine-game presentation integration — 12 September 2026
 
 The integrated presentation revision passed all 197 workspace tests, strict Clippy, formatting, the release build, three Pinball engine/theme tests and desktop-entry validation. The local staged installation also contains the nine game licenses and cabinet-art provenance.

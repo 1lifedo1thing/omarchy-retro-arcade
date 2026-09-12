@@ -1,37 +1,44 @@
 # FreeSki tuning register
 
-Status: no values have been implemented or playtested. Issue defaults below are
-proposals, not calibrated targets. Add units, implementation revision, reason and
-playtest evidence whenever a value is chosen or changed.
+Initial implementation values for practice rules/course v1. These have automated
+reference evidence; they have not yet been calibrated by a human playtest.
 
-| Parameter | Initial candidate | Status / evidence needed |
+| Parameter | Initial value | Reason / evidence |
 | --- | --- | --- |
-| Simulation tick rate | TBD ticks/s | Decide with movement and collision model |
-| World distance units and skier footprint | TBD | Consistent physics, display and collision geometry |
-| Downhill acceleration and maximum speed | TBD | Open-snow and compact-view reaction playtests |
-| Turn rate and maximum heading | TBD | Broad turns, braking and route reachability |
-| Carving friction and braking strength | TBD | Reliable novice slowdown without uphill movement |
-| Mouse sensitivity and dead zone | TBD | Mouse-only play and input handover |
-| Camera look-ahead and logical view bounds | TBD | Visibility at maximum speed across window sizes |
-| Jump duration, height and airborne steering | TBD | Ramp feel and explicit low-rock clearance |
-| Obstacle collision heights | TBD | Rocks clearable; trees remain dangerous |
-| Crash allowances | 3 | Issue proposal; confirm through practice runs |
-| Tumble duration, reset speed and recovery clearance | TBD | Recovery cannot immediately cause another crash |
-| Collision protection | 1.5 simulation seconds | Issue proposal; visible protection and pause tests |
-| Checkpoint cadence and backlog pause threshold | TBD | Bounded work, save overhead and no skipped collision time |
-| Chunk dimensions, buffer size and generation retries | TBD | Route validation across seams; bounded resources |
-| Difficulty ramp and density cap | TBD | Traversable, readable runs at every difficulty |
-| Creature warning, speed, turn rate and catch radius | TBD | Meaningful evasion and swept catch detection |
-| Creature appearance distance | 1,000 m | Issue proposal; warning and human chase playtests |
-| Missed-gate penalty | 5 s | Issue proposal; course reference runs and playtests |
-| Slalom lengths and medal thresholds | TBD per course | Production-engine completion plus human runs |
-| Particle/trail budgets and lifetime | TBD | Hazards stay readable; long-run memory stays bounded |
+| Simulation tick rate | 60 ticks/s | Production engine; 30/60/120 Hz rendering equivalence check |
+| World units / footprint | Metres; skier radius 0.65 m | Shared collision and rendering coordinates |
+| Slope / view | 80 m wide; view 96 × 72 m | Reserved clear edge corridors; resize-independent visibility |
+| Maximum speed | 22 m/s (79.2 km/h) | Fast initial candidate; human reaction-time calibration pending |
+| Acceleration | 6.5 × cos(heading) m/s² | Automatic downhill acceleration |
+| Drag / carving | 0.10 × speed + 4.5 × abs(sin(heading)) m/s² | Broad turns reduce speed |
+| Braking | Additional 18 m/s² deceleration | Reliably reaches rest in engine tests |
+| Turn rate / heading limit | 2.4 rad/s; ±1.35 rad | Bounded turns; no uphill direction |
+| Mouse dead zone / sensitivity | 1.8% / 32% of field width | Dead zone around skier; normalized heading target |
+| Camera | Skier at 24% of view height | 54.72 m / 2.49 s ahead at maximum speed |
+| Jump | 1.2 s; 2.5 m apex; 40% steering | Parabolic arc; reference run clears all three ramp/rock pairs |
+| Tree / rock / ramp radii | 1.4 / 1.2 / 1.8 m | Plus skier radius for swept contact |
+| Tree / rock collision heights | 8 / 0.65 m | Trees dangerous in air; low rocks clearable |
+| Crash allowances | 3 | Initial issue proposal retained |
+| Tumble / reset speed | 42 ticks / 0 m/s | Stops motion for readable recovery |
+| Recovery clearance | Hazard radius + skier radius + 2 m | Every authored hazard checked for clear recovery |
+| Protection | 90 ticks after tumble | 1.5 simulation seconds; pause cannot spend/extend running time |
+| Checkpoints / backlog | 300 ticks / pause above 250 ms | Five-second simulation checkpoints; no collision time skipped |
+| Practice length | 1,200 m | Reference: 3,397 ticks / 56.62 s, three jumps, zero crashes |
+| Cosmetic trails | At most 240 segments, one every 3 moving ticks | Bounded memory; reduced-effects toggle removes tracks |
+| Endless / creature / Slalom | Not implemented | Tune in milestones 3–4 |
 
-## Change record format
+## Initial evidence and observations
 
-For each tuning session record: date, commit, parameter old/new values and units,
-course/seed, input method, display conditions, observed problem, repeatable test
-or playtest evidence, and the next hypothesis. Record findings rather than
-asserting that a change is fun or fair without a playtest.
+The waypoint reference uses only heading targets and ordinary production ticks.
+It completes all six practice sections without crashes and uses all three ramps.
+The reference is a reachability check, not a claim that the game feels good.
 
-No tuning sessions recorded yet.
+A concurrent debug software-renderer run at 200% scale triggered the documented
+backlog pause while other renders and compilation were active. An isolated release
+run passed. Keep this behavior visible; do not hide slow frames by skipping ticks.
+
+## Human tuning session format
+
+Record date, commit, parameter old/new values and units, course/seed, input method,
+display conditions, observed problem, evidence and next hypothesis.
+No human tuning sessions have been recorded yet.

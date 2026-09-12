@@ -1,6 +1,6 @@
 # FreeSki delivery plan
 
-Status: setup complete; gameplay implementation has not started.
+Status: milestone 1 implemented and under acceptance; human feel/difficulty playtesting remains pending.
 Tracking issue: [#14](https://github.com/tcballard/omarchy-retro-arcade/issues/14).
 Working branch: `feat/freeski`.
 
@@ -12,7 +12,7 @@ the issue. Keep numerical defaults provisional in [TUNING.md](TUNING.md).
 
 | Milestone | Deliverable | Exit evidence | Status |
 | --- | --- | --- | --- |
-| 1. Playable practice slope | Native integration, one authored practice slope, carving, braking, look-ahead, ramps, crashes, keyboard/mouse, pause and basic save/resume | A human can play several minutes, understand hazards and recovery, and suspend/reopen the attempt; focused engine/storage and native checks | Pending discussion |
+| 1. Playable practice slope | Native integration, one authored practice slope, carving, braking, look-ahead, ramps, crashes, keyboard/mouse, pause and basic save/resume | A human can play several minutes, understand hazards and recovery, and suspend/reopen the attempt; focused engine/storage and native checks | Implemented; human acceptance pending |
 | 2. Simulation and persistence hardening | Tick-stamped replay, chronological physical events, versioned state validation, exactly-once results and complete lifecycle handling | Equivalent continuations across render schedules and save/reload; adverse input, save and event-order tests | Not started |
 | 3. Endless Free Ski | Seeded bounded chunks, traversable connections, capped difficulty, distance records, optional creature pursuit | Documented production-engine seed corpus, bounded generation/memory, chase and recovery tests, human evasion evidence | Not started |
 | 4. Five Slalom courses | One complete course first, then four more; ordered gates, penalties, finish, unlocks and medals | Production-engine reference completion for each course, timing/records tests and human-calibrated medals | Not started |
@@ -24,9 +24,9 @@ and input readability are developed throughout, with final polish in milestone 5
 
 ## Proposed code boundaries
 
-Create source files as milestone 1 settles their responsibilities; no empty Rust
-crate is registered during setup. Keep these as ordinary modules in one game
-library, splitting further only when implementation warrants it.
+The Rust library is registered and hosted by Arcade. Simulation, collision, world,
+input, app, rendering and storage modules are implemented. Course and audio
+modules remain proposed for later milestones; no empty modules are added.
 
 | Area | Responsibility |
 | --- | --- |
@@ -43,8 +43,8 @@ library, splitting further only when implementation warrants it.
 | `tests/` | Engine/replay/storage coverage and production-engine reference runs |
 
 State should distinguish Ready, Running, Paused and Results, with explicit jump,
-crash recovery and protection state. Decide representations and tick rate during
-milestone 1. Persist simulation state, not wall-clock instants or renderer state.
+crash recovery and protection state. The practice implementation uses 60 Hz ticks and serializable f64 state.
+Persist simulation state, not wall-clock instants or renderer state.
 
 ## Integration touchpoints
 

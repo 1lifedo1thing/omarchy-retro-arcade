@@ -1,0 +1,78 @@
+# Practice slope rules v1
+
+The first playable is a finite, authored 1,200-metre practice run. Cross the finish
+flags with at least one crash allowance remaining. A third crash ends the attempt.
+Results show distance, best distance, crashes and elapsed simulation time. This is
+not the later timed Slalom mode; there are no gates, medals, creature or online scores.
+
+## Movement and camera
+
+World coordinates are metres, x across the slope and +y downhill. A UI-independent
+60 Hz engine owns position, speed, heading, flight and recovery. Steering approaches
+a desired heading at a bounded rate. Releasing keyboard steering points downhill;
+mouse steering retains its latest heading target until the next intentional input.
+Braking can bring the skier to rest. Turning sideways slows descent. At the slope
+edge, outward lateral movement is constrained; downhill movement still follows
+heading. Ordinary movement never jumps to the pointer or travels uphill.
+
+The fixed 96 × 72 m view shows the same terrain at every supported window size.
+The skier sits 24% down the view, leaving 54.72 m (about 2.49 seconds at maximum
+speed) of downhill look-ahead. The HUD is outside the collision playfield. Resize
+changes projection only. Rendering does not mutate physics or obstacle locations.
+A backlog above 250 ms pauses clearly instead of dropping simulation time.
+
+## Ramps, obstacles and recovery
+
+Three striped ramps launch deterministic 1.2-second, 2.5-metre-high jumps. Airborne
+steering has 40% authority. The ground shadow remains the collision reference.
+Low rocks have 0.65 m collision height; trees remain dangerous at every jump height.
+Circular collision footprints use analytic swept intervals, including descent into
+an obstacle during the tick. Ramp contact starts flight at its contact time.
+
+One collision spends one of three allowances. After a nonfatal crash, a bounded
+search selects nearby clear snow to the side or uphill, with two reserved edge
+corridors as fallback for this authored course. Recovery never increases downhill
+records. A 0.7-second tumble stops movement, followed by 1.5 seconds of visible
+collision protection. Pause freezes both timers. A fatal collision at or before
+the finish takes precedence over finishing; ended runs never restart themselves.
+
+## Controls and lifecycle
+
+| Action | Keyboard | Mouse |
+| --- | --- | --- |
+| Start | Enter or a fresh steering key | Start skiing |
+| Steer | A/D or Left/Right | Move within the slope, left/right of the skier |
+| Brake | Hold S, Down or Space | Hold right button on slope or Hold to brake |
+| Pause/resume | Esc; Enter resumes | Pause / Resume skiing |
+| Restart | Tab to restart and activate; Enter confirms replacement | Restart practice slope, then Replace run |
+| Help | F1 | Help |
+| Settings | Ctrl+, | Settings |
+| Return to Arcade | Ctrl+H | Shared Arcade button or Back to Arcade |
+
+The most recent fresh keyboard steering press or intentional in-field pointer
+movement selects the input source. A stationary or out-of-field pointer cannot
+steal keyboard control. Focus loss pauses; regaining focus requires deliberate
+resume. Overlays consume their input and held gameplay input must be released
+before it can control the resumed run. Help/settings return to a paused run.
+Reduced effects hides cosmetic tracks; tracks are bounded to 240 segments.
+This first playable is silent; original audio is part of later presentation work.
+
+## Saves and records
+
+`$XDG_STATE_HOME/omarchy-retro-arcade/freeski.json` (or the equivalent
+`~/.local/state` path) is independent of all other games. Schema, rules and course
+versions are each 1. The save contains the complete practice simulation, separate
+record/preference fields and an exactly-once result marker. The course is static
+and versioned; there is no RNG/chunk state in this milestone.
+
+Native writes reuse the existing private atomic-storage helper. The headless
+runner supplies an equivalent temp/write/sync/rename/directory-sync implementation;
+both feature builds exercise round-trip, retention and permissions tests. JSON
+float round-trip parsing preserves f64 state for replay on the same build/platform.
+Bitwise replay across different CPU/libm implementations is not claimed.
+
+Reads are limited to 64 KiB and reject unsupported versions, invalid numeric state
+and inconsistent outcomes. A failed load preserves the original and offers either
+unsaved play or an explicit archive/reset. Archives never overwrite existing
+archives. A failed write pauses play and offers retry; the previous file survives.
+Other games' saves, preferences and data paths are unchanged.
