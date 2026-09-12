@@ -87,7 +87,14 @@ void Draw(){
  if(!board||!pb::MainTable)return;updateTexture();draw=ImGui::GetBackgroundDrawList();
  auto size=ImGui::GetIO().DisplaySize;float menu=options::Options.ShowMenu?winmain::MainMenuHeight:0;
  scale=std::min(size.x/1536.f,(size.y-menu)/1024.f);ox=(size.x-1536*scale)/2;oy=menu+(size.y-menu-1024*scale)/2;
- draw->AddRectFilled({0,menu},size,rgba(5,8,8));draw->AddImage((ImTextureID)board,p(0,0),p(1536,1024));
+ draw->AddRectFilled({0,menu},size,rgba(5,8,8));
+ // The plate is drawn as an 8x8 grid of quads rather than one 1536x1024 quad. SDL's software renderer
+ // (used by the Arcade bridge and -sw) refuses a textured triangle whose area times texture coordinate
+ // overflows 32 bits ("triangle area overflow"), which left the whole table invisible on SDL 2.32/SDL 3.
+ for(int ty=0;ty<8;ty++)for(int tx=0;tx<8;tx++){
+  ImVec2 uv0(tx/8.f,ty/8.f),uv1((tx+1)/8.f,(ty+1)/8.f);
+  draw->AddImage((ImTextureID)board,p(tx*192.f,ty*128.f),p((tx+1)*192.f,(ty+1)*128.f),uv0,uv1);
+ }
  // Exact official wordmark geometry, proportionally placed after material tinting.
  const float wordScale=144.f/4131.f,wordX=562-72,wordY=520-950*wordScale/2;
  draw->AddImage((ImTextureID)wordmark,p(wordX,wordY),p(wordX+144,wordY+950*wordScale));
