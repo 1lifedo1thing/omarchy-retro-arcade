@@ -1,6 +1,16 @@
-# Consolidation verification
+# Arcade verification
 
-## Verified locally
+## Nine-game presentation integration — 12 September 2026
+
+The integrated presentation revision passed all 197 workspace tests, strict Clippy, formatting, the release build, three Pinball engine/theme tests and desktop-entry validation. The local staged installation also contains the nine game licenses and cabinet-art provenance.
+
+[Integrated CI run](https://github.com/tcballard/omarchy-retro-arcade/actions/runs/34689873161) passed native one-window traversal of all nine games, saves, Stockfish interaction, Stack controls/focus/pause/resume, Snake controls/saves/layouts and Blast solo/local-match lifecycle. Its Arch job built the complete package with bundled Stockfish, installed one desktop entry, exercised the installed games and preserved the Solitaire session through a reinstall.
+
+All 40 actual application captures (collection plus nine games in dark, light, compact and 200% layouts) were visually reviewed. Review caught and corrected unavailable navigation glyphs and the opening Pinball preview crop. See [presentation](PRESENTATION.md) for the screenshots and final correction build.
+
+This session cannot open a local display socket, so its native GUI evidence comes from GitHub's Linux/X11 runners. The historical local evidence below belongs to the earlier consolidation, not this session.
+
+## Original five-game consolidation: local evidence
 
 - All 120 Rust tests pass across the combined workspace, including real Stockfish communication, save compatibility, deterministic rules, card artwork validation and bounded Pinball frame decoding.
 - Formatting and Clippy with warnings denied pass for all workspace targets.
@@ -10,7 +20,7 @@
 - Native renders pass at 1120×860, 900×760, 200% X11 scale and a light Omarchy palette. Actual screenshots are under `docs/screenshots`.
 - A five-second local software-renderer probe delivered 277 Pinball frames, averaging 56.7 fps while other builds were running. This is a local throughput measurement, not a latency or real-desktop benchmark.
 
-## Verified on GitHub
+## Original five-game consolidation: GitHub evidence
 
 - Published all five games as ordinary subdirectories with their complete original Git ancestry.
 - [Arch package job](https://github.com/tcballard/omarchy-retro-arcade/actions/runs/34657618469/job/103453313089): built the package and bundled Stockfish, passed all 120 Rust tests and Pinball engine tests, installed one desktop entry, exercised all five games in one window, and reinstalled without changing the Solitaire save.

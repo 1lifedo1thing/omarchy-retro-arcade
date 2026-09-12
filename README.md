@@ -4,13 +4,13 @@ Nine games. One native app. One more go.
 
 **Circuit Pinball · Solitaire · Scram · Invaders · Chess · Stack · Snake · Bubble · Blast**
 
-![The native Omarchy Arcade app](docs/screenshots/shelf.png)
+![The native Omarchy Arcade app](docs/polish/shelf.png)
 
 Open Arcade, choose a game and play in the same window. `Ctrl+H` returns to the collection; `Ctrl+Q` closes Arcade. The games retain their approved artwork, settings, controls and local saves. Everything works offline.
 
 ## Install
 
-Download the Arch package artifact from a successful [Stack PR build](https://github.com/tcballard/omarchy-retro-arcade/pull/1/checks), extract the archive, then install the `.pkg.tar.zst` file. Stack is in review; the earlier five-game package does not contain it:
+Download the `arch-package` artifact from a successful [nine-game Arcade build](https://github.com/tcballard/omarchy-retro-arcade/pull/3/checks), extract the archive, then install the `.pkg.tar.zst` file. The collection is in review; earlier packages contain fewer games:
 
 ```sh
 sudo pacman -U ./omarchy-retro-arcade-*.pkg.tar.zst
@@ -18,7 +18,7 @@ sudo pacman -U ./omarchy-retro-arcade-*.pkg.tar.zst
 
 The package includes every game and a private Stockfish engine. It replaces conflicting standalone game packages without deleting their user data. There is one desktop entry: **Omarchy Arcade**. No account or additional game downloads.
 
-Development preview. Real Omarchy desktop acceptance is tracked in [verification](docs/VERIFICATION.md).
+Development preview. See the [presentation and native screenshots](docs/PRESENTATION.md); real Omarchy desktop acceptance is tracked in [verification](docs/VERIFICATION.md).
 
 ## Build
 

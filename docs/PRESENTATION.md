@@ -24,10 +24,32 @@ All nine games are visible in the selector. A large preview, game name, genre an
 
 ## Verification
 
-The initial integrated revision passes 197 workspace tests, strict Clippy and formatting. The release executable builds, the three Pinball engine/theme tests pass, and staged installation contains one executable, one desktop entry, per-game licenses and the new artwork provenance.
+The integrated revision passes 197 workspace tests, strict Clippy and formatting. The release executable builds, the three Pinball engine/theme tests pass, and staged installation contains one executable, one desktop entry, per-game licenses and the new artwork provenance.
 
 Native screenshots, keyboard switching and clean Arch install/upgrade verification run in `.github/workflows/arcade.yml`. `scripts/polish-renders.py` captures every game and the shelf in dark, light, compact and 200% layouts, using real XTest input. It contains no alternative gameplay or renderer.
 
-A local sandbox limitation prevents opening a display socket in this session. GitHub's `polish-review` artifact is therefore the source for the rendered review. Final results will be recorded after that review. Automated Linux/X11 evidence does not replace hands-on Omarchy/Wayland playtesting or audible-device acceptance.
+All 40 screenshots from the [integrated CI run](https://github.com/tcballard/omarchy-retro-arcade/actions/runs/34689873161) were visually reviewed. The native checks and Arch package installation/reinstall passed. Review corrected unavailable font glyphs in navigation, widened the opening Pinball preview to include its scoreboard, and refined keyboard selection after mouse focus. The [final correction build](https://github.com/tcballard/omarchy-retro-arcade/actions/runs/34690454743) passed the full native job: formatting, strict Clippy, all 197 tests, release build, engine tests, nine-game switching, saves, Stack/Snake/Blast interaction checks and captures. It supplies the updated screenshots below. The repeat Arch rebuild is still running at handoff; the preceding integrated Arch build and installation/reinstall passed.
+
+A local sandbox limitation prevents opening a display socket in this session, so the rendered review uses GitHub's `polish-review` artifact. Automated Linux/X11 evidence does not replace hands-on Omarchy/Wayland playtesting or audible-device acceptance.
 
 The separate optional leaderboard service remains disabled for public use. No hosting, account requirement or second launcher is introduced by this presentation change.
+
+## Actual application captures
+
+Captured from the native executable at revision `4e7da43023191548a410c50e09e7947e19974408`. No compositing or replacement UI is used. The full dark/light/compact/200% matrix is in the final build's `polish-review` artifact.
+
+![The opening collection](polish/shelf.png)
+
+| Game | Native window |
+| --- | --- |
+| Circuit Pinball | [Open screenshot](polish/pinball.png) |
+| Solitaire | [Open screenshot](polish/solitaire.png) |
+| Scram | [Open screenshot](polish/scram.png) |
+| Invaders | [Open screenshot](polish/invaders.png) |
+| Chess | [Open screenshot](polish/chess.png) |
+| Stack | [Open screenshot](polish/stack.png) |
+| Snake | [Open screenshot](polish/snake.png) |
+| Bubble | [Open screenshot](polish/bubble.png) |
+| Blast | [Open screenshot](polish/blast.png) |
+
+[Light collection](polish/shelf-light.png) · [Compact collection](polish/shelf-compact.png)
