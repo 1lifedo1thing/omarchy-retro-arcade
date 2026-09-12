@@ -26,6 +26,7 @@ pub struct App {
     themed: Instant,
     acc: f32,
     had_focus: bool,
+    pointer_target: Option<f32>,
 }
 impl App {
     pub fn new(store: Store) -> Self {
@@ -73,6 +74,7 @@ impl App {
             themed: Instant::now(),
             acc: 0.,
             had_focus: false,
+            pointer_target: None,
         }
     }
     fn save(&mut self) {
@@ -224,9 +226,6 @@ impl eframe::App for App {
                 });
             });
         });
-        if menu_open {
-            self.paused = true;
-        }
         let blocked = !focused
             || self.paused
             || self.settings
@@ -234,35 +233,11 @@ impl eframe::App for App {
             || self.confirm
             || menu_open
             || self.error.is_some();
-        if !blocked {
-            ctx.memory_mut(|m| {
-                if let Some(id) = m.focused() {
-                    m.surrender_focus(id);
-                }
-            });
-            let (axis, fire) = ctx.input(|i| {
-                (
-                    (i.key_down(Key::ArrowRight) || i.key_down(Key::D)) as i32 as f32
-                        - (i.key_down(Key::ArrowLeft) || i.key_down(Key::A)) as i32 as f32,
-                    i.key_down(Key::Space) && !i.modifiers.ctrl,
-                )
-            });
-            self.acc += elapsed;
-            let mut impact = false;
-            while self.acc >= 1. / 120. {
-                impact |= self.s.game.step(1. / 120., axis, fire);
-                self.acc -= 1. / 120.;
-            }
-            self.s.high = self.s.high.max(self.s.game.score);
-            if impact && self.s.sound {
-                self.sound.play(self.s.game.over);
-            }
-        } else {
-            self.acc = 0.;
-        }
         egui::TopBottomPanel::bottom("controls").show(ctx, |ui| {
             ui.horizontal(|ui| {
-                ui.label(egui::RichText::new("A/D  MOVE    SPACE  FIRE    P  PAUSE").size(14.));
+                ui.label(
+                    egui::RichText::new("MOUSE / A/D  MOVE    HOLD CLICK / SPACE  FIRE").size(14.),
+                );
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     if ui
                         .button(if self.s.sound {
@@ -277,7 +252,44 @@ impl eframe::App for App {
                 });
             });
         });
-        render::board(self, ctx, blocked);
+        let pointer = render::board(self, ctx, blocked);
+        if !blocked {
+            ctx.memory_mut(|m| {
+                if let Some(id) = m.focused() {
+                    m.surrender_focus(id);
+                }
+            });
+            let (axis, fire) = ctx.input(|i| {
+                (
+                    (i.key_down(Key::ArrowRight) || i.key_down(Key::D)) as i32 as f32
+                        - (i.key_down(Key::ArrowLeft) || i.key_down(Key::A)) as i32 as f32,
+                    i.key_down(Key::Space) && !i.modifiers.ctrl,
+                )
+            });
+            if axis != 0. || !pointer.inside {
+                self.pointer_target = None;
+            } else if let Some(target) = pointer.target {
+                self.pointer_target = Some(target);
+            }
+            self.acc += elapsed;
+            let mut impact = false;
+            while self.acc >= 1. / 120. {
+                let axis = self.pointer_target.map_or(axis, |target| {
+                    // Follow at normal ship speed; never teleport or overshoot.
+                    ((target - self.s.game.ship) / (340. / 120.)).clamp(-1., 1.)
+                });
+                impact |= self.s.game.step(1. / 120., axis, fire || pointer.fire);
+                self.acc -= 1. / 120.;
+            }
+            self.s.high = self.s.high.max(self.s.game.score);
+            if impact && self.s.sound {
+                self.sound.play(self.s.game.over);
+            }
+        } else {
+            self.acc = 0.;
+            self.pointer_target = None;
+        }
+
         if self.settings {
             egui::Window::new("Settings")
                 .collapsible(false)
@@ -326,7 +338,9 @@ impl eframe::App for App {
                     ui.separator();
                     ui.label("Clear the formation before it reaches your ship.");
                     ui.label("Bunkers erode under fire. The bonus craft is worth 150.");
+                    ui.label("Move the mouse over the field to steer; hold left click to fire.");
                     ui.label("← → or A/D: move · Space: fire · P/Esc: pause");
+                    ui.label("Arrow keys take over immediately. Move the mouse to steer again.");
                     ui.label("Ctrl+N: new · Ctrl+M: sound · Ctrl+Q: quit");
                     ui.label("Ctrl+,: settings · F1: help");
                     ui.separator();

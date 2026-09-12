@@ -1,6 +1,6 @@
 mod pinball;
 mod shelf;
-use eframe::egui::{self, Key, Vec2};
+use eframe::egui::{self, Key};
 use fs2::FileExt;
 use std::{
     fs::{File, OpenOptions},
@@ -92,6 +92,7 @@ trait ArcadeGame: eframe::App {
         true
     }
     fn suspend(&mut self) {}
+    fn set_input_enabled(&mut self, _: bool) {}
     fn finished(&mut self) -> bool {
         false
     }
@@ -125,6 +126,9 @@ impl ArcadeGame for omarchy_solitaire::app::SolitaireApp {}
 impl ArcadeGame for omarchy_scram::app::ScramApp {}
 impl ArcadeGame for omarchy_invaders::App {}
 impl ArcadeGame for pinball::Pinball {
+    fn set_input_enabled(&mut self, enabled: bool) {
+        self.set_input_enabled(enabled);
+    }
     fn ready(&self) -> bool {
         self.ready()
     }
@@ -233,8 +237,7 @@ impl Arcade {
 impl eframe::App for Arcade {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         if ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, Key::F11)) {
-            let fullscreen = ctx.input(|i| i.viewport().fullscreen.unwrap_or(false));
-            ctx.send_viewport_cmd(egui::ViewportCommand::Fullscreen(!fullscreen));
+            toggle_fullscreen(ctx);
         }
         if let Some(g) = self.initial.take() {
             self.open(g, ctx);
@@ -258,6 +261,13 @@ impl eframe::App for Arcade {
                 .show(ctx, |ui| {
                     ui.horizontal(|ui| {
                         home |= ui.button("Arcade    Ctrl+H").clicked();
+                        if ui
+                            .button("Full screen")
+                            .on_hover_text("Toggle fullscreen · F11")
+                            .clicked()
+                        {
+                            toggle_fullscreen(ctx);
+                        }
                         ui.separator();
                         ui.label(
                             egui::RichText::new(a.game.name())
@@ -281,18 +291,21 @@ impl eframe::App for Arcade {
                 self.home(ctx);
             }
         }
+        let block_game_input = self.confirm_home;
         if self.confirm_home {
             let mut leave = ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, Key::Enter));
             let mut cancel = ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, Key::Escape));
-            egui::Window::new("Return to Arcade?").collapsible(false).resizable(false)
-                .anchor(egui::Align2::CENTER_CENTER,Vec2::ZERO).default_width(430.).show(ctx,|ui|{
-                ui.label("This ends the current pinball game. Saved high scores and settings are kept.");
-                ui.horizontal(|ui|{
-                    leave|=ui.button("End game and return (Enter)").clicked();
-                    cancel|=ui.button("Keep playing (Esc)").clicked();
+            egui::Modal::new(egui::Id::new("return-to-arcade")).show(ctx, |ui| {
+                ui.set_max_width(430.);
+                ui.heading("Return to Arcade?");
+                ui.label(
+                    "This ends the current pinball game. Saved high scores and settings are kept.",
+                );
+                ui.horizontal(|ui| {
+                    leave |= ui.button("End game and return (Enter)").clicked();
+                    cancel |= ui.button("Keep playing (Esc)").clicked();
                 });
             });
-            ctx.input_mut(|i| i.events.clear());
             if leave {
                 self.home(ctx);
             } else if cancel {
@@ -300,6 +313,8 @@ impl eframe::App for Arcade {
             }
         }
         if let Some(a) = self.active.as_mut() {
+            // Keep the worker rendering, but suppress input through the closing frame too.
+            a.app.set_input_enabled(!block_game_input);
             a.app.update(ctx, frame);
         } else {
             self.shelf(ctx);
@@ -350,6 +365,16 @@ impl eframe::App for Arcade {
     fn on_exit(&mut self, _: Option<&eframe::glow::Context>) {
         self.active = None;
     }
+}
+fn toggle_fullscreen(ctx: &egui::Context) {
+    // A clicked fullscreen button must not retain Space/Enter from gameplay.
+    ctx.memory_mut(|memory| {
+        if let Some(id) = memory.focused() {
+            memory.surrender_focus(id);
+        }
+    });
+    let fullscreen = ctx.input(|i| i.viewport().fullscreen.unwrap_or(false));
+    ctx.send_viewport_cmd(egui::ViewportCommand::Fullscreen(!fullscreen));
 }
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut capture = None;
