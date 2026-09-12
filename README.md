@@ -33,14 +33,32 @@ This is a tested development build from 12 September 2026, not a stable release 
 
 ## Build
 
-On Arch, install Rust 1.98+, CMake, SDL2, SDL2_image, SDL2_mixer and the native graphics dependencies listed in `packaging/PKGBUILD`.
+On Arch, install CMake, SDL2, SDL2_image, SDL2_mixer and the native graphics dependencies listed in `packaging/PKGBUILD`. `rust-toolchain.toml` pins the Rust version, which rustup installs on first build.
 
 ```sh
 scripts/build.sh
 ./target/release/omarchy-retro-arcade
 ```
 
-For computer Chess in a source build, provide Stockfish through `OMARCHY_CHESS_ENGINE`. The Arch package builds and bundles the pinned engine automatically:
+The build uses every core. Set `ARCADE_BUILD_JOBS` to limit it.
+
+### Install a source build
+
+`scripts/install.sh` joins a `DESTDIR` and a `PREFIX`, so a system install reads:
+
+```sh
+sudo scripts/install.sh / /usr
+```
+
+It installs no Chess engine. For a computer opponent, set `OMARCHY_CHESS_ENGINE` to a Stockfish executable, or put one where the app looks:
+
+```sh
+sudo install -Dm755 "$(command -v stockfish)" /usr/libexec/omarchy-retro-arcade/stockfish
+```
+
+### Build an Arch package
+
+The package bundles the pinned Stockfish automatically:
 
 ```sh
 packaging/build-arch.sh
