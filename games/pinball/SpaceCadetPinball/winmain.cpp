@@ -335,6 +335,7 @@ void winmain::MainLoop()
                     int w,h;SDL_GetRendererOutputSize(Renderer,&w,&h);auto image=SDL_CreateRGBSurfaceWithFormat(0,w,h,32,SDL_PIXELFORMAT_ARGB8888);
                     SDL_RenderReadPixels(Renderer,nullptr,image->format->format,image->pixels,image->pitch);SDL_SaveBMP(image,path);SDL_FreeSurface(image);
                 }
+                for(auto b:pb::MainTable->BallList) if(b->ActiveFlag) printf("FINAL_BALL x=%.3f y=%.3f dx=%.3f dy=%.3f\n",540+b->Position.X*25,500+b->Position.Y*25,b->Direction.X,b->Direction.Y);
                 printf("UPSTREAM_TABLE ticks=%d score=%d balls=%d ramps=%u orbits=%u targets=%u\n",probeTick,pb::MainTable->CurScore,pb::MainTable->BallCount,OmarchyTable::Ramps(),OmarchyTable::Orbits(),OmarchyTable::Targets());
                 break;
             }
@@ -344,12 +345,18 @@ void winmain::MainLoop()
             if(probeTick%90==40)pb::InputUp({InputTypes::Keyboard,SDLK_a});
             if(probeTick%110==0)pb::InputDown({InputTypes::Keyboard,SDLK_d});
             if(probeTick%110==50)pb::InputUp({InputTypes::Keyboard,SDLK_d});
-            if(getenv("OMARCHY_TRACE")&&probeTick%120==0) for(auto b:pb::MainTable->BallList) if(b->ActiveFlag) printf("TRACE %d %.2f %.2f %.2f %.2f %.2f mask%d\n",probeTick,b->Position.X,b->Position.Y,b->Direction.X,b->Direction.Y,b->Speed,b->CollisionMask);
+            if(getenv("OMARCHY_TRACE")&&probeTick%10==0) for(auto b:pb::MainTable->BallList) if(b->ActiveFlag) printf("TRACE %d %.2f %.2f %.2f %.2f %.2f mask%d\n",probeTick,b->Position.X,b->Position.Y,b->Direction.X,b->Direction.Y,b->Speed,b->CollisionMask);
             if(probeTick==180 && getenv("OMARCHY_TEST_SHOT")){
                 auto b=pb::MainTable->BallList.front();b->ActiveFlag=1;b->CollisionFlag=0;b->CollisionMask=1;b->EdgeCollisionCount=0;b->CollisionDisabledFlag=false;
                 std::string shot=getenv("OMARCHY_TEST_SHOT");float x=372,y=455,dx=0,dy=-1,speed=55;
+                if(shot=="post"){x=434;y=350;speed=20;}
+                if(shot=="sling_back_left"){x=235;y=710;dx=1;dy=0;speed=20;}
+                if(shot=="sling_back_right"){x=822;y=710;dx=-1;dy=0;speed=20;}
+                if(shot=="under_ramp"||shot=="on_ramp"){x=244;y=180;speed=0;b->CollisionMask=shot=="on_ramp"?2:1;}
+                if(shot=="module"){x=695;y=385;dx=1;dy=0;speed=20;}
+                if(shot=="guide"){x=347;y=530;dx=-1;dy=0;speed=20;}
                 if(shot=="bumper"){x=470;y=330;speed=20;}
-                if(shot=="target"){x=505;y=190;speed=15;}
+                if(shot=="target"){x=516;y=190;speed=15;}
                 if(shot=="orbit"){x=780;y=175;dx=0;dy=-1;speed=15;}
                 if(shot=="drain"){x=540;y=985;dy=1;speed=15;}
                 b->Position={(x-540)/25,(y-500)/25,b->Radius};b->Direction={dx,dy,0};b->Speed=speed;
