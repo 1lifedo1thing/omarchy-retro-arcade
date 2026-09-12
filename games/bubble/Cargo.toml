@@ -1,0 +1,13 @@
+[package]
+name = "omarchy-bubble"
+version.workspace = true
+edition = "2021"
+license = "GPL-3.0-or-later"
+
+[dependencies]
+arcade-presentation = { path = "../../shared/presentation" }
+eframe = { version = "=0.31.1", default-features = false, features = ["default_fonts", "glow", "wayland", "x11", "accesskit"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+omarchy-chess = { path = "../chess" }
+tempfile = "3"

@@ -1,0 +1,12 @@
+[package]
+name = "arcade-leaderboard-service"
+version.workspace = true
+edition = "2021"
+license = "GPL-3.0-or-later"
+[dependencies]
+arcade-leaderboard = { path = "../../shared/leaderboard" }
+omarchy-stack = { path = "../../games/stack", default-features = false }
+serde_json = "1"
+rusqlite = { version = "0.40", features = ["bundled", "backup"] }
+sha2 = "0.10"
+tiny_http = "0.12"

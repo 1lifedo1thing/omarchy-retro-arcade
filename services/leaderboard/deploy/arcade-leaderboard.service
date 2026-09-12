@@ -1,0 +1,26 @@
+[Unit]
+Description=Omarchy Arcade community leaderboard
+After=network.target
+
+[Service]
+User=arcade-scores
+Group=arcade-scores
+ExecStart=/usr/local/bin/arcade-leaderboard-service
+Environment=ARCADE_DATABASE=/var/lib/arcade-scores/arcade.sqlite3
+Environment=ARCADE_BIND=127.0.0.1:8787
+Environment=ARCADE_ALIAS_BLOCKLIST=/etc/arcade-scores/blocked-aliases.txt
+StateDirectory=arcade-scores
+UMask=0077
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+MemoryMax=256M
+TasksMax=32
+LimitNOFILE=256
+
+[Install]
+WantedBy=multi-user.target

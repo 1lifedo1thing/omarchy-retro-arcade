@@ -12,20 +12,37 @@ jobs:
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
       - name: Native dependencies
-        run: sudo apt-get update && sudo apt-get install -y cmake libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libegl1-mesa-dev libgl1-mesa-dev libxkbcommon-dev libxkbcommon-x11-0 libwayland-dev libx11-dev libxi-dev libxcursor-dev libxrandr-dev libxtst6 xvfb stockfish desktop-file-utils
+        run: sudo apt-get update && sudo apt-get install -y cmake libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libegl1-mesa-dev libgl1-mesa-dev libxkbcommon-dev libxkbcommon-x11-0 libwayland-dev libx11-dev libxi-dev libxcursor-dev libxrandr-dev libxtst6 xvfb stockfish desktop-file-utils python3-pil
       - run: cargo fmt --all --check
       - run: cargo clippy --workspace --locked --all-targets -- -D warnings
       - run: REQUIRE_STOCKFISH=1 cargo test --workspace --locked --all-targets
       - run: scripts/build.sh
       - run: ctest --test-dir build/pinball --output-on-failure -R 'theme-palette|theme-path|authored-upstream-table'
       - run: desktop-file-validate packaging/omarchy-retro-arcade.desktop
-      - name: One window, five games, existing saves
+      - name: Render every game and collection layout
+        run: |
+          xvfb-run -a -s '-screen 0 1440x1100x24' env LIBGL_ALWAYS_SOFTWARE=1 SDL_AUDIODRIVER=dummy python3 scripts/polish-renders.py target/release/omarchy-retro-arcade /tmp/arcade-polish/dark dark
+          xvfb-run -a -s '-screen 0 1440x1100x24' env LIBGL_ALWAYS_SOFTWARE=1 SDL_AUDIODRIVER=dummy python3 scripts/polish-renders.py target/release/omarchy-retro-arcade /tmp/arcade-polish/compact compact
+          xvfb-run -a -s '-screen 0 1440x1100x24' env LIBGL_ALWAYS_SOFTWARE=1 SDL_AUDIODRIVER=dummy python3 scripts/polish-renders.py target/release/omarchy-retro-arcade /tmp/arcade-polish/light light
+          xvfb-run -a -s '-screen 0 2400x1900x24' env LIBGL_ALWAYS_SOFTWARE=1 SDL_AUDIODRIVER=dummy python3 scripts/polish-renders.py target/release/omarchy-retro-arcade /tmp/arcade-polish/200 200
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: polish-review
+          path: /tmp/arcade-polish/
+      - name: One window, nine games, existing saves
         run: xvfb-run -a -s '-screen 0 1440x1100x24' env LIBGL_ALWAYS_SOFTWARE=1 SDL_AUDIODRIVER=dummy python3 scripts/native-check.py target/release/omarchy-retro-arcade
+      - name: Stack keyboard, pause, focus and saves
+        run: xvfb-run -a -s '-screen 0 2400x1900x24' env LIBGL_ALWAYS_SOFTWARE=1 python3 scripts/native-stack.py target/release/omarchy-retro-arcade /tmp/arcade-renders
+      - name: Snake native controls, saves and layouts
+        run: xvfb-run -a -s '-screen 0 2400x1800x24' env LIBGL_ALWAYS_SOFTWARE=1 python3 scripts/native-snake.py target/release/omarchy-retro-arcade /tmp/arcade-renders/snake
+      - name: Blast solo, local match and lifecycle
+        run: xvfb-run -a -s '-screen 0 1440x1100x24' env LIBGL_ALWAYS_SOFTWARE=1 python3 scripts/native-blast.py target/release/omarchy-retro-arcade /tmp/arcade-renders/blast
       - name: Capture the actual app
         run: |
           mkdir -p /tmp/arcade-renders
-          for game in chess solitaire scram invaders pinball; do
-            xvfb-run -a env LIBGL_ALWAYS_SOFTWARE=1 SDL_AUDIODRIVER=dummy XDG_STATE_HOME=/tmp/arcade-$game/state XDG_DATA_HOME=/tmp/arcade-$game/data XDG_CONFIG_HOME=/tmp/arcade-$game/config target/release/omarchy-retro-arcade --game "$game" --screenshot "/tmp/arcade-renders/$game.png"
+          for game in chess solitaire scram invaders pinball stack snake bubble blast; do
+            xvfb-run -a -s '-screen 0 1440x1100x24' env LIBGL_ALWAYS_SOFTWARE=1 SDL_AUDIODRIVER=dummy XDG_STATE_HOME=/tmp/arcade-$game/state XDG_DATA_HOME=/tmp/arcade-$game/data XDG_CONFIG_HOME=/tmp/arcade-$game/config target/release/omarchy-retro-arcade --game "$game" --screenshot "/tmp/arcade-renders/$game.png"
           done
           xvfb-run -a env LIBGL_ALWAYS_SOFTWARE=1 target/release/omarchy-retro-arcade --compact --screenshot /tmp/arcade-renders/shelf-compact.png
       - uses: actions/upload-artifact@v4
@@ -36,7 +53,7 @@ jobs:
     runs-on: ubuntu-latest
     container: archlinux:base-devel
     steps:
-      - run: pacman -Syu --noconfirm git rust cmake python sdl2 sdl2_image sdl2_mixer libglvnd libx11 libxcursor libxi libxrandr libxkbcommon libxkbcommon-x11 libxtst wayland dbus mesa libpulse xdg-desktop-portal xorg-server-xvfb xorg-xauth
+      - run: pacman -Syu --noconfirm git rust cmake python sdl2 sdl2_image sdl2_mixer libglvnd libx11 libxcursor libxi libxrandr libxkbcommon libxkbcommon-x11 libxtst wayland dbus mesa python-pillow libpulse xdg-desktop-portal xorg-server-xvfb xorg-xauth
       - uses: actions/checkout@v4
       - name: Build the complete package
         run: |
@@ -49,6 +66,7 @@ jobs:
           omarchy-retro-arcade --version
           test "$(pacman -Ql omarchy-retro-arcade | grep -c '/usr/share/applications/.*\.desktop$')" = 1
           su builder -c "cd '$GITHUB_WORKSPACE' && xvfb-run -a -s '-screen 0 1440x1100x24' env LIBGL_ALWAYS_SOFTWARE=1 SDL_AUDIODRIVER=dummy python3 scripts/native-check.py /usr/bin/omarchy-retro-arcade"
+          su builder -c "cd '$GITHUB_WORKSPACE' && xvfb-run -a -s '-screen 0 1440x1100x24' env LIBGL_ALWAYS_SOFTWARE=1 python3 scripts/native-blast.py /usr/bin/omarchy-retro-arcade"
           su builder -c 'xvfb-run -a env LIBGL_ALWAYS_SOFTWARE=1 XDG_STATE_HOME=/tmp/arcade-upgrade omarchy-retro-arcade --game solitaire --screenshot /tmp/arcade-before.png'
           cp /tmp/arcade-upgrade/omarchy-solitaire/session.json /tmp/arcade-original.json
           pacman -U --noconfirm dist/arch/*.pkg.tar.zst

@@ -1,0 +1,24 @@
+{
+    # No request bodies, credentials, addresses or access logs are persisted.
+    log {
+        output discard
+    }
+    servers {
+        timeouts {
+            read_header 5s
+            read_body 10s
+            write 15s
+            idle 30s
+        }
+    }
+}
+arcade-scores.tcballard.dev {
+    request_body {
+        max_size 2MB
+    }
+    reverse_proxy 127.0.0.1:8787 {
+        transport http {
+            response_header_timeout 12s
+        }
+    }
+}

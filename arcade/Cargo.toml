@@ -6,6 +6,7 @@ rust-version = "1.98"
 license = "GPL-3.0-or-later"
 
 [dependencies]
+arcade-presentation = { path = "../shared/presentation" }
 eframe = { version = "=0.31.1", default-features = false, features = ["default_fonts", "glow", "wayland", "x11", "accesskit"] }
 egui_extras = { version = "=0.31.1", default-features = false, features = ["svg", "image"] }
 image = { version = "0.25", default-features = false, features = ["png"] }
@@ -13,7 +14,11 @@ omarchy-chess = { path = "../games/chess" }
 omarchy-solitaire = { path = "../games/solitaire" }
 omarchy-scram = { path = "../games/scram" }
 omarchy-invaders = { path = "../games/invaders" }
+omarchy-stack = { path = "../games/stack" }
+omarchy-snake = { path = "../games/snake" }
+omarchy-blast = { path = "../games/blast" }
 fs2 = "0.4"
+omarchy-bubble = { path = "../games/bubble" }
 
 [dev-dependencies]
 tempfile = "3"

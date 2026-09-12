@@ -82,6 +82,9 @@ pub struct Pinball {
     started: Instant,
 }
 impl Pinball {
+    pub fn ready(&self) -> bool {
+        self.texture.is_some() || self.error.is_some()
+    }
     pub fn finished(&mut self) -> bool {
         self.worker
             .child

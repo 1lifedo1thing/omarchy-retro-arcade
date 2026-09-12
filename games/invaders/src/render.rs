@@ -16,16 +16,19 @@ pub fn safe_accent(c: Color32) -> Color32 {
     }
 }
 pub fn board(app: &mut App, ctx: &egui::Context, blocked: bool) {
+    arcade_presentation::apply(ctx);
     let accent = safe_accent(app.theme.accent);
     app.art.prepare(ctx, accent);
     egui::CentralPanel::default().show(ctx, |ui| {
+        arcade_presentation::backdrop(ui);
         let avail = ui.available_size();
         let scale = (avail.x / W).min(avail.y / (H + 90.)).max(0.1);
         let origin = ui.cursor().min + Vec2::new((avail.x - W * scale) / 2., 0.);
         let full = Rect::from_min_size(origin, Vec2::new(W, H + 90.) * scale);
         ui.allocate_rect(full, egui::Sense::hover());
         let p = ui.painter_at(full);
-        p.rect_filled(full, 0., Color32::from_rgb(23, 28, 26));
+        arcade_presentation::bezel(ui.painter(), full, accent);
+        p.rect_filled(full, 0., Color32::from_rgb(16, 23, 21));
         let header = |x: f32, y: f32| origin + Vec2::new(x, y) * scale;
         bitmap::text(&p, header(14., 10.), "OMARCHY INVADERS", 3. * scale, INK);
         bitmap::text(&p, header(655., 18.), "ORBIT", 2. * scale, accent);
