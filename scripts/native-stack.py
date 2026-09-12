@@ -23,7 +23,7 @@ with tempfile.TemporaryDirectory(prefix='stack-native-') as tmp:
   key(0xff0d)
   # Play using genuine XTest keyboard events, including hold and both rotations.
   key(0xff51,hold=.32);key(0x20);key(0xff53,hold=.20);key(ord('z'));key(0x20);key(ord('c'));key(0xff52);key(0xff54,hold=.4)
-  time.sleep(.2);ImageGrab.grab(xdisplay=os.environ['DISPLAY']).crop((0,0,int(1120*scale),int(860*scale))).save(out/'stack-game.png')
+  time.sleep(.2);ImageGrab.grab(xdisplay=os.environ['DISPLAY']).crop((0,0,int(1280*scale),int(900*scale))).save(out/'stack-game.png')
   key(ord('p'));time.sleep(.25)
   save=Path(tmp)/'state/omarchy-stack/session.json';before=json.loads(save.read_text())['marathon'];assert before['locks']>=2 and before['held'] is not None
   time.sleep(2.2);after=json.loads(save.read_text())['marathon'];assert before==after,'Pause changed simulation'
@@ -34,10 +34,9 @@ with tempfile.TemporaryDirectory(prefix='stack-native-') as tmp:
   key(ord('h'),True);assert windows()==[w]
   saved=json.loads(save.read_text())['marathon'];assert saved==before
   # Reopen from shelf, choose resume by mouse, verify exact saved state on leaving.
-  for _ in range(5):key(0xff53)
   key(0xff0d);time.sleep(.3)
-  ImageGrab.grab(xdisplay=os.environ['DISPLAY']).crop((0,0,int(1120*scale),int(860*scale))).save(out/'stack-menu.png')
-  click(int(159*scale),int(294*scale));key(ord('p'));time.sleep(.2)
+  ImageGrab.grab(xdisplay=os.environ['DISPLAY']).crop((0,0,int(1280*scale),int(900*scale))).save(out/'stack-menu.png')
+  key(ord('r'));key(ord('p'));time.sleep(.2)
   restored=json.loads(save.read_text())['marathon']
   for field in ['board','queue','rng','held','score']:assert restored[field]==saved[field],field
   assert restored['ticks']>=saved['ticks'];key(ord('h'),True);key(0xff0d)

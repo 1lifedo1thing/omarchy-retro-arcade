@@ -1,8 +1,8 @@
 # Omarchy Arcade
 
-Six games. One native app. One more go.
+Nine games. One native app. One more go.
 
-**Circuit Pinball · Solitaire · Scram · Invaders · Chess · Stack**
+**Circuit Pinball · Solitaire · Scram · Invaders · Chess · Stack · Snake · Bubble · Blast**
 
 ![The native Omarchy Arcade app](docs/screenshots/shelf.png)
 
@@ -40,15 +40,18 @@ The package builder requires a clean committed checkout and does not install any
 ## Source layout
 
 - `arcade/`: the Rust app, collection shelf and local Pinball transport.
-- `games/`: six ordinary game directories, preserving all imported Git history.
+- `games/`: nine ordinary game directories, preserving all imported Git history.
 - `packaging/`: one Arch package, icon and desktop entry.
 - `scripts/`: shared build, staging and verification entry points.
+- `shared/presentation/`: shared cabinet materials, control styling and artwork.
 - `shared/leaderboard/`: optional background HTTP transport.
 - `services/leaderboard/`: separately deployable replay-validation service; no public endpoint is bundled.
 
-Five Rust games draw directly into the shared window. Pinball retains the upstream C++ physics engine in a private worker whose rendering appears in that same window, including on Wayland. No browser, X11 child-window embedding or separate game launcher is used.
+Eight Rust games draw directly into the shared window. Pinball retains the upstream C++ physics engine in a private worker whose rendering appears in that same window, including on Wayland. No browser, X11 child-window embedding or separate game launcher is used.
 
 Existing save paths remain authoritative. Pinball preserves high scores and settings, but does not resume unfinished tables. The other games save when returning to Arcade.
+
+Bubble adds 20 authored bubble-shooting puzzles, saved level progress and personal bests. [Controls, verified routes and native screenshots](games/bubble/README.md).
 
 See [migration provenance](docs/MIGRATION.md), [integration decisions](DECISIONS.md), and each game's licence and artwork notices. The combined application is distributed under GPL-3.0-or-later; permissively licensed components retain their notices. This is a community project.
 

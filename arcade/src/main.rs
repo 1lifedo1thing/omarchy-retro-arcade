@@ -1,5 +1,6 @@
 mod pinball;
-use eframe::egui::{self, Color32, Key, RichText, Vec2};
+mod shelf;
+use eframe::egui::{self, Key, Vec2};
 use fs2::FileExt;
 use std::{
     fs::{File, OpenOptions},
@@ -15,15 +16,21 @@ enum Game {
     Invaders,
     Pinball,
     Stack,
+    Snake,
+    Bubble,
+    Blast,
 }
 impl Game {
-    const ALL: [Self; 6] = [
+    const ALL: [Self; 9] = [
         Self::Pinball,
         Self::Solitaire,
         Self::Scram,
         Self::Invaders,
         Self::Chess,
         Self::Stack,
+        Self::Snake,
+        Self::Bubble,
+        Self::Blast,
     ];
     fn id(self) -> &'static str {
         match self {
@@ -33,6 +40,9 @@ impl Game {
             Self::Scram => "scram",
             Self::Invaders => "invaders",
             Self::Pinball => "pinball",
+            Self::Snake => "snake",
+            Self::Bubble => "bubble",
+            Self::Blast => "blast",
         }
     }
     fn name(self) -> &'static str {
@@ -43,6 +53,9 @@ impl Game {
             Self::Scram => "Scram",
             Self::Invaders => "Invaders",
             Self::Pinball => "Circuit Pinball",
+            Self::Snake => "Snake",
+            Self::Bubble => "Bubble",
+            Self::Blast => "Blast",
         }
     }
     fn line(self) -> &'static str {
@@ -53,11 +66,17 @@ impl Game {
             Self::Scram => "Keep moving. They are behind you.",
             Self::Invaders => "Hold the line. Clear the sky.",
             Self::Pinball => "One more ball. One more high score.",
+            Self::Snake => "Eat. Grow. Leave yourself a way out.",
+            Self::Bubble => "Make three. Clear your head.",
+            Self::Blast => "Make room. Leave an exit.",
         }
     }
     fn image(self) -> egui::ImageSource<'static> {
         match self {
             Self::Stack => egui::include_image!("../../games/stack/docs/stack-game.png"),
+            Self::Snake => egui::include_image!("../../games/snake/docs/shelf.svg"),
+            Self::Bubble => egui::include_image!("../../games/bubble/docs/game.png"),
+            Self::Blast => egui::include_image!("../../games/blast/docs/game.png"),
             Self::Chess => egui::include_image!("../../games/chess/docs/preview.png"),
             Self::Solitaire => {
                 egui::include_image!("../../games/solitaire/docs/screenshots/table.png")
@@ -69,6 +88,9 @@ impl Game {
     }
 }
 trait ArcadeGame: eframe::App {
+    fn ready(&self) -> bool {
+        true
+    }
     fn suspend(&mut self) {}
     fn finished(&mut self) -> bool {
         false
@@ -82,16 +104,43 @@ impl ArcadeGame for omarchy_stack::app::StackApp {
         omarchy_stack::app::StackApp::finished(self)
     }
 }
+impl ArcadeGame for omarchy_bubble::app::BubbleApp {
+    fn suspend(&mut self) {
+        self.suspend();
+    }
+    fn finished(&mut self) -> bool {
+        omarchy_bubble::app::BubbleApp::finished(self)
+    }
+}
+impl ArcadeGame for omarchy_blast::app::App {
+    fn suspend(&mut self) {
+        self.suspend();
+    }
+    fn finished(&mut self) -> bool {
+        omarchy_blast::app::App::finished(self)
+    }
+}
 impl ArcadeGame for omarchy_chess::ui::ChessApp {}
 impl ArcadeGame for omarchy_solitaire::app::SolitaireApp {}
 impl ArcadeGame for omarchy_scram::app::ScramApp {}
 impl ArcadeGame for omarchy_invaders::App {}
 impl ArcadeGame for pinball::Pinball {
+    fn ready(&self) -> bool {
+        self.ready()
+    }
     fn finished(&mut self) -> bool {
         self.finished()
     }
     fn suspend(&mut self) {
         self.pause();
+    }
+}
+impl ArcadeGame for omarchy_snake::app::SnakeApp {
+    fn finished(&mut self) -> bool {
+        omarchy_snake::app::SnakeApp::finished(self)
+    }
+    fn suspend(&mut self) {
+        omarchy_snake::app::SnakeApp::suspend(self);
     }
 }
 struct Active {
@@ -123,6 +172,9 @@ impl Arcade {
             let mut lock: Option<Box<dyn std::any::Any>> = None;
             let app: Box<dyn ArcadeGame> = match game {
                 Game::Stack => Box::new(omarchy_stack::app::StackApp::new()),
+                Game::Snake => Box::new(omarchy_snake::app::SnakeApp::new()),
+                Game::Bubble => Box::new(omarchy_bubble::app::BubbleApp::new()),
+                Game::Blast => Box::new(omarchy_blast::app::App::new()),
                 Game::Chess => {
                     let dir = omarchy_chess::storage::state_dir();
                     lock = Some(Box::new(omarchy_chess::storage::SessionLock::acquire(
@@ -163,6 +215,7 @@ impl Arcade {
                     game.name()
                 )));
                 ctx.request_repaint();
+                self.selected = Game::ALL.iter().position(|g| *g == game).unwrap_or(0);
                 self.active = Some(active);
                 self.error = None;
             }
@@ -175,165 +228,6 @@ impl Arcade {
         ctx.memory_mut(|m| *m = egui::Memory::default());
         ctx.set_style(egui::Style::default());
         ctx.send_viewport_cmd(egui::ViewportCommand::Title("Omarchy Arcade".into()));
-    }
-    fn shelf(&mut self, ctx: &egui::Context) {
-        if self.themed.elapsed() > Duration::from_secs(2) {
-            self.theme = omarchy_chess::theme::Theme::load();
-            self.themed = Instant::now();
-        }
-        let t = &self.theme;
-        let light =
-            t.background.r() as u32 + t.background.g() as u32 + t.background.b() as u32 > 400;
-        let mut visuals = if light {
-            egui::Visuals::light()
-        } else {
-            egui::Visuals::dark()
-        };
-        visuals.panel_fill = t.background;
-        visuals.window_fill = t.background;
-        visuals.override_text_color = Some(t.foreground);
-        visuals.selection.bg_fill = t.accent;
-        ctx.set_visuals(visuals);
-        let mut play = false;
-        ctx.input_mut(|i| {
-            if i.consume_key(egui::Modifiers::NONE, Key::ArrowRight)
-                || i.consume_key(egui::Modifiers::NONE, Key::ArrowDown)
-            {
-                self.selected = (self.selected + 1) % Game::ALL.len();
-            }
-            if i.consume_key(egui::Modifiers::NONE, Key::ArrowLeft)
-                || i.consume_key(egui::Modifiers::NONE, Key::ArrowUp)
-            {
-                self.selected = (self.selected + Game::ALL.len() - 1) % Game::ALL.len();
-            }
-            play = i.consume_key(egui::Modifiers::NONE, Key::Enter);
-        });
-        let mut chosen = None;
-        egui::TopBottomPanel::bottom("arcade-footer")
-            .frame(
-                egui::Frame::NONE
-                    .fill(self.theme.background)
-                    .inner_margin(20.),
-            )
-            .show(ctx, |ui| {
-                ui.horizontal(|ui| {
-                    ui.label(
-                        RichText::new("ARROWS  CHOOSE     ENTER  PLAY     CTRL+H  ARCADE")
-                            .monospace()
-                            .size(11.)
-                            .weak(),
-                    );
-                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        if ui.button("About").clicked() {
-                            self.about = true;
-                        }
-                    });
-                });
-            });
-        egui::CentralPanel::default()
-            .frame(
-                egui::Frame::NONE
-                    .fill(self.theme.background)
-                    .inner_margin(28.),
-            )
-            .show(ctx, |ui| {
-                ui.label(
-                    RichText::new("OMARCHY / SIX GOOD WAYS TO WASTE AN EVENING")
-                        .monospace()
-                        .size(11.)
-                        .color(self.theme.accent),
-                );
-                ui.add_space(6.);
-                ui.heading(RichText::new("Arcade.").size(52.).strong());
-                ui.label(
-                    RichText::new("Your computer. Your games. One more go.")
-                        .size(16.)
-                        .weak(),
-                );
-                ui.add_space(18.);
-                let game = Game::ALL[self.selected];
-                let height = (ui.available_height() - 160.).clamp(150., 460.);
-                ui.horizontal(|ui| {
-                    let image_width = (ui.available_width() * 0.64).max(250.);
-                    egui::Frame::NONE
-                        .fill(Color32::from_rgb(14, 17, 16))
-                        .show(ui, |ui| {
-                            ui.add(
-                                egui::Image::new(game.image())
-                                    .fit_to_exact_size(Vec2::new(image_width, height)),
-                            );
-                        });
-                    ui.add_space(22.);
-                    ui.vertical(|ui| {
-                        ui.add_space(height * 0.16);
-                        ui.label(
-                            RichText::new(format!("0{} / 06", self.selected + 1))
-                                .monospace()
-                                .color(self.theme.accent),
-                        );
-                        ui.add_space(12.);
-                        ui.heading(RichText::new(game.name()).size(29.));
-                        ui.add_space(8.);
-                        ui.label(game.line());
-                        ui.add_space(22.);
-                        if ui
-                            .add_sized(
-                                [160., 44.],
-                                egui::Button::new(
-                                    RichText::new("Play").size(19.).color(self.theme.background),
-                                )
-                                .fill(self.theme.accent)
-                                .stroke(egui::Stroke::NONE),
-                            )
-                            .clicked()
-                        {
-                            play = true;
-                        }
-                        ui.add_space(12.);
-                        ui.label(RichText::new("Offline. Always here.").small().weak());
-                    });
-                });
-                ui.add_space(18.);
-                ui.columns(Game::ALL.len(), |cols| {
-                    for (i, col) in cols.iter_mut().enumerate() {
-                        let g = Game::ALL[i];
-                        let stroke = egui::Stroke::new(
-                            if i == self.selected { 2_f32 } else { 1_f32 },
-                            if i == self.selected {
-                                self.theme.accent
-                            } else {
-                                self.theme.foreground.gamma_multiply(0.2)
-                            },
-                        );
-                        let response = egui::Frame::NONE
-                            .stroke(stroke)
-                            .inner_margin(10.)
-                            .show(col, |ui| {
-                                ui.set_min_height(55.);
-                                ui.label(
-                                    RichText::new(format!("0{}", i + 1))
-                                        .monospace()
-                                        .small()
-                                        .weak(),
-                                );
-                                ui.label(RichText::new(g.name()).strong());
-                            })
-                            .response;
-                        if col
-                            .interact(response.rect, response.id, egui::Sense::click())
-                            .clicked()
-                        {
-                            chosen = Some(i);
-                        }
-                    }
-                });
-            });
-        if let Some(i) = chosen {
-            self.selected = i;
-        }
-        if play {
-            self.open(Game::ALL[self.selected], ctx);
-        }
     }
 }
 impl eframe::App for Arcade {
@@ -353,14 +247,25 @@ impl eframe::App for Arcade {
         }) {
             ctx.send_viewport_cmd(egui::ViewportCommand::Close);
         }
+        arcade_presentation::apply(ctx);
         if let Some(a) = self.active.as_ref() {
-            egui::TopBottomPanel::top("arcade-navigation").show(ctx, |ui| {
-                ui.horizontal(|ui| {
-                    home |= ui.button("Back to Arcade    Ctrl+H").clicked();
-                    ui.separator();
-                    ui.label(a.game.name());
+            egui::TopBottomPanel::top("arcade-navigation")
+                .frame(
+                    egui::Frame::NONE
+                        .fill(ctx.style().visuals.panel_fill)
+                        .inner_margin(egui::Margin::symmetric(16, 8)),
+                )
+                .show(ctx, |ui| {
+                    ui.horizontal(|ui| {
+                        home |= ui.button("←  Arcade    Ctrl+H").clicked();
+                        ui.separator();
+                        ui.label(
+                            egui::RichText::new(a.game.name())
+                                .monospace()
+                                .color(arcade_presentation::BRASS),
+                        );
+                    });
                 });
-            });
         }
         if home && self.active.is_some() {
             if self
@@ -412,13 +317,13 @@ impl eframe::App for Arcade {
         }
         if self.about {
             egui::Window::new("About Omarchy Arcade").open(&mut self.about).show(ctx,|ui|{
-            ui.heading("Omarchy Arcade");ui.label(concat!("Version ",env!("CARGO_PKG_VERSION")));ui.label("Six native games. A community project for Omarchy.");
+            ui.heading("Omarchy Arcade");ui.label(concat!("Version ",env!("CARGO_PKG_VERSION")));ui.label("Native games. A community project for Omarchy.");
             ui.label("Original game artwork and engines; credits and licences are included with the app.");ui.label("Ctrl+H returns to Arcade. Each game keeps its own controls and saves.");
         });
         }
         self.frames += 1;
         if let Some(path) = &self.capture {
-            if self.frames > 60 {
+            if self.frames > 60 && self.active.as_ref().is_none_or(|a| a.app.ready()) {
                 for event in ctx.input(|i| i.events.clone()) {
                     if let egui::Event::Screenshot { image, .. } = event {
                         let pixels: Vec<u8> =
@@ -449,7 +354,7 @@ impl eframe::App for Arcade {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut capture = None;
     let mut initial = None;
-    let mut size = [1120., 860.];
+    let mut size = [1280., 900.];
     let mut args = std::env::args().skip(1);
     while let Some(arg) = args.next() {
         match arg.as_str() {
@@ -458,7 +363,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 return Ok(());
             }
             "--help" | "-h" => {
-                println!("Omarchy Arcade\n--game chess|solitaire|scram|invaders|pinball|stack\n--screenshot PATH\n--compact\n--version\nCtrl+H: return to Arcade. Ctrl+Q: quit.");
+                println!("Omarchy Arcade\n--game chess|solitaire|scram|invaders|pinball|stack|snake|bubble|blast\n--screenshot PATH\n--compact\n--version\nCtrl+H: return to Arcade. Ctrl+Q: quit.");
                 return Ok(());
             }
             "--game" => {

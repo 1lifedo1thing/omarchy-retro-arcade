@@ -252,6 +252,7 @@ impl ScramApp {
         visuals.widgets.active.fg_stroke = Stroke::new(1_f32, self.palette.text);
         visuals.window_stroke = Stroke::new(1_f32, self.palette.wall);
         ctx.set_visuals(visuals);
+        arcade_presentation::apply(ctx);
         ctx.style_mut(|s| {
             s.spacing.item_spacing = Vec2::new(10., 8.);
             s.spacing.button_padding = Vec2::new(12., 7.);
@@ -525,6 +526,7 @@ impl ScramApp {
                 if i == 0 { p.accent } else { p.text },
             );
         }
+        arcade_presentation::bezel(painter, board, p.accent);
         painter.rect_filled(board, 0., p.field);
         let cell = |pos: Pos| {
             Rect::from_min_size(
@@ -539,6 +541,7 @@ impl ScramApp {
                 let r = cell(pos);
                 if MAP[y as usize].as_bytes()[x as usize] == b'#' {
                     maze_painter.rect_filled(r, 0., p.wall_fill);
+                    arcade_presentation::grain(&maze_painter, r, Color32::from_black_alpha(12), 4.);
                     for dir in Dir::ALL {
                         let (dx, dy) = dir.delta();
                         let neighbor = Pos {
@@ -552,8 +555,16 @@ impl ScramApp {
                                 Dir::Left => [r.left_top(), r.left_bottom()],
                                 Dir::Right => [r.right_top(), r.right_bottom()],
                             };
+                            maze_painter.line_segment(
+                                points,
+                                Stroke::new((tile * 0.26).max(2.), p.wall.gamma_multiply(0.22)),
+                            );
                             maze_painter
-                                .line_segment(points, Stroke::new((tile * 0.065).max(1.), p.wall));
+                                .line_segment(points, Stroke::new((tile * 0.10).max(1.), p.wall));
+                            maze_painter.line_segment(
+                                points,
+                                Stroke::new(0.6_f32, p.wall.lerp_to_gamma(Color32::WHITE, 0.35)),
+                            );
                         }
                     }
                 } else {
@@ -887,6 +898,7 @@ impl ScramApp {
 }
 impl eframe::App for ScramApp {
     fn update(&mut self, ctx: &egui::Context, _: &mut eframe::Frame) {
+        arcade_presentation::apply(ctx);
         let now = Instant::now();
         let dt = now.duration_since(self.clock).as_secs_f32().min(0.1);
         self.clock = now;
@@ -953,7 +965,10 @@ impl eframe::App for ScramApp {
                     .fill(self.palette.background)
                     .inner_margin(8.),
             )
-            .show(ctx, |ui| self.board(ui));
+            .show(ctx, |ui| {
+                arcade_presentation::backdrop(ui);
+                self.board(ui);
+            });
         self.dialogs(ctx);
         if self.save_clock.elapsed() > Duration::from_secs(2) {
             self.persist();

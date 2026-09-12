@@ -35,6 +35,13 @@ x.XGetWindowAttributes.argtypes=[C.c_void_p,C.c_ulong,C.POINTER(WindowAttributes
 xt.XTestFakeKeyEvent.argtypes=[C.c_void_p,C.c_uint,C.c_int,C.c_ulong]
 xt.XTestFakeButtonEvent.argtypes=[C.c_void_p,C.c_uint,C.c_int,C.c_ulong]
 xt.XTestFakeMotionEvent.argtypes=[C.c_void_p,C.c_int,C.c_int,C.c_int,C.c_ulong]
+class WindowAttributes(C.Structure):
+    _fields_=[('x',C.c_int),('y',C.c_int),('width',C.c_int),('height',C.c_int),('border_width',C.c_int),('depth',C.c_int),('visual',C.c_void_p),('root',C.c_ulong),('window_class',C.c_int),('bit_gravity',C.c_int),('win_gravity',C.c_int),('backing_store',C.c_int),('backing_planes',C.c_ulong),('backing_pixel',C.c_ulong),('save_under',C.c_int),('colormap',C.c_ulong),('map_installed',C.c_int),('map_state',C.c_int),('all_event_masks',C.c_long),('your_event_mask',C.c_long),('do_not_propagate_mask',C.c_long),('override_redirect',C.c_int),('screen',C.c_void_p)]
+x.XGetWindowAttributes.argtypes=[C.c_void_p,C.c_ulong,C.POINTER(WindowAttributes)]
+def mapped(window):
+    attributes=WindowAttributes()
+    return x.XGetWindowAttributes(display,window,C.byref(attributes)) and attributes.map_state==2
+
 display=x.XOpenDisplay(os.environ['DISPLAY'].encode()); assert display
 
 def windows():
@@ -69,11 +76,11 @@ def click(px,py):
 with tempfile.TemporaryDirectory(prefix='arcade-native-') as tmp:
     state=Path(tmp)/'state'
     env=dict(os.environ,XDG_STATE_HOME=str(state),XDG_CONFIG_HOME=tmp+'/config',XDG_DATA_HOME=tmp+'/data')
-    app=subprocess.Popen([binary],env=env)
+    app=subprocess.Popen([binary]+(['--compact'] if os.environ.get('ARCADE_TEST_COMPACT')=='1' else []),env=env)
     try:
         for _ in range(100):
             found=windows()
-            if found:break
+            if found and mapped(found[0]):break
             assert app.poll() is None
             time.sleep(.1)
         assert len(found)==1,found
@@ -108,7 +115,15 @@ with tempfile.TemporaryDirectory(prefix='arcade-native-') as tmp:
         key(0xff53);enter('Invaders');key(0x20,hold=.4);home()
         invaders=json.loads((state/'omarchy-invaders/session.json').read_text());assert invaders['version']==1
         key(0xff53);enter('Chess')
-        click(468,636);click(468,482)
+        # Locate the real board from its theme colours; independent of window size and chrome.
+        from PIL import ImageGrab
+        im=ImageGrab.grab(xdisplay=os.environ['DISPLAY']).convert('RGB')
+        coords=[(i%im.width,i//im.width) for i,c in enumerate(im.getdata()) if c in [(216,219,212),(107,116,96)]]
+        assert coords,'Chess board did not render'
+        left=min(c[0] for c in coords);right=max(c[0] for c in coords)+1
+        top=min(c[1] for c in coords);bottom=max(c[1] for c in coords)+1
+        click(int(left+(right-left)*4.5/8),int(top+(bottom-top)*6.5/8))
+        click(int(left+(right-left)*4.5/8),int(top+(bottom-top)*4.5/8))
         chess_path=state/'omarchy-chess/session.json'
         for _ in range(100):
             if chess_path.exists() and len(json.loads(chess_path.read_text())['moves'])>=2:break
@@ -120,7 +135,11 @@ with tempfile.TemporaryDirectory(prefix='arcade-native-') as tmp:
         key(0xff53);enter('Stack');key(0xff0d);key(0xff53);key(0x20);home()
         stack=json.loads((state/'omarchy-stack/session.json').read_text())
         assert stack['marathon']['locks']>=1
+        # Snake is appended to the shelf; preserve the original five-game sequence.
+        key(0xff53);enter('Snake');home()
         # Pinball runs within the SAME native window; no SDL desktop window.
+        key(0xff53);enter('Bubble');key(0xff0d);key(0x20);home()
+        key(0xff53);enter('Blast');home()
         key(0xff53);enter('Circuit Pinball');time.sleep(.7)
         assert windows()==[window],windows()
         key(0x20,hold=.6);key(ord('a'),hold=.2);key(ord('d'),hold=.2)
@@ -133,7 +152,7 @@ with tempfile.TemporaryDirectory(prefix='arcade-native-') as tmp:
         # Close from the app-level shortcut.
         key(ord('q'),True);app.wait(timeout=8);assert app.returncode==0
         assert json.loads(save.read_text())['game']==first['game']
-        print('PASS: singleton; one window across six games; Solitaire draw/save/reopen; legacy save paths; Stockfish replies to native move; native keys; clean shutdown.')
+        print('PASS: singleton; one window across nine games; Solitaire draw/save/reopen; legacy save paths; Stockfish replies to native move; native keys; clean shutdown.')
     finally:
         if app.poll() is None:app.kill();app.wait()
 x.XCloseDisplay(display)

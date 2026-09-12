@@ -348,6 +348,7 @@ impl SolitaireApp {
         v.selection.stroke = Stroke::new(1.5_f32, p.accent);
         v.window_corner_radius = egui::CornerRadius::same(5);
         ctx.set_visuals(v);
+        arcade_presentation::apply(ctx);
         ctx.style_mut(|s| {
             s.spacing.button_padding = vec2(11., 7.);
             s.spacing.item_spacing = vec2(7., 7.);
@@ -545,6 +546,15 @@ impl SolitaireApp {
                     .inner_margin(16.),
             )
             .show(ctx, |ui| {
+                let felt = ui.max_rect();
+                ui.painter().rect_filled(felt, 0., self.theme.palette.table);
+                arcade_presentation::grain(ui.painter(), felt, Color32::from_black_alpha(13), 3.);
+                ui.painter().rect_stroke(
+                    felt.shrink(5.),
+                    0.,
+                    Stroke::new(1_f32, arcade_presentation::BRASS.gamma_multiply(0.4)),
+                    StrokeKind::Inside,
+                );
                 ui.horizontal(|ui| {
                     ui.label(
                         egui::RichText::new(format!(
@@ -832,6 +842,16 @@ impl SolitaireApp {
         if t < 1. {
             ui.ctx().request_repaint();
         }
+        ui.painter().rect_filled(
+            rect.translate(vec2(1., 4.)),
+            4.,
+            Color32::from_black_alpha(55),
+        );
+        ui.painter().rect_filled(
+            rect.translate(vec2(0., 2.)),
+            4.,
+            Color32::from_black_alpha(45),
+        );
         let selected = self
             .selection
             .is_some_and(|(s, i)| s == c.pile && c.row >= i);
@@ -981,6 +1001,7 @@ impl SolitaireApp {
 }
 impl eframe::App for SolitaireApp {
     fn update(&mut self, ctx: &Context, _: &mut eframe::Frame) {
+        arcade_presentation::apply(ctx);
         self.ui(ctx);
     }
     fn on_exit(&mut self, _: Option<&eframe::glow::Context>) {

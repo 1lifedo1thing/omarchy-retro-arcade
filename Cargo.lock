@@ -205,6 +205,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "arcade-presentation"
+version = "0.1.0"
+dependencies = [
+ "eframe",
+ "image",
+]
+
+[[package]]
 name = "arrayref"
 version = "0.3.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2568,9 +2576,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "omarchy-blast"
+version = "0.1.0"
+dependencies = [
+ "arcade-presentation",
+ "eframe",
+ "omarchy-chess",
+ "serde",
+ "serde_json",
+ "tempfile",
+]
+
+[[package]]
+name = "omarchy-bubble"
+version = "0.1.0"
+dependencies = [
+ "arcade-presentation",
+ "eframe",
+ "omarchy-chess",
+ "serde",
+ "serde_json",
+ "tempfile",
+]
+
+[[package]]
 name = "omarchy-chess"
 version = "0.1.0"
 dependencies = [
+ "arcade-presentation",
  "eframe",
  "egui_extras",
  "fs2",
@@ -2588,6 +2621,7 @@ dependencies = [
 name = "omarchy-invaders"
 version = "0.1.0"
 dependencies = [
+ "arcade-presentation",
  "eframe",
  "fs2",
  "image",
@@ -2601,13 +2635,17 @@ dependencies = [
 name = "omarchy-retro-arcade"
 version = "0.1.0"
 dependencies = [
+ "arcade-presentation",
  "eframe",
  "egui_extras",
  "fs2",
  "image",
+ "omarchy-blast",
+ "omarchy-bubble",
  "omarchy-chess",
  "omarchy-invaders",
  "omarchy-scram",
+ "omarchy-snake",
  "omarchy-solitaire",
  "omarchy-stack",
  "tempfile",
@@ -2617,6 +2655,7 @@ dependencies = [
 name = "omarchy-scram"
 version = "0.1.0"
 dependencies = [
+ "arcade-presentation",
  "eframe",
  "egui_extras",
  "fs2",
@@ -2628,9 +2667,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "omarchy-snake"
+version = "0.1.0"
+dependencies = [
+ "arcade-presentation",
+ "eframe",
+ "omarchy-chess",
+ "serde",
+ "serde_json",
+ "tempfile",
+]
+
+[[package]]
 name = "omarchy-solitaire"
 version = "0.1.0"
 dependencies = [
+ "arcade-presentation",
  "eframe",
  "egui_extras",
  "fs2",
@@ -2649,6 +2701,7 @@ name = "omarchy-stack"
 version = "0.1.0"
 dependencies = [
  "arcade-leaderboard",
+ "arcade-presentation",
  "chrono",
  "eframe",
  "omarchy-chess",

@@ -319,6 +319,7 @@ impl ChessApp {
         v.widgets.active.bg_fill = self.theme.accent;
         v.widgets.active.fg_stroke = Stroke::new(1_f32, self.theme.accent_text());
         ctx.set_visuals(v);
+        arcade_presentation::apply(ctx);
         ctx.style_mut(|style| {
             style.spacing.item_spacing = Vec2::new(10., 10.);
             style.spacing.button_padding = Vec2::new(10., 6.);
@@ -598,7 +599,10 @@ impl ChessApp {
                     .fill(self.theme.background)
                     .inner_margin(16),
             )
-            .show(ctx, |ui| self.draw_board(ui));
+            .show(ctx, |ui| {
+                arcade_presentation::backdrop(ui);
+                self.draw_board(ui);
+            });
         self.dialogs(ctx);
     }
     fn activate(&mut self, square: Square) {
@@ -688,6 +692,7 @@ impl ChessApp {
             Pos2::new(outer.center().x - side / 2., outer.min.y + 16.),
             Vec2::splat(side),
         );
+        arcade_presentation::bezel(ui.painter(), rect, self.theme.accent);
         self.board_rect = Some(rect);
         let response = ui.interact(rect, ui.id().with("board"), Sense::click_and_drag());
         response.widget_info(|| {
@@ -746,6 +751,16 @@ impl ChessApp {
 
             let dark = (square.file() as u8 + square.rank() as u8).is_multiple_of(2);
             ui.painter().rect_filled(cell, 0., self.theme.square(dark));
+            arcade_presentation::grain(
+                ui.painter(),
+                cell,
+                Color32::from_black_alpha(if dark { 10 } else { 6 }),
+                4.,
+            );
+            ui.painter().line_segment(
+                [cell.left_top(), cell.right_top()],
+                Stroke::new(0.6_f32, Color32::from_white_alpha(35)),
+            );
             if last.is_some_and(|(a, b)| a == square || b == square) {
                 ui.painter().rect_filled(
                     cell,
@@ -772,6 +787,11 @@ impl ChessApp {
                 .piece_at(square)
                 .filter(|_| self.drag_source != Some(square))
             {
+                ui.painter().add(egui::Shape::ellipse_filled(
+                    cell.center() + Vec2::new(0., cell.height() * 0.32),
+                    Vec2::new(cell.width() * 0.27, cell.height() * 0.06),
+                    Color32::from_black_alpha(75),
+                ));
                 egui::Image::new(self.pieces.image(piece.color, piece.role)).paint_at(ui, cell);
             }
             if targets.contains(&square) {
@@ -1072,6 +1092,7 @@ impl ChessApp {
 }
 impl eframe::App for ChessApp {
     fn update(&mut self, ctx: &egui::Context, _: &mut eframe::Frame) {
+        arcade_presentation::apply(ctx);
         self.draw(ctx);
     }
     fn on_exit(&mut self, _: Option<&eframe::glow::Context>) {

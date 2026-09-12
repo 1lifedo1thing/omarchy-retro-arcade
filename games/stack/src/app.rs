@@ -246,22 +246,53 @@ impl StackApp {
         v.override_text_color = Some(t.foreground);
         v.selection.bg_fill = t.accent;
         ctx.set_visuals(v);
+        arcade_presentation::apply(ctx);
     }
     fn menu(&mut self, ui: &mut egui::Ui) {
-        ui.add_space(30.);
+        ui.add_space(20.);
         ui.label(
             RichText::new("STACK / OMARCHY ARCADE")
                 .monospace()
                 .color(ui.visuals().selection.bg_fill),
         );
-        ui.heading(RichText::new("Make room.").size(50.));
+        ui.heading(RichText::new("STACK").size(54.));
         ui.label("Seven shapes. One more possibility.");
-        ui.add_space(30.);
+        ui.add_space(22.);
+        let art = Rect::from_min_size(
+            ui.max_rect().right_top() + Vec2::new(-290., 90.),
+            Vec2::new(240., 330.),
+        );
+        if ui.available_width() > 850. {
+            arcade_presentation::bezel(ui.painter(), art, ui.visuals().selection.bg_fill);
+            ui.painter()
+                .rect_filled(art, 0., Color32::from_rgb(9, 16, 18));
+            for (row, pattern) in [
+                "      ", "    11", "    1 ", "  221 ", "332444", "355466", "775666", "777555",
+            ]
+            .iter()
+            .enumerate()
+            {
+                for (col, k) in pattern.bytes().enumerate() {
+                    if k != b' ' {
+                        let r = Rect::from_min_size(
+                            art.min + Vec2::new(8. + col as f32 * 37., 26. + row as f32 * 37.),
+                            Vec2::splat(34.),
+                        );
+                        arcade_presentation::tile(ui.painter(), r, colour(k - b'0'), true);
+                    }
+                }
+            }
+        }
         for mode in [Mode::Marathon, Mode::Sprint] {
             egui::Frame::group(ui.style())
+                .fill(ui.visuals().window_fill)
+                .stroke(Stroke::new(
+                    1_f32,
+                    arcade_presentation::BRASS.gamma_multiply(0.6),
+                ))
                 .inner_margin(20.)
                 .show(ui, |ui| {
-                    ui.set_min_width(350.);
+                    ui.set_width(410.);
                     ui.heading(format!("{mode:?}"));
                     ui.label(if mode == Mode::Marathon {
                         "Keep clearing as the pace rises."
@@ -295,7 +326,7 @@ impl StackApp {
                 });
             ui.add_space(15.);
         }
-        ui.label("Enter starts Marathon · S starts Sprint");
+        ui.label("Enter  Marathon     S  Sprint     R  Resume Marathon");
         ui.add_space(15.);
         if ui.button("Controls & preferences").clicked() {
             self.settings = true;
@@ -309,12 +340,15 @@ impl StackApp {
     }
     fn board(&self, ui: &mut egui::Ui, s: &Sim) {
         let avail = ui.available_size();
-        let cell = (avail.y / 20.).min((avail.x - 165.) / 10.).clamp(8., 40.);
+        let cell = ((avail.y - 24.) / 20.)
+            .min((avail.x - 210.) / 10.)
+            .clamp(8., 40.);
         let width = cell * 10.;
         ui.horizontal_top(|ui| {
             ui.add_space(((avail.x - width - 165.) / 2.).max(0.));
             let (r, _) = ui.allocate_exact_size(Vec2::new(width, cell * 20.), egui::Sense::hover());
             let p = ui.painter();
+            arcade_presentation::bezel(p, r, ui.visuals().selection.bg_fill);
             let dark = ui.visuals().dark_mode;
             p.rect_filled(
                 r,
@@ -377,10 +411,19 @@ impl StackApp {
             ui.add_space(18.);
             ui.vertical(|ui| {
                 ui.set_min_width(135.);
-                ui.label(RichText::new("HOLD").monospace().weak());
+                ui.add_space(8.);
+                ui.label(
+                    RichText::new("RESERVE")
+                        .monospace()
+                        .color(arcade_presentation::BRASS),
+                );
                 preview(ui, s.held, cell.min(24.), s.hold_used);
                 ui.add_space(12.);
-                ui.label(RichText::new("NEXT").monospace().weak());
+                ui.label(
+                    RichText::new("UP NEXT")
+                        .monospace()
+                        .color(arcade_presentation::BRASS),
+                );
                 for &k in s.queue.iter().take(5) {
                     preview(ui, Some(k), cell.min(20.), false);
                     ui.add_space(4.);
@@ -396,6 +439,7 @@ impl Default for StackApp {
 }
 impl eframe::App for StackApp {
     fn update(&mut self, ctx: &egui::Context, _: &mut eframe::Frame) {
+        arcade_presentation::apply(ctx);
         if let Some(sim) = self.online.poll() {
             self.sim = Some(sim);
             self.paused = false;
@@ -418,6 +462,8 @@ impl eframe::App for StackApp {
                     self.start(Mode::Marathon, false);
                 } else if press(Key::S) {
                     self.start(Mode::Sprint, false);
+                } else if press(Key::R) && self.saved.marathon.is_some() {
+                    self.start(Mode::Marathon, true);
                 }
             } else if press(Key::Escape) || press(Key::P) {
                 self.paused = !self.paused;
@@ -491,6 +537,7 @@ impl eframe::App for StackApp {
                     .inner_margin(18.),
             )
             .show(ctx, |ui| {
+                arcade_presentation::backdrop(ui);
                 if self.sim.is_none() {
                     self.menu(ui);
                 } else {
@@ -732,33 +779,12 @@ fn block(p: &egui::Painter, r: Rect, k: u8, active: bool, ghost: bool) {
         p.circle_filled(r.center(), 1.5, c);
         return;
     }
-    p.rect_filled(r, 2., if active { c } else { c.gamma_multiply(0.70) });
-    p.line_segment(
-        [
-            r.left_top() + Vec2::splat(3.),
-            r.right_top() + Vec2::new(-3., 3.),
-        ],
-        Stroke::new(
-            2.0_f32,
-            Color32::from_white_alpha(if active { 160 } else { 70 }),
-        ),
+    arcade_presentation::tile(
+        p,
+        r,
+        if active { c } else { c.gamma_multiply(0.80) },
+        active,
     );
-    if active {
-        p.rect_stroke(
-            r,
-            2.,
-            Stroke::new(1.0_f32, Color32::WHITE),
-            egui::StrokeKind::Inside,
-        );
-    } else {
-        p.line_segment(
-            [
-                r.left_bottom() + Vec2::new(3., -3.),
-                r.right_bottom() - Vec2::splat(3.),
-            ],
-            Stroke::new(2.0_f32, Color32::from_black_alpha(80)),
-        );
-    }
 }
 fn preview(ui: &mut egui::Ui, k: Option<u8>, cell: f32, used: bool) {
     let (r, _) = ui.allocate_exact_size(Vec2::new(cell * 4., cell * 2.), egui::Sense::hover());
