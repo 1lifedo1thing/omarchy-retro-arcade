@@ -79,6 +79,8 @@ pub struct Pinball {
     texture: Option<egui::TextureHandle>,
     error: Option<String>,
     focused: bool,
+    input_enabled: bool,
+    mouse_down: bool,
     started: Instant,
 }
 impl Pinball {
@@ -93,7 +95,22 @@ impl Pinball {
             .flatten()
             .is_some_and(|s| s.success())
     }
+    fn release_pointer(&mut self) {
+        if self.mouse_down {
+            // Release outside the worker UI so a blocked click cannot activate a menu item.
+            self.send("mouse -1 -1 0".into());
+            self.mouse_down = false;
+        }
+        self.send("mouse -1 -1 -1".into());
+    }
+    pub fn set_input_enabled(&mut self, enabled: bool) {
+        if self.input_enabled && !enabled {
+            self.release_pointer();
+        }
+        self.input_enabled = enabled;
+    }
     pub fn pause(&mut self) {
+        self.release_pointer();
         self.send("blur".into());
     }
     pub fn new(ctx: &egui::Context) -> io::Result<Self> {
@@ -154,6 +171,8 @@ impl Pinball {
             texture: None,
             error: None,
             focused: true,
+            input_enabled: true,
+            mouse_down: false,
             started: Instant::now(),
         })
     }
@@ -207,9 +226,9 @@ impl eframe::App for Pinball {
                     Some(ctx.load_texture("circuit-live", image, egui::TextureOptions::LINEAR));
             }
         }
-        let focused = ctx.input(|i| i.focused);
+        let focused = ctx.input(|i| i.focused) && self.input_enabled;
         if self.focused && !focused {
-            self.send("blur".into());
+            self.pause();
         }
         self.focused = focused;
         egui::CentralPanel::default()
@@ -235,6 +254,11 @@ impl eframe::App for Pinball {
                         .sense(egui::Sense::click_and_drag()),
                 );
                 let rect = image.rect;
+                if !focused {
+                    return;
+                }
+                // Ownership matters: coordinates alone include overlapping host dialogs.
+                let hovered = image.contains_pointer();
                 for event in ctx.input(|i| i.events.clone()) {
                     match event {
                         egui::Event::Key {
@@ -251,7 +275,7 @@ impl eframe::App for Pinball {
                                 self.send(format!("key {code} {} {mods}", i32::from(pressed)));
                             }
                         }
-                        egui::Event::PointerMoved(pos) if rect.contains(pos) => {
+                        egui::Event::PointerMoved(pos) if hovered => {
                             self.send(format!(
                                 "mouse {} {} -1",
                                 ((pos.x - rect.min.x) / scale) as i32,
@@ -263,13 +287,25 @@ impl eframe::App for Pinball {
                             button: egui::PointerButton::Primary,
                             pressed,
                             ..
-                        } if rect.contains(pos) || !pressed => {
+                        } if (pressed && hovered) || (!pressed && self.mouse_down) => {
+                            self.mouse_down = pressed;
                             self.send(format!(
                                 "mouse {} {} {}",
                                 ((pos.x - rect.min.x) / scale) as i32,
                                 ((pos.y - rect.min.y) / scale) as i32,
                                 i32::from(pressed)
                             ));
+                        }
+                        egui::Event::PointerMoved(_) | egui::Event::PointerGone
+                            if !self.mouse_down =>
+                        {
+                            self.send("mouse -1 -1 -1".into());
+                        }
+                        egui::Event::MouseWheel { delta, .. } if hovered => {
+                            let direction = delta.y.signum() as i32;
+                            if direction != 0 {
+                                self.send(format!("wheel {direction}"));
+                            }
                         }
                         _ => {}
                     }

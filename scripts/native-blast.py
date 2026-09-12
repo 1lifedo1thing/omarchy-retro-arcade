@@ -35,11 +35,32 @@ def capture():
     return ImageGrab.grab(xdisplay=os.environ['DISPLAY']).crop((0, 0, 1280, 900))
 
 
-def assert_frozen():
-    time.sleep(.25)
-    before = capture().tobytes()
+def assert_frozen(label):
+    # Focus delivery, software rendering and the pause window animation need
+    # not finish inside 250 ms on a CI runner. Require a stable scene within a
+    # bounded deadline, then independently verify it remains frozen.
+    deadline = time.monotonic() + 4
+    before = capture()
+    stable_since = time.monotonic()
+    while time.monotonic() < deadline:
+        time.sleep(.1)
+        after = capture()
+        if before.tobytes() != after.tobytes():
+            before = after
+            stable_since = time.monotonic()
+        elif time.monotonic() - stable_since >= .7:
+            break
+    else:
+        if out:
+            before.save(out/(label+'-unsettled.png'))
+        raise AssertionError(label+': pause scene never settled')
     time.sleep(.7)
-    assert before == capture().tobytes(), 'Paused scene advanced'
+    after = capture()
+    if before.tobytes() != after.tobytes():
+        if out:
+            before.save(out/(label+'-before.png'))
+            after.save(out/(label+'-after.png'))
+        raise AssertionError(label+': paused scene advanced')
 
 
 def title(window):
@@ -62,14 +83,14 @@ with tempfile.TemporaryDirectory(prefix='blast-native-') as tmp:
         if out:
             capture().save(out/'game.png')
         key(0xff1b)
-        assert_frozen()
+        assert_frozen('keyboard-pause')
         key(0xff1b)
         x.XSetInputFocus(display, x.XDefaultRootWindow(display), 1, 0)
         x.XFlush(display)
-        assert_frozen()
+        assert_frozen('focus-loss')
         x.XSetInputFocus(display, window, 1, 0)
         x.XFlush(display)
-        assert_frozen()  # Focus return must not automatically resume.
+        assert_frozen('focus-return')  # Focus return must not automatically resume.
         key(0xff1b)
         key(ord('h'),True)
         for _ in range(30):

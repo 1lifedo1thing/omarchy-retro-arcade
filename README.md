@@ -25,7 +25,7 @@ contains nine games and does **not** include 2048.
 sudo pacman -U ./omarchy-retro-arcade-*.pkg.tar.zst
 ```
 
-Open **Omarchy Arcade** from your app launcher. Choose a game with the arrow keys and press `Enter`. `Ctrl+H` returns to the collection; `Ctrl+Q` quits.
+Open **Omarchy Arcade** from your app launcher. Click a game and **Play**, or double-click its title. You can also select with the arrow keys and press `Enter`. Click **Arcade** (or press `Ctrl+H`) to return; **Full screen** and `F11` toggle fullscreen, and `Ctrl+Q` quits. See the [mouse controls and per-game input guide](docs/MOUSE-SUPPORT.md).
 
 The package includes all nine games and a bundled Stockfish engine for Chess. It replaces conflicting standalone game packages while retaining their existing save files and settings. The app works offline and needs no account.
 
