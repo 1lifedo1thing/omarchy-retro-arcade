@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="640" viewBox="0 0 960 640">
+<rect width="960" height="640" fill="#c9dcdc"/>
+<path d="M-10 500 Q200 60 480 310 T980 390" fill="none" stroke="#b4c9c9" stroke-width="4"/>
+<path d="M-10 508 Q200 68 480 318 T980 398" fill="none" stroke="#b4c9c9" stroke-width="4"/>
+<g fill="#22534c" stroke="#cee3db" stroke-width="5"><path d="M170 120l-55 110h110z M170 80l-45 100h90z"/><path d="M750 370l-65 130h130z M750 315l-50 110h100z"/><path d="M260 430l-42 85h84z M260 395l-34 70h68z"/></g>
+<g transform="translate(500 310) rotate(-25)"><ellipse cy="25" rx="32" ry="12" fill="#829c9f"/><path d="M-14-40v100 M14-40v100" stroke="#284146" stroke-width="7" stroke-linecap="round"/><path d="M0-25v44" stroke="#ce5931" stroke-width="34" stroke-linecap="round"/><circle cy="-44" r="17" fill="#f8e0ae"/><path d="M-37 1h74" stroke="#ce5931" stroke-width="9"/></g>
+<text x="48" y="560" font-family="monospace" font-size="52" font-weight="bold" fill="#284146">FreeSki</text><text x="50" y="602" font-family="monospace" font-size="22" fill="#284146">FIND YOUR EDGES. LEAVE FRESH TRACKS.</text>
+</svg>

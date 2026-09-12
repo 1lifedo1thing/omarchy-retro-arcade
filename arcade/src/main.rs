@@ -20,9 +20,10 @@ enum Game {
     Bubble,
     Blast,
     TwentyFortyEight,
+    FreeSki,
 }
 impl Game {
-    const ALL: [Self; 10] = [
+    const ALL: [Self; 11] = [
         Self::Pinball,
         Self::Solitaire,
         Self::Scram,
@@ -33,6 +34,7 @@ impl Game {
         Self::Bubble,
         Self::Blast,
         Self::TwentyFortyEight,
+        Self::FreeSki,
     ];
     fn id(self) -> &'static str {
         match self {
@@ -46,6 +48,7 @@ impl Game {
             Self::Bubble => "bubble",
             Self::Blast => "blast",
             Self::TwentyFortyEight => "2048",
+            Self::FreeSki => "freeski",
         }
     }
     fn name(self) -> &'static str {
@@ -60,6 +63,7 @@ impl Game {
             Self::Bubble => "Bubble",
             Self::Blast => "Blast",
             Self::TwentyFortyEight => "2048",
+            Self::FreeSki => "FreeSki",
         }
     }
     fn line(self) -> &'static str {
@@ -74,6 +78,7 @@ impl Game {
             Self::Bubble => "Make three. Clear your head.",
             Self::Blast => "Make room. Leave an exit.",
             Self::TwentyFortyEight => "Slide together. Make something bigger.",
+            Self::FreeSki => "Find your edges. Leave fresh tracks.",
         }
     }
     fn image(self) -> egui::ImageSource<'static> {
@@ -83,6 +88,7 @@ impl Game {
             Self::Bubble => egui::include_image!("../../games/bubble/docs/game.png"),
             Self::Blast => egui::include_image!("../../games/blast/docs/game.png"),
             Self::TwentyFortyEight => egui::include_image!("../../games/2048/docs/shelf.svg"),
+            Self::FreeSki => egui::include_image!("../../games/freeski/assets/shelf.svg"),
             Self::Chess => egui::include_image!("../../games/chess/docs/preview.png"),
             Self::Solitaire => {
                 egui::include_image!("../../games/solitaire/docs/screenshots/table.png")
@@ -124,6 +130,14 @@ impl ArcadeGame for omarchy_blast::app::App {
     }
     fn finished(&mut self) -> bool {
         omarchy_blast::app::App::finished(self)
+    }
+}
+impl ArcadeGame for omarchy_freeski::app::App {
+    fn suspend(&mut self) {
+        self.suspend();
+    }
+    fn finished(&mut self) -> bool {
+        self.finished()
     }
 }
 impl ArcadeGame for omarchy_2048::app::App {}
@@ -183,6 +197,7 @@ impl Arcade {
                 Game::Bubble => Box::new(omarchy_bubble::app::BubbleApp::new()),
                 Game::Blast => Box::new(omarchy_blast::app::App::new()),
                 Game::TwentyFortyEight => Box::new(omarchy_2048::app::App::new()?),
+                Game::FreeSki => Box::new(omarchy_freeski::app::App::new()?),
                 Game::Chess => {
                     let dir = omarchy_chess::storage::state_dir();
                     lock = Some(Box::new(omarchy_chess::storage::SessionLock::acquire(
@@ -328,6 +343,7 @@ impl eframe::App for Arcade {
             ui.heading("Omarchy Arcade");ui.label(concat!("Version ",env!("CARGO_PKG_VERSION")));ui.label("Native games. A community project for Omarchy.");
             ui.hyperlink_to("2048: Avi Barit (avibarit)", "https://github.com/avibarit/2048");
             ui.hyperlink_to("Original 2048: Gabriele Cirulli", "https://github.com/gabrielecirulli/2048");
+            ui.label("FreeSki: original practice slope and artwork by Omarchy Arcade contributors.");
             ui.label("Original game artwork and engines; credits and licences are included with the app.");ui.label("Ctrl+H returns to Arcade. Each game keeps its own controls and saves.");
         });
         }
@@ -373,7 +389,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 return Ok(());
             }
             "--help" | "-h" => {
-                println!("Omarchy Arcade\n--game chess|solitaire|scram|invaders|pinball|stack|snake|bubble|blast|2048\n--screenshot PATH\n--compact\n--version\nCtrl+H: return to Arcade. Ctrl+Q: quit.");
+                println!("Omarchy Arcade\n--game chess|solitaire|scram|invaders|pinball|stack|snake|bubble|blast|2048|freeski\n--screenshot PATH\n--compact\n--version\nCtrl+H: return to Arcade. Ctrl+Q: quit.");
                 return Ok(());
             }
             "--game" => {

@@ -14,6 +14,28 @@
   endless skiing/pursuit and five Slalom courses, then complete release acceptance.
   Numerical defaults and the detailed first-playable design remain provisional.
 
+## FreeSki first playable (12 September 2026)
+
+- User authorized implementing milestone 1. Add `omarchy-freeski` as an ordinary
+  Rust library, append FreeSki after 2048 and preserve the same window, desktop
+  entry and package. The playable scope is an authored 1,200 m practice slope;
+  endless generation, creature pursuit, Slalom and sound remain later work.
+- Use 60 Hz production simulation with f64 world metres, bounded heading changes,
+  a fixed logical view and swept circle/height checks. Practice finish and fatal
+  collisions resolve in time order. A production-input reference finishes in
+  3,397 ticks with three ramp jumps and zero crashes. Cross-platform bitwise libm
+  reproducibility is not claimed; render schedules and same-build save continuations
+  are tested independently of the UI.
+- Independent versioned `omarchy-retro-arcade/freeski.json` state uses private atomic
+  writes through the existing native storage helper; headless evidence uses an
+  equivalent portable implementation. Both builds test retention and round trips.
+  Records/preferences are logically separate from the attempt. Invalid files
+  remain intact unless explicitly archived; every restored active run is paused.
+- Original native geometry and SVG art reuse the approved cabinet material.
+  A bounded trail buffer supports reduced effects. No other game assets or saves
+  are changed. Native X11 evidence, actual Wayland rendering and human playtesting
+  are separate acceptance categories; human feel/difficulty acceptance remains open.
+
 ## Original integration contract
 
 - One repository, native window, desktop identity, Arch package and release version. Games are ordinary source subdirectories, not submodules or downloaded plugins.
