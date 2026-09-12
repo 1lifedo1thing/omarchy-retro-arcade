@@ -52,8 +52,9 @@ with tempfile.TemporaryDirectory(prefix='arcade-mouse-') as tmp:
         rail_w = min(350, max(240, (w-48-pad*2)*.32))
         bottom = h - 32 - 46
         top = 144
+        games = ['Circuit Pinball','Solitaire','Scram','Invaders','Chess','Stack','Snake','Bubble','Blast','2048']
         def select(index):
-            mouse(right-rail_w/2, top+(index+.5)*(bottom-top)/9)
+            mouse(right-rail_w/2, top+(index+.5)*(bottom-top)/len(games))
         def play(name):
             mouse(right-rail_w-30-63, bottom-53)
             ready(name+' - Omarchy Arcade')
@@ -61,8 +62,8 @@ with tempfile.TemporaryDirectory(prefix='arcade-mouse-') as tmp:
             mouse(75, 25)
             ready('Omarchy Arcade')
         shot('shelf')
-        # All nine entries can be selected, launched and left without a key.
-        for index,name in enumerate(['Circuit Pinball','Solitaire','Scram','Invaders','Chess','Stack','Snake','Bubble','Blast']):
+        # All ten entries can be selected, launched and left without a key.
+        for index,name in enumerate(games):
             select(index); play(name)
             if index == 0:
                 time.sleep(2)
@@ -105,7 +106,7 @@ with tempfile.TemporaryDirectory(prefix='arcade-mouse-') as tmp:
         play('Invaders'); key(ord('p')); key(0xff51,hold=.5); home()
         later=json.loads((state/'omarchy-invaders/session.json').read_text())
         assert later['game']['ship'] < data['game']['ship']-50
-        print('PASS: nine mouse launches/returns, Pinball confirm/cancel, Invaders mouse and keyboard handoff')
+        print('PASS: ten mouse launches/returns, Pinball confirm/cancel, Invaders mouse and keyboard handoff')
         key(ord('q'),True); app.wait(timeout=10)
         assert app.returncode == 0
     except Exception:

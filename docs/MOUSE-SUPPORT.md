@@ -22,11 +22,13 @@ Each game keeps its own settings and help. There is no new shared settings store
 | Snake | Directional gameplay remains keyboard-controlled | Speed/start, pause/resume, restart, Settings/control bindings, return. |
 | Blast | Movement/bombs remain keyboard-controlled, including local two-player | Match/arena selection, start, Settings/controls, pause/resume, restart, next round, return. |
 
+| 2048 | Click direction buttons or drag across the board | New game, undo, pause/resume, Help, preferences and continue after reaching 2048. |
+
 The shared actions are mouse-accessible; this is not a promise that every game is entirely mouse-playable. Rebinding a keyboard control still requires pressing the replacement key. Future games should provide suitable mouse gameplay and clickable common actions from the outset.
 
 ## Changes for issue #6
 
-The nine-game audit found most common actions already clickable. The patch adds Invaders steering/fire, collection mouse instructions and pointer feedback, clickable fullscreen controls, and ownership-aware Pinball pointer forwarding. Invaders pauses simulation while a Game menu is open without preventing its Pause/resume item from resuming play after the menu closes.
+The game audit found most common actions already clickable. The patch adds Invaders steering/fire, collection mouse instructions and pointer feedback, clickable fullscreen controls, and ownership-aware Pinball pointer forwarding. Invaders pauses simulation while a Game menu is open without preventing its Pause/resume item from resuming play after the menu closes.
 
 Pointer input is confined to the Invaders playfield and disabled while paused, unfocused, in menus/dialogs or after game over. A press started outside the field cannot fire by dragging into it. Mouse steering follows the existing movement speed and collision rules; it does not teleport the ship. Pinball releases an outstanding mouse press when host input is blocked or focus is lost, so the worker cannot retain a stuck button.
 
@@ -34,9 +36,9 @@ Pointer input is confined to the Invaders playfield and disabled while paused, u
 
 Automated egui input tests and X11 native checks are separate from an actual Omarchy/Wayland playtest. Before closing #6, verify on Omarchy:
 
-- All nine games can be selected, launched and left using the mouse; Pinball can both cancel and confirm returning.
+- All ten games can be selected, launched and left using the mouse; Pinball can both cancel and confirm returning.
 - Applicable settings/help, pause/resume, restart and new-game actions work with clicks.
-- Chess, Solitaire, Bubble and Invaders accept the documented pointer gameplay.
+- Chess, Solitaire, Bubble, Invaders and 2048 accept the documented pointer gameplay.
 - Opening/closing menus and dialogs cannot also play a move, fire a shot or activate a worker menu underneath.
 - Keyboard controls still work immediately after mouse use; leaving the field, releasing a held click and losing focus stop pointer firing.
 - Collection, game controls and confirmation dialogs remain usable in light/dark themes, compact windows and 200% scale.
