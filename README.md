@@ -55,7 +55,7 @@ PRs, issues and playtesting are encouraged. [Report a bug, suggest an improvemen
 ## Source layout
 
 - `arcade/`: the Rust app, collection shelf and local Pinball transport.
-- `games/`: ten ordinary game directories, preserving all imported Git history.
+- `games/`: ten implemented games and the [FreeSki project setup](games/freeski/README.md), preserving all imported Git history.
 - `packaging/`: one Arch package, icon and desktop entry.
 - `scripts/`: shared build, staging and verification entry points.
 - `shared/presentation/`: shared cabinet materials, control styling and artwork.

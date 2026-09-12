@@ -1,5 +1,21 @@
 # Integration decisions
 
+## FreeSki project setup (12 September 2026)
+
+- User requested repository preparation for issue #14 before discussing milestone
+  1. `games/freeski` contains the requirements snapshot, five-milestone plan,
+  first-playable discussion brief, tuning register, acceptance tracker and asset
+  provenance location. Gameplay implementation has not started.
+- The intended integration is an ordinary Rust game library in Arcade's existing
+  window and package. Crate registration and shelf integration belong to the
+  first playable milestone; setup adds no runtime entry or dependency.
+- Milestone 1 establishes the authored practice slope, deterministic simulation
+  and basic safe persistence. Later milestones harden those contracts, add
+  endless skiing/pursuit and five Slalom courses, then complete release acceptance.
+  Numerical defaults and the detailed first-playable design remain provisional.
+
+## Original integration contract
+
 - One repository, native window, desktop identity, Arch package and release version. Games are ordinary source subdirectories, not submodules or downloaded plugins.
 - Four Rust/egui games are library dependencies of the Arcade executable. Preserve approved rendering, gameplay and existing storage paths. Acquire each game's original session lock before opening it, flush on leaving, and drop it on returning to the shelf.
 - Circuit retains its C++ upstream engine. A private bundled worker renders through SDL software into the Arcade window. This avoids X11 window embedding and works with the same frontend on Wayland. The worker has no visible window or desktop entry. Its framed local pipes carry pixels and input, never network traffic.
