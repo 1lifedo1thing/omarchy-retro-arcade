@@ -45,7 +45,7 @@ system package installation.
 | `scripts/native-check.py` against staged installation | Passed singleton, eleven games in one window, Stockfish response, existing saves and clean shutdown |
 | `scripts/install.sh` staging and reinstall | Passed: one desktop entry, all eleven game licences, FreeSki provenance; suspended mid-jump file unchanged across reinstall and reopen |
 | Actual local Wayland launch/capture | Passed rendering and clean capture exit; interactive playtesting remains separate |
-| `packaging/build-arch.sh` | Pending local attempt from the committed tree; staged installation is not an Arch package acceptance claim |
+| `packaging/build-arch.sh` | Blocked at dependency validation: pacman has no installed `rust>=1.98` package. The user-local toolchain builds the app but does not satisfy the package database. No Arch package was built or installed; staged installation is separate evidence |
 | Hands-on human playtest | Pending; no human findings have been invented |
 
 The production reference in [engine tests](../tests/engine.rs) follows authored
