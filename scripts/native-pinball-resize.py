@@ -24,8 +24,17 @@ with tempfile.TemporaryDirectory() as tmp:
   x.XSetInputFocus(display,w,1,0);x.XFlush(display);resize(1152,836)
   # F2 starts a game; pause it before comparing state across target resizes.
   key(0xffbf);time.sleep(.8);key(ord('p'));time.sleep(.8)
-  paused=capture();time.sleep(.4)
-  assert not changed(paused.crop((0,75,1152,810)),capture().crop((0,75,1152,810)))
+  # Wait for the pause command and buffered worker frame to reach the window.
+  # A fixed delay can compare one pre-pause frame on a slower native renderer.
+  deadline=time.monotonic()+5
+  paused=capture()
+  while time.monotonic()<deadline:
+   time.sleep(.3);current=capture()
+   if not changed(paused.crop((0,75,1152,810)),current.crop((0,75,1152,810))):break
+   paused=current
+  paused.save(out/"paused-before.png");time.sleep(.4)
+  settled=capture();settled.save(out/"paused-after.png")
+  assert not changed(paused.crop((0,75,1152,810)),settled.crop((0,75,1152,810)))
   for width,height in [(941,1030),(900,1100),(1360,800),(900,760),(1152,836)]:
    im=resize(width,height);im.save(out/f'{width}x{height}.png')
    if height>width:
