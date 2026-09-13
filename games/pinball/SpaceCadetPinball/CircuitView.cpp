@@ -30,6 +30,7 @@ SDL_Surface* original=nullptr;
 SDL_Renderer* renderer=nullptr;
 uint32_t lastAccent=0;
 float scale,ox,oy;
+bool portrait=false;
 ImDrawList* draw;
 ImVec2 p(float x,float y){return {ox+x*scale,oy+y*scale};}
 ImU32 rgba(int r,int g,int b,int a=255){return IM_COL32(r,g,b,a);}
@@ -63,8 +64,9 @@ void drawBridge(const ImDrawList*,const ImDrawCmd*){
  SDL_RenderCopyF(renderer,bridge,nullptr,&destination);
 }
 void drawBoard(const ImDrawList*, const ImDrawCmd*){
- SDL_FRect destination={ox,oy,1536*scale,1024*scale};
- SDL_RenderCopyF(renderer,board,nullptr,&destination);
+ SDL_Rect source={0,0,portrait?1024:1536,1024};
+ SDL_FRect destination={ox,oy,source.w*scale,1024*scale};
+ SDL_RenderCopyF(renderer,board,&source,&destination);
 }
 void updateTexture(){
  uint32_t c=OmarchyTheme::Accent();if(c==lastAccent&&board)return;lastAccent=c;
@@ -118,7 +120,10 @@ bool Init(SDL_Renderer* r){
 void Draw(){
  if(!board||!pb::MainTable)return;updateTexture();draw=ImGui::GetBackgroundDrawList();
  auto size=ImGui::GetIO().DisplaySize;float menu=options::Options.ShowMenu?winmain::MainMenuHeight:0;
- scale=std::min(size.x/1536.f,(size.y-menu)/1024.f);ox=(size.x-1536*scale)/2;oy=menu+(size.y-menu-1024*scale)/2;
+ portrait=size.x/(size.y-menu)<1.2f;
+ float layoutWidth=portrait?1024.f:1536.f,layoutHeight=portrait?1230.f:1024.f;
+ scale=std::min(size.x/layoutWidth,(size.y-menu)/layoutHeight);
+ ox=(size.x-layoutWidth*scale)/2;oy=menu+(size.y-menu-layoutHeight*scale)/2;
  draw->AddRectFilled({0,menu},size,rgba(5,8,8));
  // Copy the rectangular plate once, retaining ImGui overlay ordering.
  draw->AddCallback(drawBoard,nullptr);
@@ -169,6 +174,23 @@ void Draw(){
  }
  if(underBridge && bridge)draw->AddCallback(drawBridge,nullptr);
  for(auto ball:t->BallList)if(ball->ActiveFlag && (ball->CollisionMask&2))drawBall(ball);
+ if(portrait){
+  // Keep the approved playfield at its native proportions; replace the tall
+  // decorative cabinet with a compact score strip below it.
+  draw->AddRectFilled(p(8,1036),p(1016,1220),rgba(15,21,20),12*scale);
+  draw->AddLine(p(24,1036),p(1000,1036),accent(150),2*scale);
+  char score[32];snprintf(score,sizeof(score),"%07d",std::max(0,t->CurScore));
+  matrix(20,1050,470,56,score,6);
+  std::string ball=OmarchyTable::GameOver()?"GAME OVER":"BALL "+std::to_string(4-std::max(1,t->BallCount));
+  matrix(510,1050,490,56,ball,4.5f);
+  const char* status=winmain::single_step?"PAUSED  P RESUME":OmarchyTable::Status();
+  matrix(20,1110,980,42,status,3.25f);
+  unsigned count=0;for(unsigned v=OmarchyTable::Targets();v;v>>=1)count+=v&1;
+  std::string stats="CIRCUIT "+std::to_string(OmarchyTable::Progress())+"/12    TARGETS "+std::to_string(count)+"/8    ORBITS "+std::to_string(OmarchyTable::Orbits())+"    RAMPS "+std::to_string(OmarchyTable::Ramps());
+  label(60,1160,stats.c_str(),20);
+  label(220,1193,"A/D OR Z/SLASH   SPACE LAUNCH",19);
+  return;
+ }
  char score[32];snprintf(score,sizeof(score),"%07d",std::max(0,t->CurScore));matrix(1067,554,414,67,score,7);
  std::string ball=OmarchyTable::GameOver()?"GAME OVER":"BALL "+std::to_string(4-std::max(1,t->BallCount));matrix(1067,638,414,56,ball,4.5f);
  std::string charge;
