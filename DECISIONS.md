@@ -65,3 +65,6 @@ rescue production balls. Keep approved art and upstream physics unchanged.
 ### Reliable spring charging and contact
 
 Align the ground ball and contact head to the visible coil, animate existing coil pixels from real charge, and retain a0.75-second one-shot release window through rapid re-presses. The upstream plunger default remains zero for imported resources. Charge text reflects real engine state; the artwork file is unchanged.
+### Passive scoring-target response
+
+Stand-up targets and side modules score through the upstream wall response with zero powered boost. Powered bumpers and slings retain their impulses. Contact tracing and real-engine shots distinguish scoring events from energy injection. Geometry is unchanged here.
