@@ -1,5 +1,18 @@
 # Stack verification
 
+## Save protection follow-up (12 September 2026)
+
+- Seven save regressions cover invalid/future saves, failed recovery destinations, prior recovery files, failed reads and dangling links, valid records/preferences/both modes, first-run saving and reopening after manual recovery. Four of the initial six tests failed against the original behavior; the fixed Stack suite passes all 26 tests.
+- Workspace formatting and strict Clippy pass. All 222 workspace tests pass with a real Stockfish engine required; none are ignored. The release build, three Pinball engine/theme checks and desktop-entry validation pass.
+- `scripts/native-stack-save-protection.py` passes under Xvfb in compact dark and light/200% configurations. Real key events exercise unsaved play, periodic saves, pause, shelf return, reopening and normal close while checking original/recovery bytes. The test also rejects the original preview's recovery-file overwrite. It runs in CI and uploads its actual-window captures with the other native evidence.
+- Existing Stack native gameplay, both save modes, pause/focus and resize checks pass. Ten-game native switching passes from a staged installation containing the app, both helpers and one desktop entry. That check used an explicit default-theme fixture because the existing theme loader can fall back to the desktop's HOME theme before XDG config.
+- On an actual Omarchy/Wayland desktop, launching the rebuilt app with an isolated future-version save, capturing the persistent notice and closing normally preserves the file without creating a recovery copy. This is desktop launch/render/exit evidence; full keyboard lifecycle coverage above is X11 automation, not human play-feel testing.
+- No live package reinstall, ARM build or leaderboard deployment was performed for this save-only change. Existing schemas, paths and packaging remain unchanged.
+
+![Persistent save-protection notice in a compact light-theme window at 200% scale](save-protection.png)
+
+The earlier integration evidence below is retained as historical context.
+
 Implemented in `feat/stack`, based on the five-game consolidation and updated with published `main` through `7c73d08`. Bubble, Blast and Snake remain separate feature work; this branch preserves the existing five games and adds Stack.
 
 ## Automated evidence
