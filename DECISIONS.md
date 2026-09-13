@@ -68,3 +68,6 @@ Align the ground ball and contact head to the visible coil, animate existing coi
 ### Passive scoring-target response
 
 Stand-up targets and side modules score through the upstream wall response with zero powered boost. Powered bumpers and slings retain their impulses. Contact tracing and real-engine shots distinguish scoring events from energy injection. Geometry is unchanged here.
+### Circuit bridge rendering
+
+Prefer the SDL offscreen video driver with accelerated rendering and retain software fallback. Create the bridge window at its final dimensions before its renderer. Copy the rectangular table texture directly in ImGui draw order, avoiding software textured-triangle work while retaining overlays and unchanged artwork. This follows the tiled-quad visibility workaround with a direct-copy path.
