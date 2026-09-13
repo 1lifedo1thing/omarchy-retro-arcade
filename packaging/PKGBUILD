@@ -3,7 +3,7 @@ pkgname=omarchy-retro-arcade
 pkgver=0.1.0
 pkgrel=1
 pkgdesc='Native games in one Omarchy Arcade application'
-arch=('x86_64')
+arch=('x86_64' 'aarch64')
 url='https://github.com/tcballard/omarchy-retro-arcade'
 license=('GPL-3.0-or-later')
 # ring's bundled C objects cannot use GCC LTO with Rust's LLVM linker.
