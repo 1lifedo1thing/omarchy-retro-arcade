@@ -18,6 +18,7 @@
 #include "OmarchyTheme.h"
 #include "OmarchyTable.h"
 #include "CircuitView.h"
+#include "CircuitTiming.h"
 #include "../native/ArcadeIcon.h"
 
 constexpr const char* winmain::Version;
@@ -324,6 +325,8 @@ void winmain::MainLoop()
 	DurationMs sleepRemainder(0), frameDuration(TargetFrameTime);
 	auto prevTime = frameStart;
 	const int probeLimit=OmarchyTable::Enabled && getenv("OMARCHY_TEST_TICKS") ? atoi(getenv("OMARCHY_TEST_TICKS")) : 0;
+    const bool checkTiming=OmarchyTable::Enabled && getenv("OMARCHY_CHECK_TIMING");
+    const auto clockStart=Clock::now();
 	int probeTick=0;
 	if(probeLimit)std::srand(1);
 
@@ -409,7 +412,9 @@ void winmain::MainLoop()
 			if (!single_step && !no_time_loss)
 			{
 				auto dt = probeLimit ? 1000.f/120 : static_cast<float>(frameDuration.count());
-				pb::frame(dt);
+				if (OmarchyTable::Enabled) CircuitTiming::Advance(dt, [](float step) { pb::frame(step); });
+				else pb::frame(dt);
+                if(checkTiming)fprintf(stderr,"CIRCUIT_CLOCK %.6f %.6f %.6f\n",DurationMs(Clock::now()-clockStart).count(),double(pb::time_now)*1000,double(dt));
                 if(probeLimit)for(auto ball:pb::MainTable->BallList){
                     if(!std::isfinite(ball->Position.X)||!std::isfinite(ball->Position.Y)||!std::isfinite(ball->Position.Z)||!std::isfinite(ball->Speed)||(ball->ActiveFlag&&(fabs(ball->Position.X)>22||ball->Position.Y < -22 ||ball->Position.Y>24))){return_value=2;return;}
                 }
@@ -499,7 +504,8 @@ void winmain::MainLoop()
 			// Limit duration to 2 * target time
 			sleepRemainder = Clamp(DurationMs(frameEnd - updateEnd) - targetTimeDelta, -TargetFrameTime,
 			                       TargetFrameTime);
-			frameDuration = std::min<DurationMs>(DurationMs(frameEnd - frameStart), 2 * TargetFrameTime);
+			frameDuration = std::min<DurationMs>(DurationMs(frameEnd - frameStart),
+                OmarchyTable::Enabled ? DurationMs(100) : 2 * TargetFrameTime);
 			frameStart = frameEnd;
 			UpdateToFrameCounter++;
 

@@ -295,3 +295,12 @@ target_compile_definitions(SpaceCadetPinball PRIVATE
  CIRCUIT_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assets/circuit"
  CIRCUIT_INSTALL_DIR="${CMAKE_INSTALL_PREFIX}/share/omarchy-retro-arcade/circuit")
 install(FILES assets/circuit/table.png DESTINATION "${CMAKE_INSTALL_DATADIR}/omarchy-spacecadet/circuit")
+
+if(BUILD_TESTING)
+    add_executable(circuit-timing-tests tests/circuit_timing_test.cpp)
+    target_include_directories(circuit-timing-tests PRIVATE SpaceCadetPinball)
+    target_compile_features(circuit-timing-tests PRIVATE cxx_std_11)
+    add_test(NAME circuit-timing COMMAND circuit-timing-tests)
+    add_test(NAME arcade-bridge-timing COMMAND python3 "${CMAKE_CURRENT_SOURCE_DIR}/tests/bridge_timing_test.py" $<TARGET_FILE:SpaceCadetPinball>)
+    set_tests_properties(arcade-bridge-timing PROPERTIES TIMEOUT 30)
+endif()
