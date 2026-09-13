@@ -4,6 +4,7 @@
 #include "gdrv.h"
 #include "zdrv.h"
 #include "pb.h"
+#include "CircuitLauncher.h"
 #include "TPinballTable.h"
 #include "TPlunger.h"
 #include "TDrain.h"
@@ -126,7 +127,7 @@ DatFile* Build(){
   rail(n.c_str(),736-i*8,327+i*25,750-i*8,307+i*25,0,kick->GroupId);
  }
  auto drain=group("drain");floats(drain,{600,2,wx(60),wy(1030),wx(1000),wy(1030)});floats(drain,{407,.8f});shorts(drain,{602,0,602,1});object(drain,1007);
- auto plunger=group("plunger");floats(plunger,{600,2,wx(892),wy(878),wx(949),wy(878)});floats(plunger,{601,wx(918),wy(850)});object(plunger,1001);
+ auto plunger=group("plunger");floats(plunger,{600,2,wx(CircuitLauncher::Left),wy(CircuitLauncher::Y),wx(CircuitLauncher::Right),wy(CircuitLauncher::Y)});floats(plunger,{601,wx(CircuitLauncher::X),wy(CircuitLauncher::Y-32)});object(plunger,1001);
  bitmap(plunger,45,12,0,0);
  for(int side=0;side<2;side++){
   float origin=side?720:340,tip=side?598:462;
@@ -208,6 +209,6 @@ void ComponentEvent(MessageCode code,TPinballComponent* c){
 void Shutdown(){if(effect){Mix_HaltChannel(-1);Mix_FreeChunk(effect);effect=nullptr;}tone.clear();}
 void TableEvent(MessageCode code){
  if(code==MessageCode::StartGamePlayer1)announce("HOLD SPACE TO LAUNCH");
- if(code==MessageCode::NewGame){pb::MainTable->Plunger->PullbackDelay=.10f;hits=targetMask=orbitCount=rampCount=circuits=0;over=false;debounce.clear();flashes.clear();announce("HOLD SPACE TO LAUNCH");}
+ if(code==MessageCode::NewGame){pb::MainTable->Plunger->PullbackDelay=.10f;pb::MainTable->Plunger->MinimumReleaseDelay=.75f;pb::MainTable->Plunger->PullbackDelay=.10f;hits=targetMask=orbitCount=rampCount=circuits=0;over=false;debounce.clear();flashes.clear();announce("HOLD SPACE TO LAUNCH");}
 }
 }

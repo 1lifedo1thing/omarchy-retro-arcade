@@ -10,6 +10,7 @@
 #include "TBall.h"
 #include "timer.h"
 #include "TPinballTable.h"
+#include <algorithm>
 
 TPlunger::TPlunger(TPinballTable* table, int groupIndex) : TCollisionComponent(table, groupIndex, true)
 {
@@ -27,13 +28,13 @@ TPlunger::TPlunger(TPinballTable* table, int groupIndex) : TCollisionComponent(t
     // FT:MaxPullback = 50; 3DPB: MaxPullback = 100, PullbackIncrement is floored.
     if (pb::FullTiltMode)
     {
-        MaxPullback = 50;
-        PullbackIncrement = MaxPullback / (ListBitmap->size() * 8.0f);
+		MaxPullback = 50;
+		PullbackIncrement = MaxPullback / (ListBitmap->size() * 8.0f);
     }
     else
     {
-        MaxPullback = 100;
-        PullbackIncrement = std::floor(MaxPullback / (ListBitmap->size() * 8.0f));
+		MaxPullback = 100;
+		PullbackIncrement = std::floor(MaxPullback / (ListBitmap->size() * 8.0f));
     }
 
 	Elasticity = 0.5f;
@@ -57,7 +58,14 @@ void TPlunger::Collision(TBall* ball, vector2* nextPosition, vector2* direction,
 	else 
 	{
 		auto boost = RandFloat() * Boost * 0.1f + Boost;
+		const bool chargedContact = MinimumReleaseDelay > 0 && Threshold == 0 && Boost > 0;
 		maths::basic_collision(ball, nextPosition, direction, Elasticity, Smoothness, Threshold, boost);
+		if (chargedContact) {
+			// Consume the authored kick once, even if a weak shot falls back.
+			Boost = 0;
+			Threshold = 1000000000.0f;
+			timer::kill(ReleasedTimer);
+		}
 	}
 }
 
@@ -69,6 +77,7 @@ int TPlunger::Message(MessageCode code, float value)
 		if (!PullbackStartedFlag && (!pb::FullTiltMode || PinballTable->MultiballCount > 0 && !PinballTable->
 			TiltLockFlag))
 		{
+			if (MinimumReleaseDelay > 0) timer::kill(ReleasedTimer);
 			PullbackStartedFlag = true;
 			Boost = 0.0;
 			Threshold = 1000000000.0;
@@ -133,7 +142,7 @@ int TPlunger::Message(MessageCode code, float value)
 			PullbackTimer_ = 0;
 			loader::play_sound(SoundIndexP2, this, "TPlunger3");
 			SpriteSet(0);
-			timer::set(PullbackDelay, this, ReleasedTimer);
+			timer::set(std::max(PullbackDelay, MinimumReleaseDelay), this, ReleasedTimer);
 		}
 		break;
 	case MessageCode::Reset:

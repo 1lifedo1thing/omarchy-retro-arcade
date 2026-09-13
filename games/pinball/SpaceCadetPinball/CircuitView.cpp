@@ -3,6 +3,7 @@
 #include "OmarchyTable.h"
 #include "OmarchyTheme.h"
 #include "pb.h"
+#include "CircuitLauncher.h"
 #include "TPinballTable.h"
 #include "TFlipper.h"
 #include "TFlipperEdge.h"
@@ -113,15 +114,35 @@ void Draw(){
   capsule(x,y-3,xx,yy-3,15,rgba(173,168,132));capsule(x,y-6,xx,yy-6,12,rgba(229,226,196));
   capsule(x+2,y+10,xx,yy+8,3,accent());disc(x,y-5,10,rgba(58,61,52));disc(x-2,y-7,7,rgba(210,212,193));disc(x-4,y-9,3,rgba(253,251,226));
  }
- for(auto ball:t->BallList)if(ball->ActiveFlag){float x=540+ball->Position.X*25,y=500+ball->Position.Y*25-ball->Position.Z*7,r=ball->Radius*25;
+ // Compress the actual coil in its existing housing. Keep the artwork file
+ // intact. The contact head sits at the coil, not atop the beige lane arrows.
+ // Charge is engine state, so holding, releasing, pause and reset stay in sync.
+ const float pull=t->Plunger->PullbackStartedFlag
+     ? std::max(0.f,std::min(t->Plunger->Boost/t->Plunger->MaxPullback,1.f)) : 0.f;
+ if(pull>0.f){
+  ImVec2 housing[]={p(924,873),p(963,873),p(973,953),p(930,953)};
+  draw->AddConvexPolyFilled(housing,4,rgba(14,15,12));
+  // The shaft stays visible through the opening above the compressed coil.
+  draw->AddLine(p(941,873),p(950,952),rgba(62,65,59),8*scale);
+  draw->AddLine(p(939,873),p(948,952),rgba(176,181,163),2*scale);
+  const float travel=48*pull;
+  draw->AddImage((ImTextureID)board,p(925+5*pull,873+travel),p(969,953),
+      {925.f/1536,873.f/1024},{969.f/1536,953.f/1024});
+ }
+ // A metal head and continuous shaft visibly connect ball contact to the coil.
+ draw->AddRectFilled(p(CircuitLauncher::Left,CircuitLauncher::Y),
+     p(CircuitLauncher::Right,CircuitLauncher::Y+5),rgba(171,178,162),2*scale);
+ draw->AddLine(p(CircuitLauncher::Left+1,CircuitLauncher::Y),
+     p(CircuitLauncher::Right-1,CircuitLauncher::Y),rgba(243,245,220),scale);
+ for(auto ball:t->BallList)if(ball->ActiveFlag){float x=540+ball->Position.X*25,y=500+ball->Position.Y*25-((ball->CollisionMask&2)?ball->Position.Z*7:0),r=ball->Radius*25;
   disc(x+5,y+10,r+2,rgba(0,0,0,155));disc(x,y,r+1,rgba(204,211,205));disc(x,y,r,rgba(29,36,38));
   disc(x-2,y-3,r*.82f,rgba(126,145,146));disc(x+2,y+3,r*.68f,rgba(33,46,47));disc(x-3,y-4,r*.55f,rgba(213,227,220));disc(x-4,y-5,r*.3f,rgba(255,255,241));
  }
- float pull=t->Plunger->PullbackStartedFlag?std::min(1.f,t->Plunger->Boost/100):0;
- draw->AddRectFilled(p(930,935+pull*35),p(977,951+pull*35),rgba(180,185,172),3*scale);
  char score[32];snprintf(score,sizeof(score),"%07d",std::max(0,t->CurScore));matrix(1067,554,414,67,score,7);
  std::string ball=OmarchyTable::GameOver()?"GAME OVER":"BALL "+std::to_string(4-std::max(1,t->BallCount));matrix(1067,638,414,56,ball,4.5f);
- const char* status=winmain::single_step?"PAUSED  P RESUME":OmarchyTable::Status();matrix(1067,714,414,66,status,3.25f);
+ std::string charge;
+ if(t->Plunger->PullbackStartedFlag)charge=t->Plunger->Boost>=t->Plunger->MaxPullback?"RELEASE TO LAUNCH":"CHARGE "+std::to_string(int(100*t->Plunger->Boost/t->Plunger->MaxPullback))+"/100";
+ const char* status=winmain::single_step?"PAUSED  P RESUME":!charge.empty()?charge.c_str():OmarchyTable::Status();matrix(1067,714,414,66,status,3.25f);
  label(1090,820,"CIRCUIT",19);label(1300,820,"TARGET BANK",19);
  label(1090,852,(std::to_string(OmarchyTable::Progress())+" / 12").c_str(),23);unsigned count=0;for(unsigned v=OmarchyTable::Targets();v;v>>=1)count+=v&1;
  label(1300,852,(std::to_string(count)+" / 8").c_str(),23);

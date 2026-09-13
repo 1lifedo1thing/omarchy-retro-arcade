@@ -295,3 +295,8 @@ target_compile_definitions(SpaceCadetPinball PRIVATE
  CIRCUIT_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assets/circuit"
  CIRCUIT_INSTALL_DIR="${CMAKE_INSTALL_PREFIX}/share/omarchy-retro-arcade/circuit")
 install(FILES assets/circuit/table.png DESTINATION "${CMAKE_INSTALL_DATADIR}/omarchy-spacecadet/circuit")
+
+if(BUILD_TESTING)
+    add_test(NAME authored-launcher-contact COMMAND python3 "${CMAKE_CURRENT_SOURCE_DIR}/tests/launcher_contact_test.py" $<TARGET_FILE:SpaceCadetPinball>)
+    add_test(NAME arcade-launcher-render COMMAND python3 "${CMAKE_CURRENT_SOURCE_DIR}/tests/launcher_render_test.py" $<TARGET_FILE:SpaceCadetPinball> --software)
+endif()
