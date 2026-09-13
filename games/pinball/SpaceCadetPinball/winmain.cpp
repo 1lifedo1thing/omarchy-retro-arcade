@@ -308,6 +308,7 @@ int winmain::WinMain(LPCSTR lpCmdLine)
 
 	SDL_free(basePath);
 	SDL_free(prefPath);
+	ArcadeBridge::Shutdown();
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
@@ -434,7 +435,7 @@ void winmain::MainLoop()
 					ImGui::SetMouseCursor(ImGuiMouseCursor_None);
 				OmarchyTheme::Update();
 				if(!ArcadeBridge::Enabled()) ImGui_ImplSDL2_NewFrame();
-                else { ImIO->DisplaySize=ImVec2(1152,790);ImIO->DeltaTime=1.f/60; }
+                else if(!ArcadeBridge::BeginFrame(Renderer)) break;
 				ImGui_Render_NewFrame();
 				ImGui::NewFrame();
 				RenderUi();
@@ -449,7 +450,7 @@ void winmain::MainLoop()
 				ImGui_Render_RenderDrawData(ImGui::GetDrawData());
 
 				ArcadeBridge::Present(Renderer);
-                SDL_RenderPresent(Renderer);
+                if(!ArcadeBridge::Enabled()) SDL_RenderPresent(Renderer);
 				frameCounter++;
 				UpdateToFrameCounter -= UpdateToFrameRatio;
 			}

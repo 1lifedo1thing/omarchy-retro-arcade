@@ -27,6 +27,7 @@ SDL_Surface* original=nullptr;
 SDL_Renderer* renderer=nullptr;
 uint32_t lastAccent=0;
 float scale,ox,oy;
+bool portrait=false;
 ImDrawList* draw;
 ImVec2 p(float x,float y){return {ox+x*scale,oy+y*scale};}
 ImU32 rgba(int r,int g,int b,int a=255){return IM_COL32(r,g,b,a);}
@@ -86,14 +87,16 @@ bool Init(SDL_Renderer* r){
 void Draw(){
  if(!board||!pb::MainTable)return;updateTexture();draw=ImGui::GetBackgroundDrawList();
  auto size=ImGui::GetIO().DisplaySize;float menu=options::Options.ShowMenu?winmain::MainMenuHeight:0;
- scale=std::min(size.x/1536.f,(size.y-menu)/1024.f);ox=(size.x-1536*scale)/2;oy=menu+(size.y-menu-1024*scale)/2;
+ portrait=size.x/(size.y-menu)<1.2f;
+ float layoutWidth=portrait?1024.f:1536.f,layoutHeight=portrait?1230.f:1024.f;
+ scale=std::min(size.x/layoutWidth,(size.y-menu)/layoutHeight);
+ ox=(size.x-layoutWidth*scale)/2;oy=menu+(size.y-menu-layoutHeight*scale)/2;
  draw->AddRectFilled({0,menu},size,rgba(5,8,8));
- // The plate is drawn as an 8x8 grid of quads rather than one 1536x1024 quad. SDL's software renderer
- // (used by the Arcade bridge and -sw) refuses a textured triangle whose area times texture coordinate
- // overflows 32 bits ("triangle area overflow"), which left the whole table invisible on SDL 2.32/SDL 3.
- for(int ty=0;ty<8;ty++)for(int tx=0;tx<8;tx++){
-  ImVec2 uv0(tx/8.f,ty/8.f),uv1((tx+1)/8.f,(ty+1)/8.f);
-  draw->AddImage((ImTextureID)board,p(tx*192.f,ty*128.f),p((tx+1)*192.f,(ty+1)*128.f),uv0,uv1);
+ // Preserve the software-renderer tile workaround while cropping portrait art.
+ for(int ty=0;ty<8;ty++)for(int tx=0;tx<8 && tx*192<layoutWidth;tx++){
+  float x=tx*192.f,xx=std::min((tx+1)*192.f,layoutWidth);
+  draw->AddImage((ImTextureID)board,p(x,ty*128.f),p(xx,(ty+1)*128.f),
+      ImVec2(x/1536.f,ty/8.f),ImVec2(xx/1536.f,(ty+1)/8.f));
  }
  // Exact official wordmark geometry, proportionally placed after material tinting.
  const float wordScale=144.f/4131.f,wordX=562-72,wordY=520-950*wordScale/2;
@@ -119,6 +122,23 @@ void Draw(){
  }
  float pull=t->Plunger->PullbackStartedFlag?std::min(1.f,t->Plunger->Boost/100):0;
  draw->AddRectFilled(p(930,935+pull*35),p(977,951+pull*35),rgba(180,185,172),3*scale);
+ if(portrait){
+  // Keep the approved playfield at its native proportions; replace the tall
+  // decorative cabinet with a compact score strip below it.
+  draw->AddRectFilled(p(8,1036),p(1016,1220),rgba(15,21,20),12*scale);
+  draw->AddLine(p(24,1036),p(1000,1036),accent(150),2*scale);
+  char score[32];snprintf(score,sizeof(score),"%07d",std::max(0,t->CurScore));
+  matrix(20,1050,470,56,score,6);
+  std::string ball=OmarchyTable::GameOver()?"GAME OVER":"BALL "+std::to_string(4-std::max(1,t->BallCount));
+  matrix(510,1050,490,56,ball,4.5f);
+  const char* status=winmain::single_step?"PAUSED  P RESUME":OmarchyTable::Status();
+  matrix(20,1110,980,42,status,3.25f);
+  unsigned count=0;for(unsigned v=OmarchyTable::Targets();v;v>>=1)count+=v&1;
+  std::string stats="CIRCUIT "+std::to_string(OmarchyTable::Progress())+"/12    TARGETS "+std::to_string(count)+"/8    ORBITS "+std::to_string(OmarchyTable::Orbits())+"    RAMPS "+std::to_string(OmarchyTable::Ramps());
+  label(60,1160,stats.c_str(),20);
+  label(220,1193,"A/D OR Z/SLASH   SPACE LAUNCH",19);
+  return;
+ }
  char score[32];snprintf(score,sizeof(score),"%07d",std::max(0,t->CurScore));matrix(1067,554,414,67,score,7);
  std::string ball=OmarchyTable::GameOver()?"GAME OVER":"BALL "+std::to_string(4-std::max(1,t->BallCount));matrix(1067,638,414,56,ball,4.5f);
  const char* status=winmain::single_step?"PAUSED  P RESUME":OmarchyTable::Status();matrix(1067,714,414,66,status,3.25f);
