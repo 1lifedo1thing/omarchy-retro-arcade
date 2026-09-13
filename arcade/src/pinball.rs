@@ -1,5 +1,6 @@
 use eframe::egui::{self, Key};
 use std::{
+    collections::HashSet,
     io::{self, Read, Write},
     path::PathBuf,
     process::{Child, Command, Stdio},
@@ -81,6 +82,7 @@ pub struct Pinball {
     focused: bool,
     input_enabled: bool,
     mouse_down: bool,
+    held_keys: HashSet<Key>,
     started: Instant,
 }
 impl Pinball {
@@ -111,6 +113,7 @@ impl Pinball {
     }
     pub fn pause(&mut self) {
         self.release_pointer();
+        self.held_keys.clear();
         self.send("blur".into());
     }
     pub fn new(ctx: &egui::Context) -> io::Result<Self> {
@@ -173,6 +176,7 @@ impl Pinball {
             focused: true,
             input_enabled: true,
             mouse_down: false,
+            held_keys: HashSet::new(),
             started: Instant::now(),
         })
     }
@@ -186,9 +190,8 @@ impl Pinball {
 }
 fn keycode(key: Key) -> Option<i32> {
     Some(match key {
-        Key::A => 97,
-        Key::D => 100,
-        Key::Z => 122,
+        Key::A | Key::Z => 97,
+        Key::D | Key::Slash => 100,
         Key::X => 120,
         Key::Space => 32,
         Key::P => 112,
@@ -204,8 +207,24 @@ fn keycode(key: Key) -> Option<i32> {
         Key::N => 110,
         Key::M => 109,
         Key::Comma => 44,
+        Key::Period => 46,
+        Key::F5 => 1073741886,
+        Key::F6 => 1073741887,
+        Key::F8 => 1073741889,
         _ => return None,
     })
+}
+// Multiple physical keys may hold the same logical control. Only emit edges.
+fn key_transition(held: &mut HashSet<Key>, key: Key, pressed: bool) -> Option<i32> {
+    let code = keycode(key)?;
+    let was_down = held.iter().any(|k| keycode(*k) == Some(code));
+    if pressed {
+        held.insert(key);
+    } else {
+        held.remove(&key);
+    }
+    let is_down = held.iter().any(|k| keycode(*k) == Some(code));
+    (was_down != is_down).then_some(code)
 }
 impl eframe::App for Pinball {
     fn update(&mut self, ctx: &egui::Context, _: &mut eframe::Frame) {
@@ -268,7 +287,7 @@ impl eframe::App for Pinball {
                             modifiers,
                             ..
                         } if focused => {
-                            if let Some(code) = keycode(key) {
+                            if let Some(code) = key_transition(&mut self.held_keys, key, pressed) {
                                 let mods = if modifiers.ctrl { 0x40 } else { 0 }
                                     | if modifiers.shift { 1 } else { 0 }
                                     | if modifiers.alt { 0x100 } else { 0 };
@@ -317,6 +336,21 @@ impl eframe::App for Pinball {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn classic_flippers_share_press_release_state() {
+        for (modern, classic, code) in [(Key::A, Key::Z, 97), (Key::D, Key::Slash, 100)] {
+            let mut held = HashSet::new();
+            assert_eq!(key_transition(&mut held, classic, true), Some(code));
+            assert_eq!(key_transition(&mut held, classic, true), None);
+            assert_eq!(key_transition(&mut held, modern, true), None);
+            assert_eq!(key_transition(&mut held, classic, false), None);
+            assert_eq!(key_transition(&mut held, modern, false), Some(code));
+            assert_eq!(key_transition(&mut held, classic, false), None);
+            // Focus loss clears the host state along with the engine's blur.
+            held.clear();
+            assert_eq!(key_transition(&mut held, classic, true), Some(code));
+        }
+    }
     #[test]
     fn rejects_unbounded_or_unknown_frames() {
         assert!(read_frame(&mut &b"OAR1\xff\xff\xff\xff\xff\xff\xff\xff"[..]).is_err());
