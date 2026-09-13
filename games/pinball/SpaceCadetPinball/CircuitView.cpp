@@ -55,6 +55,10 @@ void matrix(float x,float y,float w,float h,const std::string& text,float dot){
 }
 void capsule(float x,float y,float xx,float yy,float r,ImU32 c){float len=std::hypot(xx-x,yy-y),nx=-(yy-y)/len,ny=(xx-x)/len,tip=r*.65f;
  ImVec2 q[]={p(x+nx*r,y+ny*r),p(xx+nx*tip,yy+ny*tip),p(xx-nx*tip,yy-ny*tip),p(x-nx*r,y-ny*r)};draw->AddConvexPolyFilled(q,4,c);disc(x,y,r,c);disc(xx,yy,tip,c);}
+void drawBoard(const ImDrawList*, const ImDrawCmd*){
+ SDL_FRect destination={ox,oy,1536*scale,1024*scale};
+ SDL_RenderCopyF(renderer,board,nullptr,&destination);
+}
 void updateTexture(){
  uint32_t c=OmarchyTheme::Accent();if(c==lastAccent&&board)return;lastAccent=c;
  auto surface=SDL_ConvertSurfaceFormat(original,SDL_PIXELFORMAT_ARGB8888,0);auto pixels=(uint32_t*)surface->pixels;
@@ -66,7 +70,7 @@ void updateTexture(){
   float bright=std::max(r,std::max(g,b));
   if(amount>.02f){int rr=(int)(255*(r*(1-amount)+ar*bright*amount));int gg=(int)(255*(g*(1-amount)+ag*bright*amount));int bb=(int)(255*(b*(1-amount)+ab*bright*amount));q=0xff000000|(rr<<16)|(gg<<8)|bb;}
  }
- SDL_DestroyTexture(board);board=SDL_CreateTextureFromSurface(renderer,surface);SDL_FreeSurface(surface);
+ if(board)SDL_DestroyTexture(board);board=SDL_CreateTextureFromSurface(renderer,surface);SDL_FreeSurface(surface);
 }
 }
 bool Init(SDL_Renderer* r){
@@ -88,13 +92,8 @@ void Draw(){
  auto size=ImGui::GetIO().DisplaySize;float menu=options::Options.ShowMenu?winmain::MainMenuHeight:0;
  scale=std::min(size.x/1536.f,(size.y-menu)/1024.f);ox=(size.x-1536*scale)/2;oy=menu+(size.y-menu-1024*scale)/2;
  draw->AddRectFilled({0,menu},size,rgba(5,8,8));
- // The plate is drawn as an 8x8 grid of quads rather than one 1536x1024 quad. SDL's software renderer
- // (used by the Arcade bridge and -sw) refuses a textured triangle whose area times texture coordinate
- // overflows 32 bits ("triangle area overflow"), which left the whole table invisible on SDL 2.32/SDL 3.
- for(int ty=0;ty<8;ty++)for(int tx=0;tx<8;tx++){
-  ImVec2 uv0(tx/8.f,ty/8.f),uv1((tx+1)/8.f,(ty+1)/8.f);
-  draw->AddImage((ImTextureID)board,p(tx*192.f,ty*128.f),p((tx+1)*192.f,(ty+1)*128.f),uv0,uv1);
- }
+ // Copy the rectangular plate once, retaining ImGui overlay ordering.
+ draw->AddCallback(drawBoard,nullptr);
  // Exact official wordmark geometry, proportionally placed after material tinting.
  const float wordScale=144.f/4131.f,wordX=562-72,wordY=520-950*wordScale/2;
  draw->AddImage((ImTextureID)wordmark,p(wordX,wordY),p(wordX+144,wordY+950*wordScale));
