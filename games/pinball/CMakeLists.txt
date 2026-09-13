@@ -286,6 +286,8 @@ if(BUILD_TESTING)
 endif()
 
 if(BUILD_TESTING)
+    add_test(NAME authored-table-depth COMMAND python3 "${CMAKE_CURRENT_SOURCE_DIR}/tests/table_depth_test.py" $<TARGET_FILE:SpaceCadetPinball>)
+    add_test(NAME authored-table-boundaries COMMAND python3 "${CMAKE_CURRENT_SOURCE_DIR}/tests/table_boundaries_test.py" $<TARGET_FILE:SpaceCadetPinball>)
     add_test(NAME authored-upstream-table COMMAND python3 "${CMAKE_CURRENT_SOURCE_DIR}/tests/upstream_table_test.py" $<TARGET_FILE:SpaceCadetPinball>)
 endif()
 

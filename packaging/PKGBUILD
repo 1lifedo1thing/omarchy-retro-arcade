@@ -37,7 +37,7 @@ build() {
 check() {
   cd "$srcdir/omarchy-retro-arcade"
   OMARCHY_CHESS_ENGINE="$srcdir/Stockfish-${_engine_commit}/src/stockfish" REQUIRE_STOCKFISH=1 cargo test --frozen --workspace --all-targets
-  ctest --test-dir build/pinball --output-on-failure -R "theme-palette|theme-path|authored-upstream-table"
+  ctest --test-dir build/pinball --output-on-failure -R "theme-palette|theme-path|authored-"
 }
 package() {
   cd "$srcdir/omarchy-retro-arcade"
