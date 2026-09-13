@@ -3,6 +3,7 @@
 #include "OmarchyTable.h"
 #include "OmarchyTheme.h"
 #include "pb.h"
+#include "CircuitGeometry.h"
 #include "TPinballTable.h"
 #include "TFlipper.h"
 #include "TFlipperEdge.h"
@@ -22,7 +23,8 @@
 #endif
 namespace CircuitView {
 namespace {
-SDL_Texture *board=nullptr,*wordmark=nullptr;
+SDL_Texture *board=nullptr,*wordmark=nullptr,*bridge=nullptr;
+constexpr SDL_Rect bridgeBounds={200,0,272,120};
 SDL_Surface* original=nullptr;
 SDL_Renderer* renderer=nullptr;
 uint32_t lastAccent=0;
@@ -55,6 +57,10 @@ void matrix(float x,float y,float w,float h,const std::string& text,float dot){
 }
 void capsule(float x,float y,float xx,float yy,float r,ImU32 c){float len=std::hypot(xx-x,yy-y),nx=-(yy-y)/len,ny=(xx-x)/len,tip=r*.65f;
  ImVec2 q[]={p(x+nx*r,y+ny*r),p(xx+nx*tip,yy+ny*tip),p(xx-nx*tip,yy-ny*tip),p(x-nx*r,y-ny*r)};draw->AddConvexPolyFilled(q,4,c);disc(x,y,r,c);disc(xx,yy,tip,c);}
+void drawBridge(const ImDrawList*,const ImDrawCmd*){
+ SDL_FRect destination={ox+bridgeBounds.x*scale,oy,bridgeBounds.w*scale,bridgeBounds.h*scale};
+ SDL_RenderCopyF(renderer,bridge,nullptr,&destination);
+}
 void updateTexture(){
  uint32_t c=OmarchyTheme::Accent();if(c==lastAccent&&board)return;lastAccent=c;
  auto surface=SDL_ConvertSurfaceFormat(original,SDL_PIXELFORMAT_ARGB8888,0);auto pixels=(uint32_t*)surface->pixels;
@@ -66,7 +72,28 @@ void updateTexture(){
   float bright=std::max(r,std::max(g,b));
   if(amount>.02f){int rr=(int)(255*(r*(1-amount)+ar*bright*amount));int gg=(int)(255*(g*(1-amount)+ag*bright*amount));int bb=(int)(255*(b*(1-amount)+ab*bright*amount));q=0xff000000|(rr<<16)|(gg<<8)|bb;}
  }
- SDL_DestroyTexture(board);board=SDL_CreateTextureFromSurface(renderer,surface);SDL_FreeSurface(surface);
+ if(board)SDL_DestroyTexture(board);board=SDL_CreateTextureFromSurface(renderer,surface);
+ // A small alpha-masked rectangular sprite preserves exact source sampling.
+ // Textured triangle patches produce seams in SDL's software rasterizer.
+ std::vector<vector2> left,right;CircuitGeometry::RampSides(left,right);
+ left.insert(left.end(),right.rbegin(),right.rend());
+ auto foreground=SDL_CreateRGBSurfaceWithFormat(0,bridgeBounds.w,bridgeBounds.h,32,SDL_PIXELFORMAT_ARGB8888);
+ if(foreground){
+  auto dest=static_cast<uint32_t*>(foreground->pixels);
+  for(int y=0;y<bridgeBounds.h;++y)for(int x=0;x<bridgeBounds.w;++x){
+   float px=x+bridgeBounds.x+.5f,py=y+.5f;bool inside=false;
+   for(size_t i=0,j=left.size()-1;i<left.size();j=i++){
+    auto a=left[i],b=left[j];
+    if((a.Y>py)!=(b.Y>py) && px<(b.X-a.X)*(py-a.Y)/(b.Y-a.Y)+a.X)inside=!inside;
+   }
+   dest[y*foreground->pitch/4+x]=inside?pixels[y*surface->pitch/4+x+bridgeBounds.x]:0;
+  }
+  if(bridge)SDL_DestroyTexture(bridge);
+  bridge=SDL_CreateTextureFromSurface(renderer,foreground);
+  SDL_SetTextureBlendMode(bridge,SDL_BLENDMODE_BLEND);
+  SDL_FreeSurface(foreground);
+ }
+ SDL_FreeSurface(surface);
 }
 }
 bool Init(SDL_Renderer* r){
@@ -101,8 +128,7 @@ void Draw(){
  auto t=pb::MainTable;
  const float lamps[12][2]={{562,422},{626,438},{664,478},{674,525},{659,565},{618,599},{562,617},{507,599},{464,565},{450,526},{458,479},{498,439}};
  for(unsigned i=0;i<12;i++)lamp(lamps[i][0],lamps[i][1],i<OmarchyTable::Progress());
- const float xs[]={470,617,563,202},ys[]={226,202,287,431};
- for(int i=0;i<4;i++){std::string n="bumper"+std::to_string(i);float f=OmarchyTable::Flash(n.c_str());if(f>0){draw->AddCircle(p(xs[i],ys[i]),(i==3?33:44)*scale,accent((int)(f*230)),32,5*scale);disc(xs[i],ys[i]-15,16,rgba(255,241,179,(int)(f*100)));}}
+ for(int i=0;i<4;i++){const auto& bumper=CircuitGeometry::Bumpers()[i];std::string n="bumper"+std::to_string(i);float f=OmarchyTable::Flash(n.c_str());if(f>0){draw->AddCircle(p(bumper.x,bumper.y),(i==3?33:44)*scale,accent((int)(f*230)),32,5*scale);disc(bumper.x,bumper.y-15,16,rgba(255,241,179,(int)(f*100)));}}
  for(int i=0;i<8;i++){float x=i<4?504+i*31:747-(i-4)*8,y=i<4?117:319+(i-4)*25;lamp(x,y,(OmarchyTable::Targets()&(1u<<i))!=0,7);}
  for(int i=0;i<2;i++){std::string name=i?"sling_right":"sling_left";float f=OmarchyTable::Flash(name.c_str());if(f>0)draw->AddLine(p(i?755:295,635),p(i?690:360,778),accent((int)(f*220)),5*scale);}
  // Flipper endpoints come from the engine's current collision edge, not a UI animation.
@@ -113,10 +139,16 @@ void Draw(){
   capsule(x,y-3,xx,yy-3,15,rgba(173,168,132));capsule(x,y-6,xx,yy-6,12,rgba(229,226,196));
   capsule(x+2,y+10,xx,yy+8,3,accent());disc(x,y-5,10,rgba(58,61,52));disc(x-2,y-7,7,rgba(210,212,193));disc(x-4,y-9,3,rgba(253,251,226));
  }
- for(auto ball:t->BallList)if(ball->ActiveFlag){float x=540+ball->Position.X*25,y=500+ball->Position.Y*25-ball->Position.Z*7,r=ball->Radius*25;
+ auto drawBall=[&](TBall* ball){float x=540+ball->Position.X*25,y=500+ball->Position.Y*25,r=ball->Radius*25;
   disc(x+5,y+10,r+2,rgba(0,0,0,155));disc(x,y,r+1,rgba(204,211,205));disc(x,y,r,rgba(29,36,38));
   disc(x-2,y-3,r*.82f,rgba(126,145,146));disc(x+2,y+3,r*.68f,rgba(33,46,47));disc(x-3,y-4,r*.55f,rgba(213,227,220));disc(x-4,y-5,r*.3f,rgba(255,255,241));
+ };
+ bool underBridge=false;
+ for(auto ball:t->BallList)if(ball->ActiveFlag && !(ball->CollisionMask&2)){
+  drawBall(ball);underBridge|=500+ball->Position.Y*25<132;
  }
+ if(underBridge && bridge)draw->AddCallback(drawBridge,nullptr);
+ for(auto ball:t->BallList)if(ball->ActiveFlag && (ball->CollisionMask&2))drawBall(ball);
  float pull=t->Plunger->PullbackStartedFlag?std::min(1.f,t->Plunger->Boost/100):0;
  draw->AddRectFilled(p(930,935+pull*35),p(977,951+pull*35),rgba(180,185,172),3*scale);
  char score[32];snprintf(score,sizeof(score),"%07d",std::max(0,t->CurScore));matrix(1067,554,414,67,score,7);
@@ -129,5 +161,5 @@ void Draw(){
  label(1080,950,"A / D FLIPPERS    SPACE LAUNCH",17);
  label(1110,48,"OMARCHY ARCADE  /  PINBALL",18);
 }
-void Shutdown(){SDL_DestroyTexture(board);SDL_DestroyTexture(wordmark);SDL_FreeSurface(original);board=wordmark=nullptr;original=nullptr;lastAccent=0;}
+void Shutdown(){SDL_DestroyTexture(bridge);bridge=nullptr;SDL_DestroyTexture(board);SDL_DestroyTexture(wordmark);SDL_FreeSurface(original);board=wordmark=nullptr;original=nullptr;lastAccent=0;}
 }

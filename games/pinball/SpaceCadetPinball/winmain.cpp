@@ -18,6 +18,7 @@
 #include "OmarchyTheme.h"
 #include "OmarchyTable.h"
 #include "CircuitView.h"
+#include "TPlunger.h"
 #include "../native/ArcadeIcon.h"
 
 constexpr const char* winmain::Version;
@@ -324,35 +325,107 @@ void winmain::MainLoop()
 	DurationMs sleepRemainder(0), frameDuration(TargetFrameTime);
 	auto prevTime = frameStart;
 	const int probeLimit=OmarchyTable::Enabled && getenv("OMARCHY_TEST_TICKS") ? atoi(getenv("OMARCHY_TEST_TICKS")) : 0;
+    const bool checkGeometry=OmarchyTable::Enabled && getenv("OMARCHY_CHECK_GEOMETRY");
+    if(checkGeometry)fprintf(stderr,"NATIVE_GEOMETRY_CHECKS enabled\n");
 	int probeTick=0;
+    bool probeFullLaunch=false,probeChargeMonotonic=true;
+    float probeLastCharge=0;
+    int probeStuckTicks=0,probePreviousMask=1;
+    bool probeRampExit=false,probeRearExit=false;
 	if(probeLimit)std::srand(1);
 
 	while (true)
 	{
         if(probeLimit){
+            if(probeTick==1 && !OmarchyTable::AuditGeometry()){return_value=2;return;}
             if(probeTick>=probeLimit){
                 if(const char* path=getenv("OMARCHY_TEST_SCREENSHOT")){
                     int w,h;SDL_GetRendererOutputSize(Renderer,&w,&h);auto image=SDL_CreateRGBSurfaceWithFormat(0,w,h,32,SDL_PIXELFORMAT_ARGB8888);
                     SDL_RenderReadPixels(Renderer,nullptr,image->format->format,image->pixels,image->pitch);SDL_SaveBMP(image,path);SDL_FreeSurface(image);
                 }
+                printf("REAR_EXIT %d\n",int(probeRearExit));
                 printf("UPSTREAM_TABLE ticks=%d score=%d balls=%d ramps=%u orbits=%u targets=%u\n",probeTick,pb::MainTable->CurScore,pb::MainTable->BallCount,OmarchyTable::Ramps(),OmarchyTable::Orbits(),OmarchyTable::Targets());
+                if(getenv("OMARCHY_TEST_SHOT") && std::string(getenv("OMARCHY_TEST_SHOT"))=="ramp-complete")printf("RAMP_COMPLETE %d\n",int(probeRampExit));
+                if(getenv("OMARCHY_TEST_SHOT") && std::string(getenv("OMARCHY_TEST_SHOT"))=="plunger")printf("PLUNGER_FULL_LAUNCH %d\n",int(probeFullLaunch));
+                if(getenv("OMARCHY_TEST_SHOT") && std::string(getenv("OMARCHY_TEST_SHOT"))=="plunger-repeat")printf("PLUNGER_RECHARGE %d\n",int(probeChargeMonotonic&&probeFullLaunch));
                 break;
             }
             if(!getenv("OMARCHY_TEST_SHOT") && probeTick%240==30)pb::InputDown({InputTypes::Keyboard,SDLK_SPACE});
-            if(!getenv("OMARCHY_TEST_SHOT") && probeTick%240==150)pb::InputUp({InputTypes::Keyboard,SDLK_SPACE});
+            if(!getenv("OMARCHY_TEST_SHOT") && probeTick%240==150 && !getenv("OMARCHY_TEST_CONTACT_LAUNCH"))pb::InputUp({InputTypes::Keyboard,SDLK_SPACE});
+            if(getenv("OMARCHY_TEST_SHOT") && std::string(getenv("OMARCHY_TEST_SHOT"))=="launch-feed"){
+                const int launchAt=getenv("OMARCHY_TEST_LAUNCH_AT")?atoi(getenv("OMARCHY_TEST_LAUNCH_AT")):180;
+                if(probeTick==launchAt)pb::InputDown({InputTypes::Keyboard,SDLK_SPACE});
+                if(probeTick==launchAt+120 && !getenv("OMARCHY_TEST_CONTACT_LAUNCH"))pb::InputUp({InputTypes::Keyboard,SDLK_SPACE});
+            }
             if(probeTick%90==0)pb::InputDown({InputTypes::Keyboard,SDLK_a});
             if(probeTick%90==40)pb::InputUp({InputTypes::Keyboard,SDLK_a});
             if(probeTick%110==0)pb::InputDown({InputTypes::Keyboard,SDLK_d});
             if(probeTick%110==50)pb::InputUp({InputTypes::Keyboard,SDLK_d});
             if(getenv("OMARCHY_TRACE")&&probeTick%120==0) for(auto b:pb::MainTable->BallList) if(b->ActiveFlag) printf("TRACE %d %.2f %.2f %.2f %.2f %.2f mask%d\n",probeTick,b->Position.X,b->Position.Y,b->Direction.X,b->Direction.Y,b->Speed,b->CollisionMask);
-            if(probeTick==180 && getenv("OMARCHY_TEST_SHOT")){
+            if(getenv("OMARCHY_TEST_SHOT")&&std::string(getenv("OMARCHY_TEST_SHOT"))=="plunger-repeat"){
+                auto p=pb::MainTable->Plunger;
+                if(probeTick==360||probeTick==400)p->Message(MessageCode::PlungerInputPressed,0);
+                if(probeTick==800){
+                    // Re-press cancellation is independent of how long the
+                    // first weak shot takes to return through the authored lane.
+                    // Put the contact fixture back above the plate for the
+                    // second release; charge must still have risen monotonically.
+                    auto b=pb::MainTable->BallList.front();b->ActiveFlag=1;b->CollisionFlag=0;b->CollisionMask=1;
+                    b->EdgeCollisionCount=0;b->CollisionDisabledFlag=false;
+                    b->Position={(939.f-540)/25,(860.85f-500)/25,b->Radius};b->Direction={0,1,0};b->Speed=0;
+                }
+                if(probeTick==390||probeTick==800)p->Message(MessageCode::PlungerInputReleased,0);
+                if(probeTick>=400&&probeTick<800){
+                    if(p->Boost<probeLastCharge)probeChargeMonotonic=false;
+                    probeLastCharge=p->Boost;
+                }
+            }
+            if(getenv("OMARCHY_TEST_SHOT") && std::string(getenv("OMARCHY_TEST_SHOT"))!="plunger-repeat" && std::string(getenv("OMARCHY_TEST_SHOT"))!="launch-feed" && probeTick==(std::string(getenv("OMARCHY_TEST_SHOT"))=="plunger"?360:180)){
                 auto b=pb::MainTable->BallList.front();b->ActiveFlag=1;b->CollisionFlag=0;b->CollisionMask=1;b->EdgeCollisionCount=0;b->CollisionDisabledFlag=false;
                 std::string shot=getenv("OMARCHY_TEST_SHOT");float x=372,y=455,dx=0,dy=-1,speed=55;
+                if(shot=="ramp-complete")speed=90;
+                if(shot=="custom"){
+                    const char* vector=getenv("OMARCHY_TEST_VECTOR");
+                    if(!vector || sscanf(vector,"%f %f %f %f %f %d",&x,&y,&dx,&dy,&speed,&b->CollisionMask)!=6){return_value=2;return;}
+                    float len=std::hypot(dx,dy);if(len==0){return_value=2;return;}dx/=len;dy/=len;
+                }
                 if(shot=="bumper"){x=470;y=330;speed=20;}
-                if(shot=="target"){x=505;y=190;speed=15;}
-                if(shot=="orbit"){x=780;y=175;dx=0;dy=-1;speed=15;}
+                if(shot=="target"){x=515;y=190;speed=15;}
+                if(shot=="orbit"){x=780;y=145;dx=0;dy=-1;speed=15;}
                 if(shot=="drain"){x=540;y=985;dy=1;speed=15;}
+                // Near-edge ball in the upper chute must remain inside its raised path.
+                if(shot=="ramp-exit-side"){x=434;y=124;dx=-.37f;dy=-.929f;speed=50.5f;b->CollisionMask=2;}
+                if(shot=="raised-top"){x=353;y=42;speed=60;b->CollisionMask=2;}
+                if(shot=="raised-left"){x=233;y=181;dx=-1;dy=0;speed=60;b->CollisionMask=2;}
+                if(shot=="raised-right"){x=369;y=344;dx=1;dy=0;speed=60;b->CollisionMask=2;}
+                if(shot=="plunger"){
+                    // A settled ball between bounces can take longer than the
+                    // old .1-second kick window to meet the collision surface.
+                    x=939;y=860.85f;dx=0;dy=1;speed=0;
+                    auto p=pb::MainTable->Plunger;p->Boost=p->MaxPullback;p->PullbackStartedFlag=true;
+                    p->Message(MessageCode::PlungerInputReleased,0);
+                }
                 b->Position={(x-540)/25,(y-500)/25,b->Radius};b->Direction={dx,dy,0};b->Speed=speed;
+            }
+            for(auto b:pb::MainTable->BallList)if(b->ActiveFlag){
+                if(probeTick>360&&b->Direction.Y<0&&b->Speed>=80)probeFullLaunch=true;
+                float x=540+b->Position.X*25,y=500+b->Position.Y*25;
+                // A failed/weak launch may rest above the plunger; every other
+                // region must let a released ball keep moving or drain.
+                if(probePreviousMask==2 && b->CollisionMask==1 && y<230)probeRampExit=true;
+                probePreviousMask=b->CollisionMask;
+                const bool inShooter=x>903 && y>830 && y<874;
+                if(probeTick>180 && y>180 && x<800)probeRearExit=true;
+                probeStuckTicks=b->Speed<.5f && !inShooter ? probeStuckTicks+1 : 0;
+                if(probeStuckTicks>600){fprintf(stderr,"TRAPPED_BALL tick=%d x=%.3f y=%.3f mask=%d\n",probeTick,x,y,b->CollisionMask);return_value=2;return;}
+                if(const char* region=OmarchyTable::InvalidRegion(b)){
+                    fprintf(stderr,"INVALID_REGION %s tick=%d x=%.3f y=%.3f mask=%d\n",region,probeTick,x,y,b->CollisionMask);
+                    return_value=2;return;
+                }
+                if(!std::isfinite(x)||!std::isfinite(y)||x<0||x>1024||y<0||y>1050){
+                    fprintf(stderr,"OUTSIDE_AUTHORED_TABLE tick=%d x=%.3f y=%.3f mask=%u\n",probeTick,x,y,b->CollisionMask);
+                    return_value=2;return;
+                }
             }
             ++probeTick;has_focus=true;
         }
@@ -410,6 +483,13 @@ void winmain::MainLoop()
 			{
 				auto dt = probeLimit ? 1000.f/120 : static_cast<float>(frameDuration.count());
 				pb::frame(dt);
+                if(checkGeometry)for(auto ball:pb::MainTable->BallList){
+                    if(const char* region=OmarchyTable::InvalidRegion(ball)){
+                        fprintf(stderr,"NATIVE_GEOMETRY_FAILURE %s x=%.3f y=%.3f mask=%d\n",region,540+ball->Position.X*25,500+ball->Position.Y*25,ball->CollisionMask);
+                        return_value=2;return;
+                    }
+                }
+
                 if(probeLimit)for(auto ball:pb::MainTable->BallList){
                     if(!std::isfinite(ball->Position.X)||!std::isfinite(ball->Position.Y)||!std::isfinite(ball->Position.Z)||!std::isfinite(ball->Speed)||(ball->ActiveFlag&&(fabs(ball->Position.X)>22||ball->Position.Y < -22 ||ball->Position.Y>24))){return_value=2;return;}
                 }
