@@ -6,7 +6,6 @@
 #include "gdrv.h"
 #include "zdrv.h"
 #include "pb.h"
-#include "CircuitLauncher.h"
 #include "nudge.h"
 #include "TPinballTable.h"
 #include "TPlunger.h"
@@ -393,6 +392,6 @@ void ComponentEvent(MessageCode code,TPinballComponent* c){
 void Shutdown(){if(effect){Mix_HaltChannel(-1);Mix_FreeChunk(effect);effect=nullptr;}tone.clear();}
 void TableEvent(MessageCode code){
  if(code==MessageCode::StartGamePlayer1)announce("HOLD SPACE TO LAUNCH");
- if(code==MessageCode::NewGame){pb::MainTable->Plunger->PullbackDelay=.10f;pb::MainTable->Plunger->MinimumReleaseDelay=.75f;pb::MainTable->Plunger->PullbackDelay=.10f;hits=targetMask=orbitCount=rampCount=circuits=0;over=false;debounce.clear();flashes.clear();announce("HOLD SPACE TO LAUNCH");}
+ if(code==MessageCode::NewGame){pb::MainTable->Plunger->PullbackDelay=.10f;pb::MainTable->Plunger->MinimumReleaseDelay=.75f;hits=targetMask=orbitCount=rampCount=circuits=0;over=false;debounce.clear();flashes.clear();announce("HOLD SPACE TO LAUNCH");}
 }
 }

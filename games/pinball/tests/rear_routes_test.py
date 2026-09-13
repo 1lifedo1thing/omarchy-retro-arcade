@@ -14,7 +14,7 @@ shots=[('pillar pocket',(625,110,0,1,2,1)),
        ('bridge underpass',(370,65,0,1,12,1))]
 for name,shot in shots:
     with tempfile.TemporaryDirectory() as tmp:
-        env=dict(os.environ, OMARCHY_TEST_CONTACT_LAUNCH="1",XDG_CONFIG_HOME=tmp,XDG_DATA_HOME=tmp,
+        env=dict(os.environ, XDG_CONFIG_HOME=tmp,XDG_DATA_HOME=tmp,
                  SDL_VIDEODRIVER='dummy',SDL_AUDIODRIVER='dummy',
                  OMARCHY_TEST_TICKS='2200',OMARCHY_TEST_SHOT='custom',
                  OMARCHY_TEST_VECTOR=' '.join(map(str,shot)))
@@ -27,7 +27,7 @@ for name,shot in shots:
 # launcher or injecting a velocity. Start holds at different bounce phases.
 for phase in (180,221,259):
     with tempfile.TemporaryDirectory() as tmp:
-        env=dict(os.environ, OMARCHY_TEST_CONTACT_LAUNCH="1",XDG_CONFIG_HOME=tmp,XDG_DATA_HOME=tmp,
+        env=dict(os.environ, XDG_CONFIG_HOME=tmp,XDG_DATA_HOME=tmp,
                  SDL_VIDEODRIVER='dummy',SDL_AUDIODRIVER='dummy',
                  OMARCHY_TEST_TICKS='2200',OMARCHY_TEST_SHOT='launch-feed',
                  OMARCHY_TEST_LAUNCH_AT=str(phase))

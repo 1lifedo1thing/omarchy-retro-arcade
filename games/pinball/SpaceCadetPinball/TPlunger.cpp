@@ -49,11 +49,6 @@ TPlunger::TPlunger(TPinballTable* table, int groupIndex) : TCollisionComponent(t
 
 void TPlunger::Collision(TBall* ball, vector2* nextPosition, vector2* direction, float distance, TEdgeSegment* edge)
 {
-    // Geometry fixtures release real input exactly at contact, isolating the
-    // separately fixed short release window. No production timing change.
-    if(OmarchyTable::Enabled && getenv("OMARCHY_TEST_CONTACT_LAUNCH") &&
-        PullbackStartedFlag && Boost>=MaxPullback)
-        pb::InputUp({InputTypes::Keyboard,SDLK_SPACE});
 
 	if (PinballTable->TiltLockFlag || SomeCounter > 0) 
 	{

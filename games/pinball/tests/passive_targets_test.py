@@ -20,8 +20,8 @@ def run(name, ticks, **extra):
         print('PASS', name, flush=True)
         return result.stdout, contacts
 
-shots = [(f'upper target {i}', f'{504+i*31} 161 0 -1 15 1', f'target{i}') for i in range(4)]
-shots += [(f'side module {i}', f'790 {315+i*25} -1 0 15 1', f'module{i}') for i in range(4)]
+shots = [(f'upper target {i}', f'{512+i*28} 163 0 -1 15 1', f'target{i}') for i in range(4)]
+shots += [(f'side module {i}', f'{715-i*6} {315+i*25} 1 0 15 1', f'module{i}') for i in range(4)]
 shots += [('powered bumper', '470 330 0 -1 20 1', 'bumper0')]
 for name, vector, component in shots:
     out, contacts = run(name, 550, OMARCHY_TEST_SHOT='custom', OMARCHY_TEST_VECTOR=vector)

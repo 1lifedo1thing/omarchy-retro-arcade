@@ -13,7 +13,7 @@ shots = [('left support', '252 85 0 1 15 1'),
 shots += [(f'launch {phase}', None) for phase in (180, 221, 259)]
 for name, vector in shots:
     with tempfile.TemporaryDirectory() as tmp:
-        env = dict(os.environ, OMARCHY_TEST_CONTACT_LAUNCH="1", XDG_CONFIG_HOME=tmp, XDG_DATA_HOME=tmp,
+        env = dict(os.environ,  XDG_CONFIG_HOME=tmp, XDG_DATA_HOME=tmp,
                    SDL_VIDEODRIVER='dummy', SDL_AUDIODRIVER='dummy',
                    OMARCHY_TEST_TICKS='2200', OMARCHY_TRACE_RAMP='1',
                    OMARCHY_TEST_SHOT='custom' if vector else 'launch-feed')

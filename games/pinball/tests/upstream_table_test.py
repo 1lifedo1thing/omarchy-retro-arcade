@@ -10,7 +10,7 @@ executable = str(Path(sys.argv[1]).resolve())
 
 def run(shot=None):
     with tempfile.TemporaryDirectory() as tmp:
-        env = dict(os.environ, OMARCHY_TEST_CONTACT_LAUNCH="1", XDG_DATA_HOME=tmp, XDG_CONFIG_HOME=tmp,
+        env = dict(os.environ,  XDG_DATA_HOME=tmp, XDG_CONFIG_HOME=tmp,
                    SDL_VIDEODRIVER="dummy", SDL_AUDIODRIVER="dummy",
                    OMARCHY_TEST_TICKS="1000" if shot else "21600")
         env.pop("OMARCHY_TEST_SHOT", None)

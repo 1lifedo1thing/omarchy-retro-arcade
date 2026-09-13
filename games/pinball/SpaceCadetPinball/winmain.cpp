@@ -348,6 +348,7 @@ void winmain::MainLoop()
                     int w,h;SDL_GetRendererOutputSize(Renderer,&w,&h);auto image=SDL_CreateRGBSurfaceWithFormat(0,w,h,32,SDL_PIXELFORMAT_ARGB8888);
                     SDL_RenderReadPixels(Renderer,nullptr,image->format->format,image->pixels,image->pitch);SDL_SaveBMP(image,path);SDL_FreeSurface(image);
                 }
+                for(auto b:pb::MainTable->BallList)if(b->ActiveFlag)printf("FINAL_BALL x=%.3f y=%.3f dx=%.3f dy=%.3f\n",540+b->Position.X*25,500+b->Position.Y*25,b->Direction.X,b->Direction.Y);
                 printf("REAR_EXIT %d\n",int(probeRearExit));
                 printf("UPSTREAM_TABLE ticks=%d score=%d balls=%d ramps=%u orbits=%u targets=%u\n",probeTick,pb::MainTable->CurScore,pb::MainTable->BallCount,OmarchyTable::Ramps(),OmarchyTable::Orbits(),OmarchyTable::Targets());
                 if(getenv("OMARCHY_TEST_SHOT") && std::string(getenv("OMARCHY_TEST_SHOT"))=="ramp-complete")printf("RAMP_COMPLETE %d\n",int(probeRampExit));
@@ -356,11 +357,11 @@ void winmain::MainLoop()
                 break;
             }
             if(!getenv("OMARCHY_TEST_SHOT") && probeTick%240==30)pb::InputDown({InputTypes::Keyboard,SDLK_SPACE});
-            if(!getenv("OMARCHY_TEST_SHOT") && probeTick%240==150 && !getenv("OMARCHY_TEST_CONTACT_LAUNCH"))pb::InputUp({InputTypes::Keyboard,SDLK_SPACE});
+            if(!getenv("OMARCHY_TEST_SHOT") && probeTick%240==150)pb::InputUp({InputTypes::Keyboard,SDLK_SPACE});
             if(getenv("OMARCHY_TEST_SHOT") && std::string(getenv("OMARCHY_TEST_SHOT"))=="launch-feed"){
                 const int launchAt=getenv("OMARCHY_TEST_LAUNCH_AT")?atoi(getenv("OMARCHY_TEST_LAUNCH_AT")):180;
                 if(probeTick==launchAt)pb::InputDown({InputTypes::Keyboard,SDLK_SPACE});
-                if(probeTick==launchAt+120 && !getenv("OMARCHY_TEST_CONTACT_LAUNCH"))pb::InputUp({InputTypes::Keyboard,SDLK_SPACE});
+                if(probeTick==launchAt+120)pb::InputUp({InputTypes::Keyboard,SDLK_SPACE});
             }
             if(probeTick%90==0)pb::InputDown({InputTypes::Keyboard,SDLK_a});
             if(probeTick%90==40)pb::InputUp({InputTypes::Keyboard,SDLK_a});
