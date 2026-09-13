@@ -62,3 +62,6 @@ enters the raised tube; its upper portal is outgoing-only. Close both low tube
 supports without spanning the underpass. Diagnostics reject illegal interiors,
 rail penetration, trapping and wrong entry provenance; they never teleport or
 rescue production balls. Keep approved art and upstream physics unchanged.
+### Reliable spring charging and contact
+
+Align the ground ball and contact head to the visible coil, animate existing coil pixels from real charge, and retain a0.75-second one-shot release window through rapid re-presses. The upstream plunger default remains zero for imported resources. Charge text reflects real engine state; the artwork file is unchanged.
