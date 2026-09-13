@@ -126,7 +126,7 @@ void Draw(){
  label(1090,852,(std::to_string(OmarchyTable::Progress())+" / 12").c_str(),23);unsigned count=0;for(unsigned v=OmarchyTable::Targets();v;v>>=1)count+=v&1;
  label(1300,852,(std::to_string(count)+" / 8").c_str(),23);
  label(1090,899,("ORBITS  "+std::to_string(OmarchyTable::Orbits())).c_str(),18);label(1300,899,("RAMPS  "+std::to_string(OmarchyTable::Ramps())).c_str(),18);
- label(1080,950,"A / D FLIPPERS    SPACE LAUNCH",17);
+ label(1080,950,"A/D OR Z/SLASH   SPACE LAUNCH",17);
  label(1110,48,"OMARCHY ARCADE  /  PINBALL",18);
 }
 void Shutdown(){SDL_DestroyTexture(board);SDL_DestroyTexture(wordmark);SDL_FreeSurface(original);board=wordmark=nullptr;original=nullptr;lastAccent=0;}
