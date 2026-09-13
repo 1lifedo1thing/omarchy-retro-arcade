@@ -311,13 +311,13 @@ fn records_are_independent_and_survive_a_corrupt_run() {
     s.turn(Direction::Left, false);
     r.preferences.audio = true;
     save(dir.path(), &mut r, Some(&s)).unwrap();
-    let (loaded, restored, error) = load(dir.path());
+    let (loaded, restored, error, _) = load(dir.path());
     assert!(error.is_none());
     assert_eq!(restored, Some(s));
     assert_eq!(loaded.best, r.best);
     assert!(loaded.preferences.audio);
     std::fs::write(dir.path().join("session.json"), b"broken").unwrap();
-    let (loaded, restored, error) = load(dir.path());
+    let (loaded, restored, error, _) = load(dir.path());
     assert!(restored.is_none());
     assert!(error.unwrap().contains("could not be read or resumed"));
     assert_eq!(loaded.best, r.best);
@@ -336,7 +336,7 @@ fn corrupt_records_do_not_destroy_a_valid_session() {
     let s = Sim::new(0, Speed::Normal);
     save(dir.path(), &mut Records::default(), Some(&s)).unwrap();
     std::fs::write(dir.path().join("records.json"), b"garbage").unwrap();
-    let (_, run, error) = load(dir.path());
+    let (_, run, error, _) = load(dir.path());
     assert!(error.is_some());
     assert_eq!(run, Some(s));
 }
