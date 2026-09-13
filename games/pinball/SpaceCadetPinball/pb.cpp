@@ -457,7 +457,12 @@ void pb::timed_frame(float timeDelta)
 						break;
 					}
 
-					edge->EdgeCollision(ball, distance);
+                    const float contactSpeed=ball->Speed;
+                    edge->EdgeCollision(ball, distance);
+                    static const bool traceContacts=OmarchyTable::Enabled && getenv("OMARCHY_TRACE_CONTACTS");
+                    if(traceContacts)fprintf(stderr,"CONTACT %.4f %s %.3f %.3f %.3f %.3f\n",time_now,
+                        edge->CollisionComponent->GroupName?edge->CollisionComponent->GroupName:"unnamed",
+                        contactSpeed,ball->Speed,540+25*ball->Position.X,500+25*ball->Position.Y);
 					if (distance <= 0.0f || ball->CollisionDisabledFlag)
 						break;
 					distanceSum += distance;

@@ -92,6 +92,7 @@ DatFile* Build(){
  auto mission=group("mission_text_box");shorts(mission,{1500,405,270,185,130,0,0,0,0});object(mission,1033);
  auto mat=group(nullptr,300);floats(mat,{301,.95f,302,.8f});
  auto kick=group(nullptr,400);floats(kick,{401,1,402,28});
+ auto targetContact=group(nullptr,400);floats(targetContact,{401,1,402,0});
  // The collision coordinates below are measured against assets/circuit/table.png.
  // The custom view uses the same 25 pixels/world-unit mapping.
  auto rail=[&](const char* name,float x,float y,float xx,float yy,int mask=0,int kicker=-1){
@@ -119,11 +120,11 @@ DatFile* Build(){
  // Stand-up targets use the upstream wall/kicker response.
  for(int i=0;i<4;i++){
   std::string n="target"+std::to_string(i);
-  rail(n.c_str(),493+i*31,142,515+i*31,142,0,kick->GroupId);
+  rail(n.c_str(),493+i*31,142,515+i*31,142,0,targetContact->GroupId);
  }
  for(int i=0;i<4;i++){
   std::string n="module"+std::to_string(i);
-  rail(n.c_str(),736-i*8,327+i*25,750-i*8,307+i*25,0,kick->GroupId);
+  rail(n.c_str(),736-i*8,327+i*25,750-i*8,307+i*25,0,targetContact->GroupId);
  }
  auto drain=group("drain");floats(drain,{600,2,wx(60),wy(1030),wx(1000),wy(1030)});floats(drain,{407,.8f});shorts(drain,{602,0,602,1});object(drain,1007);
  auto plunger=group("plunger");floats(plunger,{600,2,wx(892),wy(878),wx(949),wy(878)});floats(plunger,{601,wx(918),wy(850)});object(plunger,1001);

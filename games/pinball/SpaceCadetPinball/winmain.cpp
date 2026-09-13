@@ -348,6 +348,11 @@ void winmain::MainLoop()
             if(probeTick==180 && getenv("OMARCHY_TEST_SHOT")){
                 auto b=pb::MainTable->BallList.front();b->ActiveFlag=1;b->CollisionFlag=0;b->CollisionMask=1;b->EdgeCollisionCount=0;b->CollisionDisabledFlag=false;
                 std::string shot=getenv("OMARCHY_TEST_SHOT");float x=372,y=455,dx=0,dy=-1,speed=55;
+                if(shot=="custom"){
+                    const char* vector=getenv("OMARCHY_TEST_VECTOR");
+                    if(!vector || sscanf(vector,"%f %f %f %f %f %d",&x,&y,&dx,&dy,&speed,&b->CollisionMask)!=6){return_value=2;return;}
+                    float len=std::hypot(dx,dy);if(len==0){return_value=2;return;}dx/=len;dy/=len;
+                }
                 if(shot=="bumper"){x=470;y=330;speed=20;}
                 if(shot=="target"){x=505;y=190;speed=15;}
                 if(shot=="orbit"){x=780;y=175;dx=0;dy=-1;speed=15;}
