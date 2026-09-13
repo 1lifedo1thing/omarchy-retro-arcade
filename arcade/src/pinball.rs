@@ -204,6 +204,7 @@ fn keycode(key: Key) -> Option<i32> {
         Key::N => 110,
         Key::M => 109,
         Key::Comma => 44,
+        Key::Period => 46,
         _ => return None,
     })
 }

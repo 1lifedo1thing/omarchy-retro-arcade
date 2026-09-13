@@ -3,6 +3,7 @@
 #include "OmarchyTable.h"
 #include "OmarchyTheme.h"
 #include "pb.h"
+#include "nudge.h"
 #include "TPinballTable.h"
 #include "TFlipper.h"
 #include "TFlipperEdge.h"
@@ -87,6 +88,10 @@ void Draw(){
  if(!board||!pb::MainTable)return;updateTexture();draw=ImGui::GetBackgroundDrawList();
  auto size=ImGui::GetIO().DisplaySize;float menu=options::Options.ShowMenu?winmain::MainMenuHeight:0;
  scale=std::min(size.x/1536.f,(size.y-menu)/1024.f);ox=(size.x-1536*scale)/2;oy=menu+(size.y-menu-1024*scale)/2;
+ if(!winmain::single_step){
+  ox+=6.f*scale*(nudge::nudged_right-nudge::nudged_left);
+  oy-=3.f*scale*(nudge::nudged_right+nudge::nudged_left+nudge::nudged_up);
+ }
  draw->AddRectFilled({0,menu},size,rgba(5,8,8));
  // The plate is drawn as an 8x8 grid of quads rather than one 1536x1024 quad. SDL's software renderer
  // (used by the Arcade bridge and -sw) refuses a textured triangle whose area times texture coordinate
@@ -126,7 +131,8 @@ void Draw(){
  label(1090,852,(std::to_string(OmarchyTable::Progress())+" / 12").c_str(),23);unsigned count=0;for(unsigned v=OmarchyTable::Targets();v;v>>=1)count+=v&1;
  label(1300,852,(std::to_string(count)+" / 8").c_str(),23);
  label(1090,899,("ORBITS  "+std::to_string(OmarchyTable::Orbits())).c_str(),18);label(1300,899,("RAMPS  "+std::to_string(OmarchyTable::Ramps())).c_str(),18);
- label(1080,950,"A / D FLIPPERS    SPACE LAUNCH",17);
+ label(1080,936,"A / D FLIPPERS    SPACE LAUNCH",17);
+ label(1080,958,"X / . / UP   NUDGE",15);
  label(1110,48,"OMARCHY ARCADE  /  PINBALL",18);
 }
 void Shutdown(){SDL_DestroyTexture(board);SDL_DestroyTexture(wordmark);SDL_FreeSurface(original);board=wordmark=nullptr;original=nullptr;lastAccent=0;}

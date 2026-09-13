@@ -49,3 +49,11 @@
 - Keep classic merging, spawning, score, win/continue and the current source's 20-move undo. Preserve the latest rapid-move fix's intent: animations have no independent mutable board and completion renders authoritative state. Reduced motion is optional. No audio is added to the silent source game.
 - Use a versioned `omarchy-retro-arcade/2048.json` save, private atomic writes and bounded loading. Save all moves, undo, best score and preferences; invalid/future files remain untouched and play continues with an explicit unsaved-state message. No existing game data or standalone Tauri/browser localStorage is migrated or removed.
 - Append 2048 to the shelf. Existing ordering and commands remain intact. Mouse direction buttons and board dragging supplement arrows/WASD. Keep headless X11 results distinct from hands-on Omarchy/Wayland acceptance.
+
+### Circuit nudge and tilt feedback
+
+Render bounded displacement from active upstream nudge flags. Pause/focus loss
+releases held nudges and centres the board. Display DANGER/TILT in the custom HUD;
+retain upstream flipper/scoring penalties and next-ball recovery. Track held
+input separately from the0.4-second physical pulse: a rested meter warns around
+0.875s and tilts around1.75s. Classic-resource behavior remains unchanged.

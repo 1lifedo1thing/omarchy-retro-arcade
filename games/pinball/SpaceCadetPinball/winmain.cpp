@@ -18,6 +18,7 @@
 #include "OmarchyTheme.h"
 #include "OmarchyTable.h"
 #include "CircuitView.h"
+#include "../tests/CircuitNudgeProbe.h"
 #include "../native/ArcadeIcon.h"
 
 constexpr const char* winmain::Version;
@@ -353,6 +354,9 @@ void winmain::MainLoop()
                 if(shot=="orbit"){x=780;y=175;dx=0;dy=-1;speed=15;}
                 if(shot=="drain"){x=540;y=985;dy=1;speed=15;}
                 b->Position={(x-540)/25,(y-500)/25,b->Radius};b->Direction={dx,dy,0};b->Speed=speed;
+            }
+            if(getenv("OMARCHY_TEST_SHOT") && std::string(getenv("OMARCHY_TEST_SHOT"))=="nudge" && !CheckCircuitNudge(probeTick)){
+                fprintf(stderr,"NUDGE_FAILURE tick=%d\n",probeTick);return_value=2;return;
             }
             ++probeTick;has_focus=true;
         }
@@ -901,6 +905,8 @@ if(OmarchyTable::Enabled && ImGui::MenuItem("How to play")){pause(false);showCir
         ImGui::TextUnformatted("P / Escape: pause    F2: new game    F11: fullscreen");
         ImGui::Separator();
         ImGui::TextUnformatted("Three balls. Keep the ball above the flippers.");
+        ImGui::BulletText("X / period / Up: nudge from left / right / bottom.");
+        ImGui::BulletText("Too much nudging tilts: flippers and scoring lock until the next ball.");
         ImGui::BulletText("Bumpers: 100. Twelve hits: circuit bonus +2500.");
         ImGui::BulletText("Targets: 250. All eight targets: system bonus +5000.");
         ImGui::BulletText("Right orbit: 1000. Upper left ramp: 1500.");
