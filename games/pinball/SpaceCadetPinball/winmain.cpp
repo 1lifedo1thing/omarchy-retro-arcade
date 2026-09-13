@@ -19,6 +19,7 @@
 #include "OmarchyTable.h"
 #include "CircuitView.h"
 #include "TPlunger.h"
+#include "CircuitTiming.h"
 #include "../native/ArcadeIcon.h"
 
 constexpr const char* winmain::Version;
@@ -328,6 +329,8 @@ void winmain::MainLoop()
 	const int probeLimit=OmarchyTable::Enabled && getenv("OMARCHY_TEST_TICKS") ? atoi(getenv("OMARCHY_TEST_TICKS")) : 0;
     const bool checkGeometry=OmarchyTable::Enabled && getenv("OMARCHY_CHECK_GEOMETRY");
     if(checkGeometry)fprintf(stderr,"NATIVE_GEOMETRY_CHECKS enabled\n");
+    const bool checkTiming=OmarchyTable::Enabled && getenv("OMARCHY_CHECK_TIMING");
+    const auto clockStart=Clock::now();
 	int probeTick=0;
     bool probeFullLaunch=false,probeChargeMonotonic=true;
     float probeLastCharge=0;
@@ -483,7 +486,9 @@ void winmain::MainLoop()
 			if (!single_step && !no_time_loss)
 			{
 				auto dt = probeLimit ? 1000.f/120 : static_cast<float>(frameDuration.count());
-				pb::frame(dt);
+				if (OmarchyTable::Enabled) CircuitTiming::Advance(dt, [](float step) { pb::frame(step); });
+				else pb::frame(dt);
+                if(checkTiming)fprintf(stderr,"CIRCUIT_CLOCK %.6f %.6f %.6f\n",DurationMs(Clock::now()-clockStart).count(),double(pb::time_now)*1000,double(dt));
                 if(checkGeometry)for(auto ball:pb::MainTable->BallList){
                     if(const char* region=OmarchyTable::InvalidRegion(ball)){
                         fprintf(stderr,"NATIVE_GEOMETRY_FAILURE %s x=%.3f y=%.3f mask=%d\n",region,540+ball->Position.X*25,500+ball->Position.Y*25,ball->CollisionMask);
@@ -580,7 +585,8 @@ void winmain::MainLoop()
 			// Limit duration to 2 * target time
 			sleepRemainder = Clamp(DurationMs(frameEnd - updateEnd) - targetTimeDelta, -TargetFrameTime,
 			                       TargetFrameTime);
-			frameDuration = std::min<DurationMs>(DurationMs(frameEnd - frameStart), 2 * TargetFrameTime);
+			frameDuration = std::min<DurationMs>(DurationMs(frameEnd - frameStart),
+                OmarchyTable::Enabled ? DurationMs(100) : 2 * TargetFrameTime);
 			frameStart = frameEnd;
 			UpdateToFrameCounter++;
 

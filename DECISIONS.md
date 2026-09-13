@@ -74,3 +74,6 @@ Prefer the SDL offscreen video driver with accelerated rendering and retain soft
 ### Responsive pinball bridge
 
 Debounce bounded logical surface sizes and resize the SDL render target without restarting the worker. Tall layouts use the full playfield plus a lower HUD, and the host paints its full panel. Pointer coordinates follow the displayed frame; upstream mouse ownership and dialog gating are preserved.
+### Circuit elapsed simulation time
+
+Retain up to100ms elapsed time and advance it in bounded120Hz substeps so render/transport stalls do not discard ordinary simulation time. Preserve classic-resource timing. A slow-consumer bridge test compares elapsed wall and engine time.
