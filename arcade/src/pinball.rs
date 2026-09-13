@@ -69,13 +69,18 @@ fn helper() -> io::Result<PathBuf> {
 }
 struct Worker {
     child: Child,
-    input: mpsc::SyncSender<String>,
+    input: Option<mpsc::SyncSender<String>>,
     writer: Option<thread::JoinHandle<()>>,
     reader: Option<thread::JoinHandle<()>>,
 }
 impl Drop for Worker {
     fn drop(&mut self) {
-        let _ = self.input.try_send("quit".into());
+        if let Some(input) = self.input.take() {
+            let _ = input.try_send("quit".into());
+            // Close the channel even when quit could not fit. A drained writer
+            // must not wait for another command while Drop joins it.
+            drop(input);
+        }
         let end = Instant::now() + Duration::from_secs(2);
         loop {
             match self.child.try_wait() {
@@ -93,6 +98,13 @@ impl Drop for Worker {
         }
         if let Some(reader) = self.reader.take() {
             let _ = reader.join();
+        }
+    }
+}
+fn write_commands(mut pipe: impl Write, commands: mpsc::Receiver<String>) {
+    while let Ok(command) = commands.recv() {
+        if writeln!(pipe, "{command}").is_err() || command == "quit" {
+            break;
         }
     }
 }
@@ -152,18 +164,12 @@ impl Pinball {
             .env_remove("OMARCHY_TEST_SHOT")
             .env_remove("OMARCHY_TEST_SCREENSHOT")
             .spawn()?;
-        let mut pipe = child
+        let pipe = child
             .stdin
             .take()
             .ok_or_else(|| io::Error::other("No Circuit input"))?;
         let (input, commands) = mpsc::sync_channel::<String>(256);
-        let writer = thread::spawn(move || {
-            while let Ok(command) = commands.recv() {
-                if writeln!(pipe, "{command}").is_err() || command == "quit" {
-                    break;
-                }
-            }
-        });
+        let writer = thread::spawn(move || write_commands(pipe, commands));
         let mut output = child
             .stdout
             .take()
@@ -190,7 +196,7 @@ impl Pinball {
         Ok(Self {
             worker: Worker {
                 child,
-                input,
+                input: Some(input),
                 writer: Some(writer),
                 reader: Some(reader),
             },
@@ -209,7 +215,13 @@ impl Pinball {
     }
     fn send(&mut self, command: String) {
         if self.error.is_none() {
-            if let Err(e) = self.worker.input.try_send(command) {
+            if let Err(e) = self
+                .worker
+                .input
+                .as_ref()
+                .expect("live worker input")
+                .try_send(command)
+            {
                 self.error = Some(format!("Circuit input failed: {e}"));
             }
         }
@@ -376,6 +388,71 @@ impl eframe::App for Pinball {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn worker_shutdown_is_bounded() {
+        for scenario in ["full", "blocked-write", "exited"] {
+            let mut fixture = Command::new(std::env::current_exe().unwrap())
+                .args([
+                    "--exact",
+                    "pinball::tests::worker_shutdown_fixture",
+                    "--ignored",
+                ])
+                .env("ARCADE_SHUTDOWN_SCENARIO", scenario)
+                .spawn()
+                .unwrap();
+            let deadline = Instant::now() + Duration::from_secs(8);
+            loop {
+                if let Some(status) = fixture.try_wait().unwrap() {
+                    assert!(status.success(), "shutdown scenario {scenario}");
+                    break;
+                }
+                if Instant::now() >= deadline {
+                    let _ = fixture.kill();
+                    let _ = fixture.wait();
+                    panic!("shutdown exceeded deadline: {scenario}");
+                }
+                thread::sleep(Duration::from_millis(20));
+            }
+        }
+    }
+
+    // Only the supervising test invokes this, so a regression cannot hang CI.
+    #[test]
+    #[ignore]
+    fn worker_shutdown_fixture() {
+        let scenario = std::env::var("ARCADE_SHUTDOWN_SCENARIO").unwrap();
+        let mut child = Command::new("sleep")
+            .arg("30")
+            .stdin(Stdio::piped())
+            .stdout(Stdio::null())
+            .spawn()
+            .unwrap();
+        let pipe = child.stdin.take().unwrap();
+        if scenario == "exited" {
+            child.kill().unwrap();
+            child.wait().unwrap();
+        }
+        let (input, commands) = mpsc::sync_channel(1);
+        input
+            .send(if scenario == "blocked-write" {
+                "x".repeat(1_000_000)
+            } else {
+                "blur".into()
+            })
+            .unwrap();
+        let writer = thread::spawn(move || {
+            // Keep the queue full until Drop has attempted its nonblocking quit.
+            thread::sleep(Duration::from_millis(200));
+            write_commands(pipe, commands);
+        });
+        drop(Worker {
+            child,
+            input: Some(input),
+            writer: Some(writer),
+            reader: None,
+        });
+    }
+
     #[test]
     fn classic_flippers_share_press_release_state() {
         for (modern, classic, code) in [(Key::A, Key::Z, 97), (Key::D, Key::Slash, 100)] {
