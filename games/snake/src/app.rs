@@ -30,6 +30,7 @@ pub struct SnakeApp {
     rebind: Option<usize>,
     restart: bool,
     error: Option<String>,
+    writable: bool,
     feedback: Duration,
 }
 impl Default for SnakeApp {
@@ -39,8 +40,10 @@ impl Default for SnakeApp {
 }
 impl SnakeApp {
     pub fn new() -> Self {
-        let dir = storage::state_dir();
-        let (records, saved, error) = storage::load(&dir);
+        Self::from_dir(storage::state_dir())
+    }
+    fn from_dir(dir: PathBuf) -> Self {
+        let (records, saved, error, writable) = storage::load(&dir);
         let restored = saved.is_some();
         let seed = Self::seed();
         let sim = saved.unwrap_or_else(|| Sim::new(seed, records.preferences.speed));
@@ -67,6 +70,7 @@ impl SnakeApp {
             rebind: None,
             restart: false,
             error,
+            writable,
             feedback: Duration::ZERO,
         }
     }
@@ -90,6 +94,9 @@ impl SnakeApp {
         }
     }
     fn persist(&mut self) {
+        if !self.writable {
+            return;
+        }
         self.records.record(&self.sim);
         if let Err(e) = storage::save(&self.dir, &mut self.records, Some(&self.sim)) {
             self.error = Some(format!("Snake could not save: {e}"));
@@ -715,5 +722,60 @@ impl eframe::App for SnakeApp {
     fn on_exit(&mut self, _: Option<&eframe::glow::Context>) {
         self.audio.stop();
         self.persist();
+    }
+}
+
+#[cfg(test)]
+mod save_protection_tests {
+    use super::*;
+    use eframe::App as _;
+
+    #[test]
+    fn failed_archives_block_restart_save_and_exit() {
+        for filename in ["session.json", "records.json"] {
+            for original in [
+                b"broken".to_vec(),
+                br#"{"version":99}"#.to_vec(),
+                vec![b' '; 16385],
+            ] {
+                let dir = tempfile::tempdir().unwrap();
+                let path = dir.path().join(filename);
+                std::fs::write(&path, &original).unwrap();
+                std::fs::write(dir.path().join("archive"), b"archive blocker").unwrap();
+                let mut app = SnakeApp::from_dir(dir.path().to_owned());
+                assert!(!app.writable);
+                app.records.preferences.audio = true;
+                app.fresh(false);
+                app.persist();
+                app.on_exit(None);
+                assert_eq!(std::fs::read(&path).unwrap(), original);
+                std::fs::remove_file(dir.path().join("archive")).unwrap();
+                app.persist();
+                assert_eq!(std::fs::read(&path).unwrap(), original);
+                let mut reopened = SnakeApp::from_dir(dir.path().to_owned());
+                assert!(reopened.writable);
+                reopened.on_exit(None);
+                let copies: Vec<_> = std::fs::read_dir(dir.path().join("archive"))
+                    .unwrap()
+                    .collect();
+                assert_eq!(copies.len(), 1);
+                assert_eq!(
+                    std::fs::read(copies[0].as_ref().unwrap().path()).unwrap(),
+                    original
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn new_and_valid_saves_remain_writable() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut app = SnakeApp::from_dir(dir.path().to_owned());
+        app.records.preferences.audio = true;
+        app.on_exit(None);
+        let reopened = SnakeApp::from_dir(dir.path().to_owned());
+        assert!(reopened.writable);
+        assert!(reopened.records.preferences.audio);
+        assert!(reopened.restored);
     }
 }

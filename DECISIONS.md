@@ -108,3 +108,12 @@ serve/pause states, persistent pause explanations, named practice choices and
 save retry feedback. Verify menu clicks through real egui events and include all
 eleven entries in the native mouse harness. Separate CI screenshots and automated
 input from hands-on Omarchy feel acceptance.
+
+### Rejected Blast and Snake saves
+
+Block Blast writes after a rejected load, and block Snake writes when either
+recovery archive fails. Conservatively keep Snake's records and session together
+until reopening successfully loads or archives both. Ordinary write errors remain
+retryable. Repairing files does not silently enable writes in an already-open
+fallback game. Preserve existing paths and schemas; test restart, persistence and
+exit through real app methods without a native display.

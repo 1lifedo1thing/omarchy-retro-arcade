@@ -47,23 +47,27 @@ pub fn state_dir() -> PathBuf {
         })
         .join("omarchy-snake")
 }
-fn reject(dir: &Path, filename: &str) -> String {
+fn reject(dir: &Path, filename: &str) -> (String, bool) {
     let path = dir.join(filename);
     let archive = dir.join("archive");
     let kept = std::fs::create_dir_all(&archive)
         .and_then(|_| std::fs::rename(&path, archive.join(format!("{}-{filename}", stamp()))))
         .is_ok();
-    format!(
-        "Snake {filename} could not be read or resumed. {}",
-        if kept {
-            "The original was kept in Snake's recovery archive."
-        } else {
-            "The original could not be archived; check file permissions."
-        }
+    (
+        format!(
+            "Snake {filename} could not be read or resumed. {}",
+            if kept {
+                "The original was kept in Snake's recovery archive."
+            } else {
+                "The original could not be archived; saving is disabled. Preserve or repair the file, then reopen Snake."
+            }
+        ),
+        kept,
     )
 }
-pub fn load(dir: &Path) -> (Records, Option<Sim>, Option<String>) {
+pub fn load(dir: &Path) -> (Records, Option<Sim>, Option<String>, bool) {
     let mut error = None;
+    let mut writable = true;
     let records = if dir.join("records.json").exists() {
         match read_bounded(&dir.join("records.json"), 8192)
             .ok()
@@ -72,7 +76,9 @@ pub fn load(dir: &Path) -> (Records, Option<Sim>, Option<String>) {
         {
             Some(r) => r,
             None => {
-                error = Some(reject(dir, "records.json"));
+                let (message, kept) = reject(dir, "records.json");
+                error = Some(message);
+                writable &= kept;
                 Records::default()
             }
         }
@@ -87,14 +93,19 @@ pub fn load(dir: &Path) -> (Records, Option<Sim>, Option<String>) {
         {
             Some(s) => Some(s.sim),
             None => {
-                error = Some(reject(dir, "session.json"));
+                let (message, kept) = reject(dir, "session.json");
+                error = Some(match error {
+                    Some(prior) => format!("{prior}\n{message}"),
+                    None => message,
+                });
+                writable &= kept;
                 None
             }
         }
     } else {
         None
     };
-    (records, sim, error)
+    (records, sim, error, writable)
 }
 pub fn save(dir: &Path, records: &mut Records, sim: Option<&Sim>) -> Result<(), String> {
     records.version = 1;
