@@ -53,3 +53,12 @@
 ### Classic pinball keyboard controls
 
 Z and slash alias A/D with shared held-key state. Release the logical action only when its final physical alias releases and clear held state on blur. Forward period and the supported legacy function keys without rewriting saved engine bindings.
+### Connected Circuit boundaries and traversable routes
+
+Use connected two-sided capsule chains, closed obstacle bodies, explicit ground
+and raised layers, and a ground underpass beneath the high ramp arch. Preserve
+full-ball-width playable routes and intentional drains. Only the lower mouth
+enters the raised tube; its upper portal is outgoing-only. Close both low tube
+supports without spanning the underpass. Diagnostics reject illegal interiors,
+rail penetration, trapping and wrong entry provenance; they never teleport or
+rescue production balls. Keep approved art and upstream physics unchanged.

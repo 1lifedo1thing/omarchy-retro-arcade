@@ -1,9 +1,9 @@
 #include "pch.h"
 #include "CircuitView.h"
-#include "CircuitLayout.h"
 #include "OmarchyTable.h"
 #include "OmarchyTheme.h"
 #include "pb.h"
+#include "CircuitGeometry.h"
 #include "TPinballTable.h"
 #include "TFlipper.h"
 #include "TFlipperEdge.h"
@@ -23,7 +23,8 @@
 #endif
 namespace CircuitView {
 namespace {
-SDL_Texture *board=nullptr,*wordmark=nullptr;
+SDL_Texture *board=nullptr,*wordmark=nullptr,*bridge=nullptr;
+constexpr SDL_Rect bridgeBounds={200,0,272,120};
 SDL_Surface* original=nullptr;
 SDL_Renderer* renderer=nullptr;
 uint32_t lastAccent=0;
@@ -56,35 +57,9 @@ void matrix(float x,float y,float w,float h,const std::string& text,float dot){
 }
 void capsule(float x,float y,float xx,float yy,float r,ImU32 c){float len=std::hypot(xx-x,yy-y),nx=-(yy-y)/len,ny=(xx-x)/len,tip=r*.65f;
  ImVec2 q[]={p(x+nx*r,y+ny*r),p(xx+nx*tip,yy+ny*tip),p(xx-nx*tip,yy-ny*tip),p(x-nx*r,y-ny*r)};draw->AddConvexPolyFilled(q,4,c);disc(x,y,r,c);disc(xx,yy,tip,c);}
-// Reuse the plate's pixels as foreground pieces. Texture coordinates stay in
-// plate space: no second artwork file, scaling transform or painted substitute.
-void plateQuad(CircuitLayout::Point a,CircuitLayout::Point b,CircuitLayout::Point c,CircuitLayout::Point d){
- auto uv=[](CircuitLayout::Point q){return ImVec2(q.x/1536.f,q.y/1024.f);};
- draw->AddImageQuad((ImTextureID)board,p(a.x,a.y),p(b.x,b.y),p(c.x,c.y),p(d.x,d.y),uv(a),uv(b),uv(c),uv(d));
-}
-void plateEllipse(float x,float y,float rx,float ry){
- for(int i=0;i<32;++i){float a=i*6.2831853f/32,b=(i+1)*6.2831853f/32;
-  plateQuad({x,y},{x+rx*cos(a),y+ry*sin(a)},{x+rx*cos(b),y+ry*sin(b)},{x,y});
- }
-}
-void foreground(bool onRamp,float ballY){
- std::vector<CircuitLayout::Point> left,right;CircuitLayout::rampEdges(left,right);
- for(size_t i=0;i+1<left.size();++i){
-  if(!onRamp)plateQuad(left[i],right[i],right[i+1],left[i+1]);
-  else {
-   // The ball rides on the deck but behind the narrow raised side rails.
-   auto inward=[](CircuitLayout::Point a,CircuitLayout::Point b){return CircuitLayout::Point{a.x+(b.x-a.x)*.12f,a.y+(b.y-a.y)*.12f};};
-   plateQuad(left[i],inward(left[i],right[i]),inward(left[i+1],right[i+1]),left[i+1]);
-   plateQuad(inward(right[i],left[i]),right[i],right[i+1],inward(right[i+1],left[i+1]));
-  }
- }
- if(!onRamp)plateQuad({850,397},{859,378},{889,374},{902,394});
- // Raised bumper caps cover balls passing behind their ground-level bases.
- // A ball approaching the front remains in front of the bumper artwork.
- if(!onRamp)for(auto b:CircuitLayout::bumpers())if(ballY<b.y)
-  plateEllipse(b.x,b.y-16,b.r+3,b.r*.9f+9);
- if(!onRamp)for(auto b:CircuitLayout::posts())if(ballY<b.y)
-  plateEllipse(b.x,b.y-10,b.r+2,b.r+12);
+void drawBridge(const ImDrawList*,const ImDrawCmd*){
+ SDL_FRect destination={ox+bridgeBounds.x*scale,oy,bridgeBounds.w*scale,bridgeBounds.h*scale};
+ SDL_RenderCopyF(renderer,bridge,nullptr,&destination);
 }
 void updateTexture(){
  uint32_t c=OmarchyTheme::Accent();if(c==lastAccent&&board)return;lastAccent=c;
@@ -97,7 +72,28 @@ void updateTexture(){
   float bright=std::max(r,std::max(g,b));
   if(amount>.02f){int rr=(int)(255*(r*(1-amount)+ar*bright*amount));int gg=(int)(255*(g*(1-amount)+ag*bright*amount));int bb=(int)(255*(b*(1-amount)+ab*bright*amount));q=0xff000000|(rr<<16)|(gg<<8)|bb;}
  }
- SDL_DestroyTexture(board);board=SDL_CreateTextureFromSurface(renderer,surface);SDL_FreeSurface(surface);
+ if(board)SDL_DestroyTexture(board);board=SDL_CreateTextureFromSurface(renderer,surface);
+ // A small alpha-masked rectangular sprite preserves exact source sampling.
+ // Textured triangle patches produce seams in SDL's software rasterizer.
+ std::vector<vector2> left,right;CircuitGeometry::RampSides(left,right);
+ left.insert(left.end(),right.rbegin(),right.rend());
+ auto foreground=SDL_CreateRGBSurfaceWithFormat(0,bridgeBounds.w,bridgeBounds.h,32,SDL_PIXELFORMAT_ARGB8888);
+ if(foreground){
+  auto dest=static_cast<uint32_t*>(foreground->pixels);
+  for(int y=0;y<bridgeBounds.h;++y)for(int x=0;x<bridgeBounds.w;++x){
+   float px=x+bridgeBounds.x+.5f,py=y+.5f;bool inside=false;
+   for(size_t i=0,j=left.size()-1;i<left.size();j=i++){
+    auto a=left[i],b=left[j];
+    if((a.Y>py)!=(b.Y>py) && px<(b.X-a.X)*(py-a.Y)/(b.Y-a.Y)+a.X)inside=!inside;
+   }
+   dest[y*foreground->pitch/4+x]=inside?pixels[y*surface->pitch/4+x+bridgeBounds.x]:0;
+  }
+  if(bridge)SDL_DestroyTexture(bridge);
+  bridge=SDL_CreateTextureFromSurface(renderer,foreground);
+  SDL_SetTextureBlendMode(bridge,SDL_BLENDMODE_BLEND);
+  SDL_FreeSurface(foreground);
+ }
+ SDL_FreeSurface(surface);
 }
 }
 bool Init(SDL_Renderer* r){
@@ -132,9 +128,8 @@ void Draw(){
  auto t=pb::MainTable;
  const float lamps[12][2]={{562,422},{626,438},{664,478},{674,525},{659,565},{618,599},{562,617},{507,599},{464,565},{450,526},{458,479},{498,439}};
  for(unsigned i=0;i<12;i++)lamp(lamps[i][0],lamps[i][1],i<OmarchyTable::Progress());
- const auto& bumpers=CircuitLayout::bumpers();
- for(int i=0;i<4;i++){std::string n="bumper"+std::to_string(i);float f=OmarchyTable::Flash(n.c_str());if(f>0){draw->AddCircle(p(bumpers[i].x,bumpers[i].y),(i==3?33:44)*scale,accent((int)(f*230)),32,5*scale);disc(bumpers[i].x,bumpers[i].y-15,16,rgba(255,241,179,(int)(f*100)));}}
- for(int i=0;i<8;i++){float x=i<4?516+i*29:758-(i-4)*7.5f,y=i<4?117:335+(i-4)*26;lamp(x,y,(OmarchyTable::Targets()&(1u<<i))!=0,7);}
+ for(int i=0;i<4;i++){const auto& bumper=CircuitGeometry::Bumpers()[i];std::string n="bumper"+std::to_string(i);float f=OmarchyTable::Flash(n.c_str());if(f>0){draw->AddCircle(p(bumper.x,bumper.y),(i==3?33:44)*scale,accent((int)(f*230)),32,5*scale);disc(bumper.x,bumper.y-15,16,rgba(255,241,179,(int)(f*100)));}}
+ for(int i=0;i<8;i++){float x=i<4?504+i*31:747-(i-4)*8,y=i<4?117:319+(i-4)*25;lamp(x,y,(OmarchyTable::Targets()&(1u<<i))!=0,7);}
  for(int i=0;i<2;i++){std::string name=i?"sling_right":"sling_left";float f=OmarchyTable::Flash(name.c_str());if(f>0)draw->AddLine(p(i?755:295,635),p(i?690:360,778),accent((int)(f*220)),5*scale);}
  // Flipper endpoints come from the engine's current collision edge, not a UI animation.
  for(auto flipper:t->FlipperList){auto e=flipper->FlipperEdge;float x=540+e->RotOrigin.X*25,y=500+e->RotOrigin.Y*25;
@@ -144,14 +139,18 @@ void Draw(){
   capsule(x,y-3,xx,yy-3,15,rgba(173,168,132));capsule(x,y-6,xx,yy-6,12,rgba(229,226,196));
   capsule(x+2,y+10,xx,yy+8,3,accent());disc(x,y-5,10,rgba(58,61,52));disc(x-2,y-7,7,rgba(210,212,193));disc(x-4,y-9,3,rgba(253,251,226));
  }
- for(auto ball:t->BallList)if(ball->ActiveFlag){float x=CircuitLayout::imageX(ball->Position.X),y=CircuitLayout::imageY(ball->Position.Y),r=ball->Radius*25;
-  if(getenv("OMARCHY_TEST_HIDE_BALL")){foreground(ball->CollisionMask==2,y);continue;}
+ auto drawBall=[&](TBall* ball){float x=540+ball->Position.X*25,y=500+ball->Position.Y*25,r=ball->Radius*25;
   disc(x+5,y+10,r+2,rgba(0,0,0,155));disc(x,y,r+1,rgba(204,211,205));disc(x,y,r,rgba(29,36,38));
   disc(x-2,y-3,r*.82f,rgba(126,145,146));disc(x+2,y+3,r*.68f,rgba(33,46,47));disc(x-3,y-4,r*.55f,rgba(213,227,220));disc(x-4,y-5,r*.3f,rgba(255,255,241));
-  foreground(ball->CollisionMask==2,y);
+ };
+ bool underBridge=false;
+ for(auto ball:t->BallList)if(ball->ActiveFlag && !(ball->CollisionMask&2)){
+  drawBall(ball);underBridge|=500+ball->Position.Y*25<132;
  }
+ if(underBridge && bridge)draw->AddCallback(drawBridge,nullptr);
+ for(auto ball:t->BallList)if(ball->ActiveFlag && (ball->CollisionMask&2))drawBall(ball);
  float pull=t->Plunger->PullbackStartedFlag?std::min(1.f,t->Plunger->Boost/100):0;
- draw->AddRectFilled(p(CircuitLayout::plungerLeft,CircuitLayout::plungerY+pull*35),p(CircuitLayout::plungerRight,CircuitLayout::plungerY+16+pull*35),rgba(180,185,172),3*scale);
+ draw->AddRectFilled(p(930,935+pull*35),p(977,951+pull*35),rgba(180,185,172),3*scale);
  char score[32];snprintf(score,sizeof(score),"%07d",std::max(0,t->CurScore));matrix(1067,554,414,67,score,7);
  std::string ball=OmarchyTable::GameOver()?"GAME OVER":"BALL "+std::to_string(4-std::max(1,t->BallCount));matrix(1067,638,414,56,ball,4.5f);
  const char* status=winmain::single_step?"PAUSED  P RESUME":OmarchyTable::Status();matrix(1067,714,414,66,status,3.25f);
@@ -162,5 +161,5 @@ void Draw(){
  label(1080,950,"A/D OR Z/SLASH   SPACE LAUNCH",17);
  label(1110,48,"OMARCHY ARCADE  /  PINBALL",18);
 }
-void Shutdown(){SDL_DestroyTexture(board);SDL_DestroyTexture(wordmark);SDL_FreeSurface(original);board=wordmark=nullptr;original=nullptr;lastAccent=0;}
+void Shutdown(){SDL_DestroyTexture(bridge);bridge=nullptr;SDL_DestroyTexture(board);SDL_DestroyTexture(wordmark);SDL_FreeSurface(original);board=wordmark=nullptr;original=nullptr;lastAccent=0;}
 }

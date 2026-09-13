@@ -297,3 +297,11 @@ target_compile_definitions(SpaceCadetPinball PRIVATE
  CIRCUIT_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assets/circuit"
  CIRCUIT_INSTALL_DIR="${CMAKE_INSTALL_PREFIX}/share/omarchy-retro-arcade/circuit")
 install(FILES assets/circuit/table.png DESTINATION "${CMAKE_INSTALL_DATADIR}/omarchy-spacecadet/circuit")
+
+if(BUILD_TESTING)
+    add_test(NAME authored-geometry-sweep COMMAND python3 "${CMAKE_CURRENT_SOURCE_DIR}/tests/geometry_sweep_test.py" $<TARGET_FILE:SpaceCadetPinball>)
+    set_tests_properties(authored-geometry-sweep PROPERTIES TIMEOUT 480)
+    add_test(NAME authored-rear-routes COMMAND python3 "${CMAKE_CURRENT_SOURCE_DIR}/tests/rear_routes_test.py" $<TARGET_FILE:SpaceCadetPinball>)
+    add_test(NAME authored-ramp-entry COMMAND python3 "${CMAKE_CURRENT_SOURCE_DIR}/tests/ramp_entry_test.py" $<TARGET_FILE:SpaceCadetPinball>)
+    add_test(NAME authored-bridge-layers COMMAND python3 "${CMAKE_CURRENT_SOURCE_DIR}/tests/bridge_layers_test.py" $<TARGET_FILE:SpaceCadetPinball>)
+endif()
