@@ -47,6 +47,8 @@ jobs:
         run: xvfb-run -a -s '-screen 0 1440x1100x24' env LIBGL_ALWAYS_SOFTWARE=1 python3 scripts/native-2048.py target/release/omarchy-retro-arcade /tmp/arcade-renders/2048
       - name: Stack keyboard, pause, focus and saves
         run: xvfb-run -a -s '-screen 0 2400x1900x24' env LIBGL_ALWAYS_SOFTWARE=1 python3 scripts/native-stack.py target/release/omarchy-retro-arcade /tmp/arcade-renders
+      - name: Stack rejected-save protection
+        run: xvfb-run -a -s '-screen 0 1440x1100x24' env LIBGL_ALWAYS_SOFTWARE=1 python3 scripts/native-stack-save-protection.py target/release/omarchy-retro-arcade /tmp/arcade-renders/stack-save-protection
       - name: Snake native controls, saves and layouts
         run: xvfb-run -a -s '-screen 0 2400x1800x24' env LIBGL_ALWAYS_SOFTWARE=1 python3 scripts/native-snake.py target/release/omarchy-retro-arcade /tmp/arcade-renders/snake
       - name: Blast solo, local match and lifecycle
