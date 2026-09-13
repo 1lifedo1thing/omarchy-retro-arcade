@@ -7,6 +7,7 @@
 #include "zdrv.h"
 #include "pb.h"
 #include "CircuitLauncher.h"
+#include "nudge.h"
 #include "TPinballTable.h"
 #include "TPlunger.h"
 #include "TDrain.h"
@@ -363,7 +364,12 @@ unsigned Orbits(){return orbitCount;}
 unsigned Ramps(){return rampCount;}
 unsigned Circuits(){return circuits;}
 bool GameOver(){return over;}
-const char* Status(){return pb::time_now<noticeUntil||over?notice.c_str():"LIGHT THE CIRCUIT";}
+const char* Status(){
+ if(over)return notice.c_str();
+ if(pb::MainTable->TiltLockFlag)return "TILT  FLIPPERS LOCKED";
+ if(nudge::nudge_count>.5f)return "DANGER  NUDGE LESS";
+ return pb::time_now<noticeUntil?notice.c_str():"LIGHT THE CIRCUIT";
+}
 float Flash(const char* name){auto i=flashes.find(name);return i==flashes.end()?0:std::max(0.f,1-(pb::time_now-i->second)/.25f);}
 void ComponentEvent(MessageCode code,TPinballComponent* c){
  auto t=c->PinballTable;if(!t)return;

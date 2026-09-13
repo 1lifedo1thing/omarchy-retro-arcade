@@ -77,3 +77,10 @@ Debounce bounded logical surface sizes and resize the SDL render target without 
 ### Circuit elapsed simulation time
 
 Retain up to100ms elapsed time and advance it in bounded120Hz substeps so render/transport stalls do not discard ordinary simulation time. Preserve classic-resource timing. A slow-consumer bridge test compares elapsed wall and engine time.
+### Circuit nudge and tilt feedback
+
+Render bounded displacement from active upstream nudge flags. Pause/focus loss
+releases held nudges and centres the board. Display DANGER/TILT in the custom HUD;
+retain upstream flipper/scoring penalties and next-ball recovery. Track held
+input separately from the0.4-second physical pulse: a rested meter warns around
+0.875s and tilts around1.75s. Classic-resource behavior remains unchanged.

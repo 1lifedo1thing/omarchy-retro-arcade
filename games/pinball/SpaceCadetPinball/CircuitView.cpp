@@ -5,6 +5,7 @@
 #include "pb.h"
 #include "CircuitGeometry.h"
 #include "CircuitLauncher.h"
+#include "nudge.h"
 #include "TPinballTable.h"
 #include "TFlipper.h"
 #include "TFlipperEdge.h"
@@ -124,6 +125,10 @@ void Draw(){
  float layoutWidth=portrait?1024.f:1536.f,layoutHeight=portrait?1230.f:1024.f;
  scale=std::min(size.x/layoutWidth,(size.y-menu)/layoutHeight);
  ox=(size.x-layoutWidth*scale)/2;oy=menu+(size.y-menu-layoutHeight*scale)/2;
+ if(!winmain::single_step){
+  ox+=6.f*scale*(nudge::nudged_right-nudge::nudged_left);
+  oy-=3.f*scale*(nudge::nudged_right+nudge::nudged_left+nudge::nudged_up);
+ }
  draw->AddRectFilled({0,menu},size,rgba(5,8,8));
  // Copy the rectangular plate once, retaining ImGui overlay ordering.
  draw->AddCallback(drawBoard,nullptr);
@@ -200,7 +205,8 @@ void Draw(){
  label(1090,852,(std::to_string(OmarchyTable::Progress())+" / 12").c_str(),23);unsigned count=0;for(unsigned v=OmarchyTable::Targets();v;v>>=1)count+=v&1;
  label(1300,852,(std::to_string(count)+" / 8").c_str(),23);
  label(1090,899,("ORBITS  "+std::to_string(OmarchyTable::Orbits())).c_str(),18);label(1300,899,("RAMPS  "+std::to_string(OmarchyTable::Ramps())).c_str(),18);
- label(1080,950,"A/D OR Z/SLASH   SPACE LAUNCH",17);
+ label(1080,936,"A/D OR Z/SLASH   SPACE LAUNCH",17);
+ label(1080,958,"X / . / UP   NUDGE",15);
  label(1110,48,"OMARCHY ARCADE  /  PINBALL",18);
 }
 void Shutdown(){SDL_DestroyTexture(bridge);bridge=nullptr;SDL_DestroyTexture(board);SDL_DestroyTexture(wordmark);SDL_FreeSurface(original);board=wordmark=nullptr;original=nullptr;lastAccent=0;}
