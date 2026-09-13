@@ -65,7 +65,7 @@ rail penetration, trapping and wrong entry provenance; they never teleport or
 rescue production balls. Keep approved art and upstream physics unchanged.
 ### Reliable spring charging and contact
 
-Align the ground ball and contact head to the visible coil, animate existing coil pixels from real charge, and retain a0.75-second one-shot release window through rapid re-presses. The upstream plunger default remains zero for imported resources. Charge text reflects real engine state; the artwork file is unchanged.
+Align the ground ball and contact head to the visible coil, animate existing coil pixels from real charge, and retain a 0.75-second one-shot release window through rapid re-presses. The upstream plunger default remains zero for imported resources. Charge text reflects real engine state; the artwork file is unchanged.
 ### Passive scoring-target response
 
 Stand-up targets and side modules score through the upstream wall response with zero powered boost. Powered bumpers and slings retain their impulses. Contact tracing and real-engine shots distinguish scoring events from energy injection. Geometry is unchanged here.
@@ -85,3 +85,7 @@ releases held nudges and centres the board. Display DANGER/TILT in the custom HU
 retain upstream flipper/scoring penalties and next-ball recovery. Track held
 input separately from the0.4-second physical pulse: a rested meter warns around
 0.875s and tilts around1.75s. Classic-resource behavior remains unchanged.
+
+### Contributor integration
+
+Combine #21–#28 on current main while retaining contributor commits. CircuitGeometry replaces the alternate #19 layout and duplicate launcher constants. Retain #19's boundary/depth regression intent and bumper-cap occlusion using the shared geometry. Use direct plate copies with portrait cropping; one status priority for both layouts (pause, game over, tilt/danger, charge, notice). Exercise normal fixed-time launches without a contact-release test shim. Wire native classic-control, resizing, geometry and nudge regressions into CI. #29 save protection and #30 build-job limits land independently.

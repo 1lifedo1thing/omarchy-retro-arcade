@@ -8,7 +8,7 @@ The top-left tube uses sampled smooth cross-sections, with an explicit elevated 
 
 The launch floor is at the visible coil head (artwork y=873), with the resting ball centred at x=939, y=861.75. The beige arrow strip is traversable launch-lane artwork, not a raised contact plate. The feed starts 32 pixels above the floor. The floor endpoints meet the existing sloped lane walls; the divider continues to the apron. The two floor corners are capped. Its intentional one-way gate sits at the right orbit's exit into the field, not horizontally across the launch lane; an unsuccessful launch may return to the plunger. Return lanes keep enough width for the ball all the way to their drains. The bottom and outlane drains remain intentional loss routes; the launch floor is not a drain.
 
-Scoring response remains unchanged here. Removing powered energy from passive target faces and animating the launcher are separate changes.
+The integration retains powered bumpers and slings, while stand-up targets and modules score with zero powered boost. The launcher animates real charge and retains a 0.75-second release window, including rapid re-press cancellation.
 
 ## Verification
 
@@ -50,4 +50,4 @@ the legitimate lower mouth, and three real launch phases. Every recorded
 promotion must lie at the lower mouth; launch shots must reach open play.
 `OMARCHY_TRACE_RAMP=1` prints entry coordinates only for the authored table.
 
-Standalone route tests set `OMARCHY_TEST_CONTACT_LAUNCH=1` to release real launcher input at full-charge collision contact to isolate geometry from the separate short-release-window bug on upstream main. Their launch phases vary charge start, not a guaranteed fixed release instant. General release-window and rapid re-press behavior are covered by the separate launcher change.
+Standalone route tests use normal fixed-time input release at three charge-start phases. There is no contact-triggered release shortcut in the engine or test environment. Launcher contact and rapid re-press regressions run alongside the geometry checks.

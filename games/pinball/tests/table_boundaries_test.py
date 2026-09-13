@@ -8,7 +8,7 @@ import tempfile
 
 executable = str(Path(sys.argv[1]).resolve())
 for shot, vector, axis, expected_sign in (
-    ("rail_end_cap", "354 868 -1 0 10 1", "dx", 1),
+    ("rail_end_cap", "355 792 0 1 10 1", "dx", 1),
     ("module", "715 315 1 0 15 1", "dx", -1),
     ("guide", "325 500 -1 0 15 1", "dx", 1),
     ("sling_back_left", "257 680 1 0 15 1", "dx", -1),
