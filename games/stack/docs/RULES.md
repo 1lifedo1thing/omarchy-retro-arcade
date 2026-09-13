@@ -16,4 +16,6 @@ Left and right together cancel. Movement happens immediately on changing directi
 
 Pauses and focus loss freeze simulation. Preferences, both local bests and one complete run per mode are saved atomically under `$XDG_STATE_HOME/omarchy-stack/session.json` (default `~/.local/state`). Restored runs retain all board, bag, hold, repeat, gravity, lock, score and tick state, and remain eligible for local records. They are never eligible for sharing in v1.
 
+If Stack cannot read or validate an existing save, it leaves that file and any earlier recovery files untouched. A persistent notice explains that play can continue without saving progress or settings. Saving remains disabled until Stack is closed, the original save is recovered or moved aside, and Stack is reopened. No automatic archive or reset replaces an unreadable or future-version save.
+
 Artwork is original procedural block drawing. Optional cues are original synthesised PCM (shared Arcade cue utility originating in Bubble); `paplay` is optional and absence of an audio server does not stop gameplay. Reduced motion disables the clear-border flash.
