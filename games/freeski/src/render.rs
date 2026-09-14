@@ -1,8 +1,8 @@
 use crate::{
     engine::{Mode, Phase, Point, Sim},
-    world::{self, Kind, Obstacle},
+    world::{self, Obstacle},
 };
-use eframe::egui::{self, Align2, Color32, FontId, Pos2, Rect, Shape, Stroke, Vec2};
+use eframe::egui::{self, Align2, Color32, FontId, Pos2, Rect, Stroke, Vec2};
 pub const VIEW_WIDTH: f64 = 96.;
 pub const VIEW_HEIGHT: f64 = 96.;
 pub fn field(area: Rect) -> Rect {
@@ -17,16 +17,22 @@ pub fn point(field: Rect, sim: &Sim, p: Point) -> Pos2 {
             + ((p.y - sim.position.y) / VIEW_HEIGHT) as f32 * field.height(),
     )
 }
+pub struct Effects<'a> {
+    pub tracks: &'a [(Point, Point)],
+    pub braking: bool,
+    pub landing: Option<(Point, u64)>,
+}
+
 pub fn draw(
     ui: &egui::Ui,
     field: Rect,
     state: &crate::storage::Save,
     obstacles: &[Obstacle],
     accent: Color32,
-    reduced: bool,
-    tracks: &[(Point, Point)],
+    effects: Effects<'_>,
 ) {
     let sim = &state.run;
+    let reduced = state.reduced_effects;
     arcade_presentation::bezel(ui.painter(), field, accent);
     let p = ui.painter().with_clip_rect(field);
     let light = !ui.visuals().dark_mode;
@@ -39,6 +45,29 @@ pub fn draw(
     let scale = field.width() / VIEW_WIDTH as f32;
     p.rect_filled(field, 0., snow);
     let at = |x, y| point(field, sim, Point { x, y });
+    // Sparse shallow wind marks are world-anchored, faint, and bounded. They
+    // add snow texture without resembling obstacles or covering the route.
+    let drift_row = ((sim.position.y - 20.) / 16.).floor() as i64;
+    for row in drift_row..drift_row + 9 {
+        for column in 0..3i64 {
+            let hash = row.wrapping_mul(37).wrapping_add(column * 71);
+            let x = (hash.rem_euclid(78) - 39) as f64;
+            let y = row as f64 * 16. + column as f64 * 3.;
+            let pos = at(x, y);
+            let shade = Color32::from_rgba_unmultiplied(95, 139, 149, 18);
+            p.line_segment(
+                [pos, pos + Vec2::new(2.4, -0.22) * scale],
+                Stroke::new((scale * 0.10).max(0.6), shade),
+            );
+            p.line_segment(
+                [
+                    pos + Vec2::new(0.8, 0.25) * scale,
+                    pos + Vec2::new(3.3, 0.02) * scale,
+                ],
+                Stroke::new((scale * 0.08).max(0.5), Color32::from_white_alpha(30)),
+            );
+        }
+    }
     // A fixed world view reveals the same hazards at every window size.
     let start = ((sim.position.y - 20.) / 10.).floor() as i32;
     for row in start..start + 12 {
@@ -59,10 +88,16 @@ pub fn draw(
         }
     }
     if !reduced {
-        for (a, b) in tracks {
+        for (a, b) in effects.tracks {
+            let dx = b.x - a.x;
+            let dy = b.y - a.y;
+            let length = dx.hypot(dy).max(0.001);
             for offset in [-0.35, 0.35] {
                 p.line_segment(
-                    [at(a.x + offset, a.y), at(b.x + offset, b.y)],
+                    [
+                        at(a.x + offset * dy / length, a.y - offset * dx / length),
+                        at(b.x + offset * dy / length, b.y - offset * dx / length),
+                    ],
                     Stroke::new((scale * 0.12).max(0.7), Color32::from_black_alpha(20)),
                 );
             }
@@ -73,76 +108,7 @@ pub fn draw(
         if !field.expand(10. * scale).contains(pos) {
             continue;
         }
-        p.add(Shape::ellipse_filled(
-            pos + Vec2::new(1.1, 0.8) * scale,
-            Vec2::new(2.4, 0.8) * scale,
-            Color32::from_black_alpha(28),
-        ));
-        match o.kind {
-            Kind::Pole => {}
-            Kind::Tree => {
-                p.line_segment(
-                    [pos, pos - Vec2::new(0., 2.) * scale],
-                    Stroke::new(0.65 * scale, Color32::from_rgb(88, 76, 58)),
-                );
-                for (dy, w) in [(1.2, 2.5), (2.7, 2.), (4., 1.4)] {
-                    let q = pos - Vec2::new(0., dy) * scale;
-                    p.add(Shape::convex_polygon(
-                        vec![
-                            q + Vec2::new(-w, 0.) * scale,
-                            q + Vec2::new(0., -3.) * scale,
-                            q + Vec2::new(w, 0.) * scale,
-                        ],
-                        Color32::from_rgb(34, 83, 76),
-                        Stroke::NONE,
-                    ));
-                    p.line_segment(
-                        [
-                            q + Vec2::new(-w * 0.7, -0.45) * scale,
-                            q + Vec2::new(0., -2.7) * scale,
-                        ],
-                        Stroke::new(0.35 * scale, Color32::from_rgb(192, 215, 209)),
-                    );
-                }
-            }
-            Kind::Rock => {
-                p.add(Shape::convex_polygon(
-                    vec![
-                        pos + Vec2::new(-1.5, 0.) * scale,
-                        pos + Vec2::new(-0.9, -1.4) * scale,
-                        pos + Vec2::new(0.7, -1.7) * scale,
-                        pos + Vec2::new(1.5, -0.2) * scale,
-                        pos + Vec2::new(0.5, 0.7) * scale,
-                    ],
-                    Color32::from_rgb(107, 127, 139),
-                    Stroke::new(0.15 * scale, ink),
-                ));
-                p.line_segment(
-                    [
-                        pos + Vec2::new(-0.9, -1.3) * scale,
-                        pos + Vec2::new(0.7, -1.6) * scale,
-                    ],
-                    Stroke::new(0.5 * scale, Color32::WHITE),
-                );
-            }
-            Kind::Ramp => {
-                let r = Rect::from_center_size(pos, Vec2::new(4.2, 3.3) * scale);
-                p.rect_filled(r, 0., Color32::from_rgb(51, 109, 125));
-                for y in [-0.8, 0., 0.8] {
-                    p.line_segment(
-                        [
-                            pos + Vec2::new(-1.5, y) * scale,
-                            pos + Vec2::new(1.5, y) * scale,
-                        ],
-                        Stroke::new(0.28 * scale, Color32::WHITE),
-                    );
-                }
-                p.line_segment(
-                    [r.left_bottom(), r.right_bottom()],
-                    Stroke::new(0.5 * scale, Color32::from_rgb(231, 170, 71)),
-                );
-            }
-        }
+        crate::artwork::obstacle(&p, pos, scale, o);
     }
     if state.mode == Mode::Slalom {
         if let Some(course) = crate::course::course(state.course_index) {
@@ -160,18 +126,14 @@ pub fn draw(
                 };
                 for side in [-1., 1.] {
                     let base = at(gate.x + side * gate.half_width, gate.y);
-                    let top = base - Vec2::new(0., 4.) * scale;
-                    p.circle_stroke(base, (0.5 * scale).max(2.), Stroke::new(scale * 0.2, color));
-                    p.line_segment([base, top], Stroke::new(scale * 0.3, color));
-                    p.add(Shape::convex_polygon(
-                        vec![
-                            top,
-                            top + Vec2::new(-side as f32 * 2.2, 0.5) * scale,
-                            top + Vec2::new(0., 1.7) * scale,
-                        ],
+                    crate::artwork::gate(
+                        &p,
+                        base,
+                        scale,
+                        side as f32,
                         color,
-                        Stroke::NONE,
-                    ));
+                        index == state.slalom.next_gate,
+                    );
                 }
                 if index >= state.slalom.next_gate {
                     p.text(
@@ -200,13 +162,31 @@ pub fn draw(
     };
     let finish = at(0., finish_distance);
     if state.mode != Mode::FreeSki && field.expand(8. * scale).contains(finish) {
-        for n in -16..16 {
-            let x = n as f32 * 2.5 * scale;
-            let r = Rect::from_min_size(
-                Pos2::new(finish.x + x, finish.y),
-                Vec2::new(2.5, 1.2) * scale,
+        for side in [-1., 1.] {
+            crate::artwork::finish_post(
+                &p,
+                at(side * world::HALF_WIDTH, finish_distance),
+                scale,
+                side as f32,
             );
-            p.rect_filled(r, 0., if n % 2 == 0 { ink } else { Color32::WHITE });
+        }
+        for row in 0..2 {
+            for n in -16..16 {
+                let x = n as f32 * 2.5 * scale;
+                let r = Rect::from_min_size(
+                    Pos2::new(finish.x + x, finish.y + row as f32 * 1.2 * scale),
+                    Vec2::new(2.5, 1.2) * scale,
+                );
+                p.rect_filled(
+                    r,
+                    0.,
+                    if (n + row) % 2 == 0 {
+                        ink
+                    } else {
+                        Color32::WHITE
+                    },
+                );
+            }
         }
         p.text(
             finish - Vec2::new(0., 4. * scale),
@@ -254,69 +234,17 @@ pub fn draw(
         }
     }
     let ground = point(field, sim, sim.position);
-    p.add(Shape::ellipse_filled(
-        ground + Vec2::new(0., 0.7) * scale,
-        Vec2::new(1.6, 0.65) * scale,
-        Color32::from_black_alpha(65),
-    ));
-    let skier = ground - Vec2::new(0., sim.height() as f32 * scale * 1.3);
-    if sim.protection > 0 || sim.tumble > 0 {
-        p.circle_stroke(
-            ground,
-            2.6 * scale,
-            Stroke::new(0.24 * scale, Color32::from_rgb(168, 101, 24)),
-        );
+    if !reduced {
+        if let Some((pos, tick)) = effects.landing {
+            crate::artwork::landing(
+                &p,
+                point(field, sim, pos),
+                scale,
+                sim.ticks.saturating_sub(tick),
+            );
+        }
     }
-    let angle = if sim.tumble > 0 {
-        1.4
-    } else {
-        -(sim.heading as f32)
-    };
-    let rotate = |v: Vec2| {
-        Vec2::new(
-            v.x * angle.cos() - v.y * angle.sin(),
-            v.x * angle.sin() + v.y * angle.cos(),
-        )
-    };
-    for dx in [-0.55, 0.55] {
-        p.line_segment(
-            [
-                skier + rotate(Vec2::new(dx, -1.4)) * scale,
-                skier + rotate(Vec2::new(dx, 1.6)) * scale,
-            ],
-            Stroke::new(0.27 * scale, ink),
-        );
-    }
-    // Yaw belongs to the skis/feet. Keep the standing body vertical in the
-    // oblique view so a traverse reads as turning, rather than falling over.
-    let body = |v: Vec2| if sim.tumble > 0 { rotate(v) } else { v };
-    let jacket = Color32::from_rgb(206, 89, 49);
-    let hip = skier - body(Vec2::new(0., 0.65)) * scale;
-    for dx in [-0.55, 0.55] {
-        let boot = skier + rotate(Vec2::new(dx, 0.)) * scale;
-        p.line_segment([hip, boot], Stroke::new(0.38 * scale, ink));
-    }
-    let shoulder = skier - body(Vec2::new(0., 1.65)) * scale;
-    p.line_segment([hip, shoulder], Stroke::new(1.25 * scale, jacket));
-    let head = skier - body(Vec2::new(0., 2.25)) * scale;
-    p.circle_filled(head, 0.65 * scale, Color32::from_rgb(248, 224, 174));
-    // Goggles shift toward the direction of travel, showing left/right profile.
-    let facing = sim.heading.sin() as f32;
-    p.line_segment(
-        [
-            head + Vec2::new(facing * 0.35 - 0.3, 0.15) * scale,
-            head + Vec2::new(facing * 0.35 + 0.3, 0.15) * scale,
-        ],
-        Stroke::new(0.22 * scale, ink),
-    );
-    for side in [-1., 1.] {
-        let hand = shoulder + body(Vec2::new(side * 0.95, 0.65)) * scale;
-        p.line_segment([shoulder, hand], Stroke::new(0.3 * scale, jacket));
-        p.line_segment(
-            [hand, hand + rotate(Vec2::new(0., -1.5)) * scale],
-            Stroke::new(0.12 * scale, ink),
-        );
-    }
+    crate::artwork::skier(&p, ground, scale, sim, effects.braking, reduced);
     if sim.phase == Phase::Ready {
         p.text(
             ground + Vec2::new(0., 5. * scale),

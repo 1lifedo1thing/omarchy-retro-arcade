@@ -20,3 +20,8 @@ pub mod world;
 
 #[cfg(feature = "ui")]
 mod yeti;
+
+#[cfg(feature = "ui")]
+mod artwork;
+#[cfg(feature = "ui")]
+mod geometry;

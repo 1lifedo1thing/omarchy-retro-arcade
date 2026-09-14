@@ -208,3 +208,20 @@ ticks and actor speed, stop when stationary, and respect reduced effects. Turns
 away show the back of its head. The renderer remains read-only and anchored to
 the physical actor; pursuit policy, collision shape and save schema are unchanged.
 No external artwork, image files or runtime dependencies were added.
+
+## 2026-09-14: Extend FreeSki's approved yeti art direction
+
+Tyler approved the yeti and requested the same craft across FreeSki. The skier,
+trees, rocks, ramps, Slalom flags, finish markers and shelf illustration now use
+original layered geometry, dark outlines, ivory snow and restrained highlights.
+Orange remains the skier's focal colour. Ski yaw and torso profile communicate
+turning; braking, speed, flight and tumble change cosmetic poses.
+
+`artwork.rs` owns these sprites. Shared ellipse/concave-polygon helpers move from
+the yeti into `geometry.rs`, preserving the approved yeti design. Tree/rock variants
+derive from obstacle IDs without touching world generation. Shadows stay at the
+physical actor/obstacle anchors. New snow effects remain small and bounded, use
+simulation ticks, and respect reduced effects. One unsaved landing-puff record
+lives in App; it is cleared with other cosmetics when replacing runs. Collision
+shapes, physics, terrain, save schema, compact menus and shared cabinet materials
+are preserved. No external assets or runtime dependencies are introduced.

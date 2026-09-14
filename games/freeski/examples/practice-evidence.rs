@@ -26,6 +26,7 @@ fn main() {
     session = Session::new(Save::default());
     session.state.run.start();
     let mut captured = false;
+    let mut approach = false;
     for _ in 0..12000 {
         let target_x = if session.state.run.position.y < 280. {
             0.
@@ -37,6 +38,15 @@ fn main() {
             heading,
             brake: false,
         });
+        if !approach && session.state.run.position.y >= 370. {
+            storage::write(
+                &dir.join("ramp-approach.json"),
+                &session.state,
+                &session.obstacles,
+            )
+            .unwrap();
+            approach = true;
+        }
         if session.state.run.jump.is_some_and(|t| t > 0.3) {
             storage::write(
                 &dir.join("mid-jump.json"),
@@ -49,10 +59,10 @@ fn main() {
         }
         assert!(!session.state.run.ended());
     }
-    assert!(captured);
+    assert!(captured && approach);
     assert_eq!(session.state.run.phase, Phase::Running);
     println!(
-        "Generated mid-jump and recovery saves through production controls in {}",
+        "Generated ramp-approach, mid-jump and recovery saves through production controls in {}",
         dir.display()
     );
 }

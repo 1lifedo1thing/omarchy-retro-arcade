@@ -35,6 +35,7 @@ pub struct App {
     leave: bool,
     pause_reason: String,
     tracks: VecDeque<(Point, Point)>,
+    landing: Option<(Point, u64)>,
 }
 impl App {
     pub fn new() -> Result<Self, String> {
@@ -65,6 +66,7 @@ impl App {
             leave: false,
             pause_reason: "Your run is saved. Resume when you are ready.".into(),
             tracks: VecDeque::new(),
+            landing: None,
         };
         app.refresh_obstacles();
         app.flush();
@@ -135,6 +137,7 @@ impl App {
         self.restart = false;
         self.controls.clear();
         self.tracks.clear();
+        self.landing = None;
         self.accumulator = 0.;
         self.flush();
     }
@@ -367,8 +370,7 @@ impl App {
                     &self.session.state,
                     &self.session.obstacles,
                     self.theme.accent,
-                    self.session.state.reduced_effects,
-                    &tracks,
+                    render::Effects { tracks: &tracks, braking: self.controls.braking(), landing: self.landing },
                 );
             });
         if let Some(mode) = mode_choice {
@@ -423,10 +425,22 @@ impl App {
                     {
                         self.accumulator = (self.accumulator - DT).max(0.);
                         let before = self.session.state.run.position;
+                        let was_airborne = self.session.state.run.jump.is_some();
                         let events = self.session.step(
                             self.controls
                                 .for_tick(input, self.session.state.run.heading),
                         );
+                        if was_airborne
+                            && self.session.state.run.jump.is_none()
+                            && self.session.state.run.tumble == 0
+                            && !self.session.state.run.ended()
+                            && !self.session.state.reduced_effects
+                        {
+                            self.landing = Some((
+                                self.session.state.run.position,
+                                self.session.state.run.ticks,
+                            ));
+                        }
                         if !self.session.state.muted {
                             for event in events {
                                 self.play_event(event);
@@ -605,9 +619,10 @@ GPL-3.0-or-later",
                     ui,
                     &mut self.session.state.reduced_effects,
                     "Reduced effects (hide ski tracks)",
-                    "Keep the slope clear of tracks and creature stride animation.",
+                    "Hide tracks, powder, landing puffs and creature stride animation.",
                 ) {
                     self.tracks.clear();
+                    self.landing = None;
                     self.flush();
                 }
                 ui.add_space(12.);
@@ -746,6 +761,7 @@ GPL-3.0-or-later",
                                 .select_course(self.session.state.course_index + 1);
                             self.refresh_obstacles();
                             self.tracks.clear();
+                            self.landing = None;
                             self.audio.stop();
                             self.controls.clear();
                             self.flush();

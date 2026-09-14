@@ -108,7 +108,10 @@ movement selects the input source. A stationary or out-of-field pointer cannot
 steal keyboard control. Focus loss pauses; regaining focus requires deliberate
 resume. Overlays consume their input and held gameplay input must be released
 before it can control the resumed run. Help/settings return to a paused run.
-Reduced effects hides cosmetic tracks; tracks are bounded to 240 segments.
+Reduced effects hides cosmetic tracks, powder, landing puffs and yeti stride.
+Tracks are bounded to 240 segments and follow the direction of travel. Powder
+uses twelve recycled points; at most one landing puff lasts 24 simulation ticks.
+These effects never change collisions, speed or saved progress.
 Original synthesized cues mark carving, ramps, crashes, gates, missed gates,
 creature warnings, catches and finishes. Ctrl+M or Settings mutes sound. Playback
 uses the desktop paplay service, with no audio device required for silent play.

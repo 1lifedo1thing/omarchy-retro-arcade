@@ -32,7 +32,7 @@ changing its relevant source. Keep historical observations dated.
 | Pursuer policy | chase.rs; deterministic two-phase tick plan, bounded movement, swept relative catch |
 | Records and replacement | storage.rs::Save; separate domains, exactly-once results |
 | Decode, migration, retained originals and atomic write | storage.rs; bounded validation before reconstructing terrain |
-| Drawing and trails | render.rs, yeti.rs and app.rs; read-only state projection, bounded cosmetics |
+| Drawing and trails | render.rs projects state; artwork.rs/yeti.rs draw sprites with geometry.rs; app.rs owns bounded tracks and one landing puff |
 | Sound | audio.rs; original PCM cues, at most one owned playback process, stopped/reaped on pause/mute/exit |
 | Full-run evidence | examples and integration tests; ordinary inputs through Session |
 

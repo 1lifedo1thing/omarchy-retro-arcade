@@ -7,8 +7,12 @@ pub struct Controls {
     pointer: Option<Pos2>,
     armed: bool,
     retain_heading: bool,
+    braking: bool,
 }
 impl Controls {
+    pub fn braking(&self) -> bool {
+        self.braking
+    }
     pub fn clear(&mut self) {
         *self = Self::default();
     }
@@ -104,6 +108,7 @@ impl Controls {
             || i.key_down(Key::Space)
             || (i.pointer.secondary_down()
                 && i.pointer.latest_pos().is_some_and(|p| field.contains(p)));
+        self.braking = brake;
         (Input { heading, brake }, intentional)
     }
 }

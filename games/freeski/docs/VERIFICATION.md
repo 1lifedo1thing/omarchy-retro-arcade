@@ -477,3 +477,44 @@ Temporary evidence is under `/tmp/freeski-yeti-native`, including the four close
 views and lifecycle captures. Build, Clippy, test and lifecycle logs use the
 `/tmp/freeski-yeti-` prefix. The close-up preview is a magnified native screenshot,
 not a separate mockup or replacement game state.
+
+### Cohesive FreeSki artwork pass — 2026-09-14
+
+Tyler approved the yeti and requested its level of craft across the game. Original
+layered skier poses, snowy trees, faceted rocks, raised ramps, Slalom cloth flags,
+finish markers and the shelf SVG now share that direction. Wind marks, directional
+tracks, twelve-point powder and one short landing puff add bounded cosmetic motion.
+The skier stays upright during yaw, with distinct brake, flight and tumble poses.
+The approved yeti geometry is unchanged; common helpers moved into geometry.rs.
+
+- PASS: workspace fmt, strict all-target Clippy and 290 workspace tests with a
+  required real Stockfish engine, run serially. The diagnostic-only addition to
+  practice-evidence was subsequently executed and checked with Clippy.
+- PASS: release app build; original shelf SVG parsed and inspected in the actual
+  Arcade shelf. No new library or external artwork dependency.
+- PASS: actual native dark/light/compact/200% captures inspected for skier poses,
+  tree/rock detail, jump/shadow separation, landing puff, cloth gates and finish
+  flags. Ramp approach was inspected at compact and 200% scale.
+- PASS: reduced-effects checkbox selected through native controls at compact and
+  200% scale, persisted in the disposable save, then resumed for visual inspection.
+- PASS: full dark native lifecycle with twelve production fixtures, input handover,
+  focus/pause isolation, shelf switching, reopen and invalid-save retention.
+- PASS: actual Wayland game closed normally and reopened with the complete parsed
+  player save preserved. Updated game left open for Tyler.
+- NOT RUN: new package/install or unchanged Pinball C++ checks. Prior package
+  artifacts predate this art pass. Human acceptance of the expanded artwork is
+  pending; automated captures do not constitute human playtesting.
+
+`practice-evidence` now writes `ramp-approach.json` through ordinary steering in
+addition to mid-jump and recovery. `scripts/native-freeski-art.py` takes the release
+binary, output directory and dark/light/compact/200 variant. Set FREESKI_FIXTURES to
+a directory populated by the practice, endless and completion evidence examples;
+run under Xvfb like the existing native driver. It uses disposable XDG directories,
+normal inputs, exact fixture restoration checks and graceful close.
+
+Local captures are `/tmp/freeski-art-native/{dark,light,compact,200,close,lifecycle}`;
+logs use `/tmp/freeski-art-`. Initial dark/light captures preceded the extra ramp
+fixture and reduced-effects clicks. An initial compact driver run failed because
+a ctypes mouse coordinate was a float; integer coordinates fixed the harness,
+and the full compact rerun and 200% run passed. No gameplay change was made to
+accommodate the driver.
