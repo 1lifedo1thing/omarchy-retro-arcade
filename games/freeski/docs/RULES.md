@@ -1,9 +1,10 @@
 # FreeSki rules v2
 
-The first playable is a finite, authored 1,200-metre practice run. Cross the finish
-flags with at least one crash allowance remaining. A third crash ends the attempt.
-Results show distance, best distance, crashes and elapsed simulation time. This is
-not the later timed Slalom mode; there are no gates, medals, creature or online scores.
+Current behavior at `13fa3bf`: Practice is an authored 1,200-metre run; Free Ski
+continues across seeded terrain. A third crash ends either attempt. Practice also
+ends at its finish flags. Results show distance, the relevant best distance,
+crashes and simulation time. Gates, medals, creature pursuit and online scores
+are not implemented. Proposed changes live in [NEXT.md](NEXT.md), not these rules.
 
 ## Movement and camera
 
@@ -38,7 +39,8 @@ Density rises to a fixed cap. No creature pursues the skier in this version.
 
 ## Ramps, obstacles and recovery
 
-Three striped ramps launch deterministic 1.2-second, 2.5-metre-high jumps. Airborne
+Practice has three striped ramps; Free Ski generates optional ramps. Both launch
+deterministic 1.2-second, 2.5-metre-high jumps. Airborne
 steering has 40% authority. The ground shadow remains the collision reference.
 Low rocks have 0.65 m collision height; trees remain dangerous at every jump height.
 Circular collision footprints use analytic swept intervals, including descent into
@@ -46,7 +48,7 @@ an obstacle during the tick. Ramp contact starts flight at its contact time.
 
 One collision spends one of three allowances. After a nonfatal crash, a bounded
 search selects nearby clear snow to the side or uphill, with two reserved edge
-corridors as fallback for this authored course. Recovery never increases downhill
+corridors as fallback in both terrain modes. Recovery never increases downhill
 records. A 0.7-second tumble stops movement, followed by 1.5 seconds of visible
 collision protection. Pause freezes both timers. A fatal collision at or before
 the finish takes precedence over finishing; ended runs never restart themselves.
@@ -59,7 +61,7 @@ the finish takes precedence over finishing; ended runs never restart themselves.
 | Steer | A/D or Left/Right | Move within the slope, left/right of the skier |
 | Brake | Hold S, Down or Space | Hold right button on slope or Hold to brake |
 | Pause/resume | Esc; Enter resumes | Pause / Resume skiing |
-| Restart | Tab to restart and activate; Enter confirms replacement | Restart practice slope, then Replace run |
+| Restart | Tab to the action and activate; Enter confirms replacement | Restart practice slope or New mountain, then Replace run |
 | Help | F1 | Help |
 | Settings | Ctrl+, | Settings |
 | Return to Arcade | Ctrl+H | Shared Arcade button or Back to Arcade |
@@ -70,13 +72,13 @@ steal keyboard control. Focus loss pauses; regaining focus requires deliberate
 resume. Overlays consume their input and held gameplay input must be released
 before it can control the resumed run. Help/settings return to a paused run.
 Reduced effects hides cosmetic tracks; tracks are bounded to 240 segments.
-This first playable is silent; original audio is part of later presentation work.
+The current game is silent; original audio is part of later presentation work.
 
 ## Saves and records
 
 `$XDG_STATE_HOME/omarchy-retro-arcade/freeski.json` (or the equivalent
 `~/.local/state` path) is independent of all other games. Schema, rules and course
-versions are 2, 2 and 1 respectively; endless generator version is 1. The save contains the complete practice simulation, separate
+versions are 2, 2 and 1 respectively; endless generator version is 1. The save contains the complete active run, separate
 record/preference fields and an exactly-once result marker. Practice is static. Free Ski stores its seed and generator version; the current
 chunk window is reconstructed exactly from seed and skier position, with no hidden
 mutable RNG state.

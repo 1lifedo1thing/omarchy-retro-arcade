@@ -1,10 +1,12 @@
 # Arcade verification
 
-## FreeSki practice milestone — 12 September 2026
+## FreeSki practice and endless skiing — 13 September 2026
 
-FreeSki is the eleventh game in the source build. Its authored practice slope has
-engine, storage, frontend and native evidence, plus an actual local Wayland
-render. Staged reinstall preserves suspended progress. See the
+FreeSki is the eleventh game in the source build. Practice and seeded endless
+skiing have engine, storage, frontend and native evidence. The current FreeSki
+report records 252 workspace tests at `13fa3bf`, native layout/switching checks
+and staged preservation of an endless mid-jump save. Local Wayland launch is
+separate from detailed human acceptance; local Arch packaging remains blocked. See the
 [FreeSki verification report](../games/freeski/docs/VERIFICATION.md) for exact
 checks, screenshots, known test-environment findings and remaining human acceptance.
 The older nine-game preview release below is unchanged.

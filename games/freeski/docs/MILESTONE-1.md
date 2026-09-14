@@ -1,11 +1,12 @@
 # Milestone 1: the playable practice slope
 
-Status: implemented with automated evidence. Human acceptance of skiing feel,
-readability and difficulty remains pending; this milestone is not marked accepted.
+Historical milestone brief for the first practice implementation. The current
+[delivery plan](PLAN.md), [system design](SYSTEM.md) and [next implementation
+brief](NEXT.md) supersede this agenda. Checklists below record the scope assessed
+at that stage, not additional setup gates for an already playable game.
 
-The user authorized implementation on 12 September 2026. Initial choices and
-reference evidence are in [TUNING.md](TUNING.md); actual behavior is in
-[RULES.md](RULES.md). The agenda below now guides follow-up human playtesting.
+Initial values and subsequent human feedback are in [TUNING.md](TUNING.md);
+current behavior is in [RULES.md](RULES.md).
 
 ## Outcome
 

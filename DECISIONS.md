@@ -119,3 +119,27 @@
   resume identically through chunk boundaries and mid-jump saves.
 - Endless human difficulty/variety acceptance is pending. No creature, Slalom,
   audio, new package identity, online service or other-game save changes are added.
+
+
+## FreeSki system design direction (13 September 2026)
+
+- The user requested an agent-ergonomics pass after positive feedback on the
+  endless build. Scope is the FreeSki development/play/verification system inside
+  Arcade. This revision changes documents and plans, not runtime behavior.
+- Adopt one UI-independent full-run session path for native play, fixture
+  generation and reference replay. Current orchestration is split across app,
+  examples and tests; extract it without changing rules-2 physics or schema-2
+  saves before pursuit. Existing engines and the Arcade host remain intact.
+- Make causal cases reusable: run identity, initial state, ordered tick inputs,
+  expected invariant and first divergent tick. Small cases belong with tests;
+  bulky artifacts need retained revision-linked evidence. A temporary screenshot
+  path and a worker success report alone do not establish durable acceptance.
+- Separate document authority: PLAN for status/order, SYSTEM for ownership,
+  NEXT for the pursuit contract, RULES for implemented behavior, TUNING for
+  numerical choices/observations and VERIFICATION for demonstrated outcomes.
+  The original issue snapshot and milestone brief remain historical references.
+- Next player-facing feature is optional pursuit, with chase off by default,
+  distinct records, visible warning, deterministic world movement, ordered catch
+  and faithful saved continuation. Proposed recovery/fairness policies and
+  acceptance cases are specified in `games/freeski/docs/NEXT.md`; numeric pursuit
+  values remain uncalibrated. Slalom follows one complete course at a time.

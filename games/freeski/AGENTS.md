@@ -1,21 +1,35 @@
 # FreeSki project instructions
 
-- Read README.md, docs/PLAN.md and docs/REQUIREMENTS.md before implementation.
-  Check docs/MILESTONE-1.md for the current discussion brief. Project setup does
-  not settle its open design choices; subsequent user direction takes precedence.
-- Build a Rust library hosted by Arcade. Append the shelf entry when playable;
-  preserve existing order, games, saves, artwork and package identity.
-- Keep deterministic simulation independent of egui, audio, wall-clock time and
-  filesystem access. Rendering and resize must not change world state or rules.
-- Use one production simulation for gameplay, replay, course completion evidence
-  and generator validation. Tests or reference runs must not bypass movement rules.
-- Implement foundational simulation and save safety during milestone 1; milestone
-  2 hardens them. Do not defer those foundations until after content production.
-- Keep numerical assumptions and playtest revisions in docs/TUNING.md. Record
-  material integration choices in ../../DECISIONS.md and evidence in
-  docs/VERIFICATION.md. Do not mark planned or headless work as desktop acceptance.
-- Keep original asset provenance in assets/README.md, including code-generated
-  geometry and sound. Preserve all existing approved Arcade artwork.
-- Use focused commits on a feature branch. Complete the applicable checks in
-  ../../CONTRIBUTING.md. Add FreeSki to existing native and package verification
-  when implementation makes those checks meaningful.
+FreeSki is an existing Rust library inside Arcade. Preserve the one-window/package
+contract, existing game order, saves and approved artwork in root AGENTS.md.
+
+## Read according to the task
+
+- Start with [README.md](README.md) and [docs/PLAN.md](docs/PLAN.md) for current
+  capabilities and next work. Do not repeat completed project setup.
+- For cross-module design or new modes, read [docs/SYSTEM.md](docs/SYSTEM.md).
+  The next pursuit pass is scoped in [docs/NEXT.md](docs/NEXT.md).
+- For behavior changes, read [docs/RULES.md](docs/RULES.md) and the active revision
+  in [docs/TUNING.md](docs/TUNING.md). Tyler liked the rules-2 speed and turning.
+- For checks and closeout, use [docs/VERIFICATION.md](docs/VERIFICATION.md) and
+  root CONTRIBUTING.md. Historical runs are evidence for their named revision.
+- For scope questions, consult [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md), the
+  issue snapshot. MILESTONE-1.md is historical; current plans supersede its agenda.
+
+## Implementation contracts
+
+- Keep fixed-tick simulation independent of UI, audio, filesystem and wall time.
+  Full-run gameplay, replay and reference evidence should converge on the shared
+  session path planned in SYSTEM.md. Direct engine calls remain useful for focused
+  physics tests; never add test-only movement or collision exemptions.
+- State owns outcomes. Rendering/resize cannot change physics, terrain or records.
+  Terrain is versioned and reproducible; cache and cosmetic effects stay bounded.
+- Preserve supported saves through explicit validated migration and retain the
+  original. Unsupported/corrupt files keep the existing explicit recovery flow.
+  Do not reset actual user state to make a test or screenshot convenient.
+- Every behavior revision needs a discriminating check and current rules/tuning.
+  Record material integration choices in root DECISIONS.md and actual results in
+  VERIFICATION.md. Keep human observations separate from reference feasibility.
+- Use a feature branch and focused commits. Run applicable combined gates after
+  integration; repeat passing checks only for changed source, a failure or a new
+  concern. Documentation-only work needs content/link/diff checks, not a game build.

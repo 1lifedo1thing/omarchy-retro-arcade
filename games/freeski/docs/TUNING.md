@@ -1,5 +1,14 @@
 # FreeSki tuning register
 
+Active baseline: rules 2, generator 1. Use the **2026-09-12 speed and steering**
+revision together with **2026-09-13 endless terrain** below; the initial table is
+historical. Runtime constants live in engine.rs/endless.rs/render.rs. The proposed
+pursuit policy in [NEXT.md](NEXT.md) has no calibrated numeric values yet.
+
+Tyler's later response to the endless pass was positive overall ("this is good").
+No duration, seed, input method or specific variety/difficulty findings were supplied;
+this does not close those acceptance questions.
+
 Initial implementation values for practice rules/course v1. Retained as the initial baseline; the first human feedback and rules-2 revision
 are recorded below.
 

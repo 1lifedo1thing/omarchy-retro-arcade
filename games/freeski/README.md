@@ -8,8 +8,9 @@ rocks and three crash allowances. Free Ski keeps a separate distance record and
 creates a new mountain for each new run. Creature pursuit, Slalom and sound remain
 later milestones.
 
-Tyler's follow-up playtest found the revised speed and turning felt good. The
-endless terrain still needs human difficulty and variety playtesting.
+Tyler's follow-up playtest found the revised speed and turning felt good, and his
+overall response to the endless pass was positive. Detailed terrain difficulty
+and variety playtesting remains open.
 
 Build with `scripts/build.sh`, choose FreeSki at the end of the Arcade shelf, or run:
 
@@ -31,7 +32,9 @@ Records and preferences survive restarts. Invalid saves remain untouched until a
 explicit archive/reset; playing without saving is also available.
 
 - [Rules, controls, save behavior and limitations](docs/RULES.md)
-- [Delivery plan and milestone gates](docs/PLAN.md)
+- [What comes next](docs/PLAN.md)
+- [System design and ownership](docs/SYSTEM.md)
+- [Next implementation: optional pursuit](docs/NEXT.md)
 - [Milestone 1 implementation and human acceptance](docs/MILESTONE-1.md)
 - [Issue #14 requirements snapshot](docs/REQUIREMENTS.md)
 - [Tuning and reference runs](docs/TUNING.md)

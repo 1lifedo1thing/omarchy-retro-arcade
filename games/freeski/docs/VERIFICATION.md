@@ -1,9 +1,67 @@
 # FreeSki acceptance and evidence
 
 Practice, simulation/save hardening and endless terrain are implemented. Tyler
-reported positive feedback on rules-2 movement. Endless difficulty/variety human
-acceptance, creature pursuit, Slalom and release presentation remain open.
+reported positive feedback on rules-2 movement and later on the endless pass
+overall. Detailed difficulty/variety acceptance, creature pursuit, Slalom and
+release presentation remain open.
 The full issue #14 remains open.
+
+## Choosing checks
+
+Use these task routes for the inner development loop. Root
+[CONTRIBUTING.md](../../../CONTRIBUTING.md) and the
+[CI workflow](../../../.github/workflows/arcade.yml) still define combined gates.
+Run those applicable gates after integration; do not rerun unrelated suites merely
+because another document changed.
+
+| Changed responsibility | Discriminating evidence |
+| --- | --- |
+| Pure physics/contact | Named engine regression, then FreeSki headless suite |
+| Terrain/window bounds | Deterministic overlap/ID checks and seed corpus in `tests/endless.rs` |
+| Save/schema/records | Migration, original retention, record separation, invalid versions and exact continuation in `tests/hardening.rs` |
+| Input/lifecycle/session integration | Frontend tests, especially multi-tick crash reset and chunk/render equivalence; real native input and reopen |
+| Visuals or new controls | Actual dark/light/compact/200% app captures and readable keyboard/mouse flow |
+| Package/install boundary | Committed-source package build, staged/native install and exact save preservation on upgrade, reported separately |
+| Docs/plans/instructions only | Content and current-vs-proposed review, local links, referenced commands/symbols and `git diff --check`; report runtime tests as not rerun |
+
+Existing commands, run from the repository root with the project's Rust/native
+prerequisites available:
+
+```sh
+cargo test -p omarchy-freeski --locked --no-default-features
+cargo test -p omarchy-freeski --locked --lib
+freeski_evidence=$(mktemp -d /tmp/freeski-evidence.XXXXXX)
+cargo run -p omarchy-freeski --locked --no-default-features --example practice-evidence -- "$freeski_evidence/fixtures"
+cargo run -p omarchy-freeski --locked --no-default-features --example endless-evidence -- "$freeski_evidence/fixtures"
+```
+
+The examples create synthetic saves through ordinary inputs. They are current
+commands, distinct from the **proposed** reusable replay runner in SYSTEM.md.
+The native script takes the release binary, output directory and layout variant;
+its `FREESKI_FIXTURES` variable points at the generated fixture directory. See CI
+for the full invocation and native/Pillow dependencies. On a Wayland desktop,
+unset `WAYLAND_DISPLAY` for Xvfb tests so the real desktop is not selected.
+
+Avoid rediscovering these demonstrated environment conditions:
+
+- The local Rust toolchain has been run through `mise exec rust@stable -- ...`.
+  Check what exists on the current host; historical `/tmp` dependency paths may
+  have expired. User-local Rust does not satisfy makepkg's package-database checks.
+- Run native layout variants sequentially or allocate separate virtual displays;
+  simultaneous `xvfb-run -a` startup has raced. Avoid concurrent heavy compilation
+  during software-renderer timing acceptance. Do not relax the backlog pause to
+  conceal an overloaded test environment.
+- A real Stockfish engine is needed for required Chess checks; an engine timeout
+  is a concrete failing prerequisite, not a FreeSki test exemption.
+- All scripted gameplay uses isolated XDG state. Native layout evidence is not a
+  human difficulty rating. An installed release may differ from the development
+  binary; identify which executable is being tested.
+
+For new evidence record revision/dirty status, command and dependencies, input
+identity, outcome and retained artifact location. A local `/tmp` path alone is
+transient. Keep small causal regressions in the repository and retain bulky
+captures through CI artifacts. Promote the minimal failing example into a test
+before treating the lesson as reusable evidence.
 
 ## Acceptance tracker
 
@@ -21,8 +79,10 @@ The full issue #14 remains open.
 | A10 | Workspace, native switching, package/upgrade and desktop acceptance | Workspace/build/native/staged reinstall checks pass; actual Arch package build/install acceptance and human Wayland playtest pending |
 | A11 | Shelf/help/About, provenance, rules, controls and decisions | Practice and endless shelf/help/rules reviewed; creature/Slalom presentation remains later work |
 
-Implementation source commit: `acf6286` (`feat/freeski`). Later documentation
-commits add evidence without changing gameplay.
+Current runtime evidence is for `13fa3bf`, with documentation in `4dc1f8f`.
+The initial practice implementation was `acf6286`. Sections below are dated
+historical runs; planned APIs in [SYSTEM.md](SYSTEM.md) and [NEXT.md](NEXT.md) do
+not inherit a pass from these results.
 
 ## 12 September 2026 implementation evidence
 
@@ -69,7 +129,8 @@ handover and mandatory release of held controls after suspension.
 - [Restored crash recovery](captures/recovery.png)
 - [Local Wayland ready screen](captures/wayland.png)
 
-All are native application captures, not mockups. X11 layout captures show release
+These committed captures belong to the initial practice revision, not the later
+endless build. All are native application captures, not mockups. X11 layout captures show release
 builds at 1280 × 900, 900 × 760 and 1800 × 1520 (200%). The Wayland compositor chose
 a tiled 941 × 1030 window. Review checked unclipped controls, hazard silhouettes,
 contrast and separation of HUD from the slope. Paused restore captures intentionally
@@ -173,3 +234,17 @@ The replay evidence uses explicit tick-stamped production inputs; no player-faci
 replay importer/exporter is shipped. Statistical route checks establish feasibility,
 not difficulty calibration. Test several minutes of the endless mode before tuning
 its density or beginning creature pursuit.
+
+
+## 13 September 2026 system design pass
+
+Documentation-only revision: introduced SYSTEM.md and NEXT.md, replaced stale
+setup work in PLAN.md, routed AGENTS.md by task, and distinguished active rules,
+historical tuning and revision-specific evidence. The next planned work is shared
+session/reproduction support followed by optional pursuit; no proposed interface
+or gameplay behavior was implemented in this pass.
+
+Checked local Markdown links/anchors, referenced current commands and symbols,
+source consistency, scope/status language and whitespace. Runtime tests and native
+captures were not rerun because executable code and assets did not change; the
+252-test runtime result above remains evidence for `13fa3bf`, not a new run.
