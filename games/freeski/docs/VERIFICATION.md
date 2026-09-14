@@ -82,7 +82,7 @@ before treating the lesson as reusable evidence.
 | A7 | Save/reopen during jumps, recovery, pursuit and Slalom | Practice and endless jump/recovery continuation and native restoration pass; unsupported saves retained; pursuit warning/active/recovery/caught and Slalom progress/results also restored exactly |
 | A8 | Render-rate equivalence and resize independence | Frontend replay at 30/60/120 Hz and alternating window sizes produces identical tick state; backlog pause tested |
 | A9 | Actual theme/size/scale captures | Dark, light, compact, 200% X11 and local Wayland captures inspected |
-| A10 | Workspace, native switching, package/upgrade and desktop acceptance | Workspace/build/native/staged reinstall checks pass; actual Arch package build/install acceptance and human Wayland playtest pending |
+| A10 | Workspace, native switching, package/upgrade and desktop acceptance | Workspace/build/native/staged reinstall checks pass; user-local Arch package build and extracted-package checks pass; system pacman installation and human difficulty acceptance not claimed |
 | A11 | Shelf/help/About, provenance, rules, controls and decisions | All modes have shelf/help/About, original geometry/sound provenance, rules and controls |
 
 Current completion evidence is in the final dated section. The preceding endless
@@ -314,3 +314,46 @@ pacman has no `rust>=1.98` package. A user-local build of the same PKGBUILD uses
 mise Rust, verified remaining dependencies and checksummed sources; its final
 result is recorded below. System packages and pacman installation state are not
 changed by these checks.
+
+### Final completion closeout — code `4f61399`
+
+| Check | Result |
+| --- | --- |
+| FreeSki all targets after long-escape fix | PASS: 75 tests |
+| FreeSki without UI | PASS: 60 tests |
+| Workspace Clippy / formatting and rebuilt release | PASS |
+| Package's required workspace tests | PASS: 288, with the package's built, pinned Stockfish |
+| Package's Pinball checks | PASS: all three |
+| Native packaged app | PASS: all eleven games, singleton, engine response, original save paths and clean shutdown |
+| Packaged FreeSki | PASS: normal controls, mode choices, focus/overlays, exact fixture restore, shelf return, mute and future-file retention |
+| Package re-extraction and reopen | PASS: exact active pursuit, Slalom progress and completed-cup saves retained |
+| Actual Omarchy/Wayland launch | PASS: updated game opened; every legacy field in the player's schema-2 save remained exact, with an original schema-2 backup |
+| Human difficulty / audio judgement | Not claimed; new modes await Tyler's playtest |
+| System pacman install/upgrade | Not performed; package extraction/re-extraction is the demonstrated boundary |
+
+The main package was built from committed source `4f61399` using the unmodified
+PKGBUILD, with a computed checksum replacing its source placeholder. All sources
+passed SHA-256 verification. All runtime/build dependencies except the pacman Rust
+entry were verified installed. `mise` supplied Rust 1.98.1; `makepkg --nodeps`
+bypassed that package-database prerequisite only. `--noextract` reused prepared
+committed source and compiler/engine build caches. No build/check phase was skipped.
+No system packages, identities or configuration were changed.
+
+Artifact: `dist/arch/omarchy-retro-arcade-0.1.0-1-x86_64.pkg.tar.zst` (131,552,099
+bytes), SHA-256 `48eb67577ad75eecb2b10c73226be30819f458dc97631ee1328272374aef7302`.
+The corresponding app snapshot, pinned Stockfish source, NNUE and exact PKGBUILD
+are in `dist/arch/sources`. App-source archive SHA-256:
+`411c11171261f3e3f524c9389aa65aeb3c6c430d025068de59d8f56b419ca126`.
+The package contains one desktop entry and bundled Stockfish with its licence.
+
+Final artifacts include `/tmp/freeski-complete-package-final.log`,
+`/tmp/freeski-package-native-all.log`, `/tmp/freeski-package-native-freeski.log`,
+`/tmp/freeski-package-upgrade.log`, and the `package` capture directory beneath
+`/tmp/freeski-complete-native`. A live close-pursuit capture in its `creature`
+directory shows the original actor at its physical position, produced from seed
+17 through normal Session inputs. These temporary paths may expire.
+
+The old release executable was replaced by the tested completion build on the
+actual Wayland desktop. The running player save was never used to generate test
+fixtures or reset to obtain screenshots. Next work is scoped in NEXT.md; issue
+#14 has not been closed or externally updated by this pass.

@@ -54,11 +54,15 @@ Captured from the native executable at revision `4e7da43023191548a410c50e09e7947
 
 [Light collection](polish/shelf-light.png) · [Compact collection](polish/shelf-compact.png)
 
-## FreeSki practice and endless skiing
+## FreeSki complete local modes
 
-The eleventh source-build game uses original snowy terrain and geometric
-skier/obstacles inside the existing cabinet, with Practice and Free Ski mode choice.
-The linked committed captures document the initial practice build; dated entries
-in the report identify later endless evidence. Optional creature presentation is
-planned in [the next delivery brief](../games/freeski/docs/NEXT.md).
-[Actual app captures and acceptance notes](../games/freeski/docs/VERIFICATION.md#actual-app-captures).
+The eleventh source-build game uses original snowy terrain, skier, gates and
+horned creature geometry inside the existing cabinet. It offers Practice,
+endless Free Ski with optional pursuit, and the five-course Slalom Cup. Original
+synthesized cues accompany visible outcomes; mute and reduced effects are saved.
+
+The linked committed captures below the historical report document the initial
+practice build. The completion report identifies later dark/light/compact/200%
+captures, live pursuit art, course results and exact suspended-run restoration.
+[Actual app captures and acceptance notes](../games/freeski/docs/VERIFICATION.md).
+[Next human playtest](../games/freeski/docs/NEXT.md).
