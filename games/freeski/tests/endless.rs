@@ -15,6 +15,7 @@ fn signature(obstacle: &Obstacle) -> (usize, u64, u64, u8) {
             Kind::Tree => 0,
             Kind::Rock => 1,
             Kind::Ramp => 2,
+            Kind::Pole => 3,
         },
     )
 }

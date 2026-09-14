@@ -88,6 +88,19 @@ fn overlap_causes_one_crash_and_validated_recovery() {
     s.step(Input::default(), &items);
     assert_eq!(s.protection, PROTECTION_TICKS - 1);
 }
+
+#[test]
+fn tick_segment_ends_at_contact_and_excludes_recovery_relocation() {
+    let items = vec![obstacle(Kind::Tree, 0., 1.)];
+    let mut sim = running();
+    sim.speed = MAX_SPEED;
+    let outcome = sim.step_outcome_mode(Input::default(), &items, Mode::Practice, None);
+    assert_eq!(outcome.events, vec![Event::Crash]);
+    assert!(outcome.segment.crash_fraction.is_some());
+    assert!(outcome.segment.proposed_speed > 0.);
+    assert_ne!(outcome.segment.end, sim.position);
+    assert!(outcome.segment.end.y <= sim.distance);
+}
 #[test]
 fn all_authored_hazards_allow_clear_recovery_without_forward_distance() {
     let items = world::practice();

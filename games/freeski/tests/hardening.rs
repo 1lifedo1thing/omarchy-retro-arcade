@@ -195,13 +195,57 @@ fn schema_one_migration_is_lossless_and_retains_original_bytes() {
     std::fs::write(&path, &bytes).unwrap();
 
     let migrated = storage::load(&path, &world::practice()).unwrap();
-    assert_eq!(migrated.version, 2);
+    assert_eq!(migrated.version, 3);
     assert_eq!(migrated.mode, Mode::Practice);
     assert_eq!(migrated.best_distance, 300.);
     assert!(migrated.reduced_effects);
     assert_eq!(std::fs::read(&path).unwrap(), bytes);
     assert_eq!(
         std::fs::read(path.with_extension("schema-1-1.json")).unwrap(),
+        bytes
+    );
+}
+
+#[test]
+fn schema_two_migration_preserves_active_endless_run_and_original_bytes() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("freeski.json");
+    let mut save = Save::default();
+    save.select_mode(Mode::FreeSki, 0x5152);
+    save.run = running_at(2_345.);
+    save.run.pause();
+    save.free_best_distance = 1_999.;
+    save.reduced_effects = true;
+    let mut value = serde_json::to_value(&save).unwrap();
+    let object = value.as_object_mut().unwrap();
+    object.insert("version".into(), 2.into());
+    for field in [
+        "chase_enabled",
+        "chase",
+        "chase_best_distance",
+        "course_index",
+        "slalom",
+        "slalom_best",
+        "unlocked_courses",
+        "muted",
+    ] {
+        object.remove(field);
+    }
+    let bytes = serde_json::to_vec(&value).unwrap();
+    std::fs::write(&path, &bytes).unwrap();
+
+    let migrated = storage::load(&path, &world::practice()).unwrap();
+    assert_eq!(migrated.version, 3);
+    assert_eq!(migrated.mode, Mode::FreeSki);
+    assert_eq!(migrated.seed, 0x5152);
+    assert_eq!(migrated.run.position.y, 2_345.);
+    assert_eq!(migrated.free_best_distance, 1_999.);
+    assert!(!migrated.chase_enabled);
+    assert_eq!(migrated.unlocked_courses, 1);
+    assert!(migrated.reduced_effects);
+    assert_eq!(std::fs::read(&path).unwrap(), bytes);
+    assert_eq!(
+        std::fs::read(path.with_extension("schema-2-1.json")).unwrap(),
         bytes
     );
 }
@@ -263,4 +307,18 @@ fn stale_valid_ramp_ids_survive_windows_but_forged_ids_do_not() {
     assert!(save.valid(&world::practice()));
     save.run.last_ramp = Some(ramp.id + 2);
     assert!(!save.valid(&world::practice()));
+}
+
+#[test]
+fn slalom_validation_uses_its_canonical_course_not_the_callers_window() {
+    let practice = world::practice();
+    let practice_ramp = practice
+        .iter()
+        .find(|obstacle| obstacle.kind == Kind::Ramp)
+        .unwrap();
+    let mut save = Save::default();
+    assert!(save.select_course(0));
+    save.run.phase = Phase::Paused;
+    save.run.last_ramp = Some(practice_ramp.id);
+    assert!(!save.valid(&practice));
 }

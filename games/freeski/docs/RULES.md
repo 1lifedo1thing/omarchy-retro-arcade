@@ -1,10 +1,10 @@
 # FreeSki rules v2
 
-Current behavior at `13fa3bf`: Practice is an authored 1,200-metre run; Free Ski
-continues across seeded terrain. A third crash ends either attempt. Practice also
-ends at its finish flags. Results show distance, the relevant best distance,
-crashes and simulation time. Gates, medals, creature pursuit and online scores
-are not implemented. Proposed changes live in [NEXT.md](NEXT.md), not these rules.
+Practice is an authored 1,200-metre run. Free Ski continues across seeded terrain,
+with optional creature pursuit and separate distance records. Slalom has five
+courses, sequential unlocks, ordered gates, penalties and medals. A third crash
+ends an attempt; a creature catch ends a chase. Practice and Slalom also end at
+their finish flags. Player movement remains rules 2; save schema is 3.
 
 ## Movement and camera
 
@@ -35,7 +35,38 @@ The generator reconstructs bounded chunks from the seed and generator version.
 Only nearby chunks remain in memory; future terrain is prepared beyond the visible
 view before it can appear. Trees, rocks, optional ramp jumps and open stretches
 vary by seed, with a connected clear route and reserved edge recovery corridors.
-Density rises to a fixed cap. No creature pursues the skier in this version.
+Density rises to a fixed cap. Enable Creature pursuit before starting to add the
+chase described below.
+
+## Creature pursuit
+
+The option defaults off. At 1,000 m the creature gives a visible warning lasting
+three simulation seconds before seeking a clear spawn behind the skier. A blocked
+spawn retries at bounded intervals. Active pursuit never teleports: it accelerates,
+turns and collides with terrain in world coordinates. Its higher straight speed
+creates pressure; slower turning and turning drag reward deliberate carving.
+The creature is drawn at its physical position, with a labelled distance marker
+when outside the view. The warning remains visible when muted.
+
+Swept relative contact catches the skier even during a jump, ends the run and
+records the chase distance once. During tumble and recovery protection, catches
+are disabled and the creature stops outside a safe gap. Timers and actor motion
+freeze on pause; restoration does not restart warning or pursuit. New mountains
+retain the selected chase option. Switching categories cannot transfer records.
+
+## Slalom Cup
+
+Pinecone Path, Long Turns, Split Pines, Needle Run and Summit Cup unlock in order.
+A downhill physical crossing between a gate's poles counts the next ordered gate;
+passing outside adds five seconds once. Sideways/uphill motion and recovery
+relocation do not count. Poles use ordinary crash physics with a 1.2 m collision height. The first valid finish after resolving every gate ends the race.
+
+The timer starts on intentional start/steer and counts simulation ticks, including
+recovery but excluding pauses. Final time is raw time plus missed-gate penalties.
+Results show these separately. Bronze requires a valid finish; Silver and Gold
+use the authored time targets in TUNING.md. Finishing unlocks the next course.
+Personal bests, unlocks and preferences survive retries and mode changes. Creature
+pursuit is disabled in Slalom. The course chooser disables locked courses.
 
 ## Ramps, obstacles and recovery
 
@@ -57,6 +88,8 @@ the finish takes precedence over finishing; ended runs never restart themselves.
 
 | Action | Keyboard | Mouse |
 | --- | --- | --- |
+| Ready mode / course | P/F/L; 1–5 for unlocked Slalom courses | Mode and course buttons |
+| Ready pursuit option | C in Free Ski | Creature pursuit checkbox |
 | Start | Enter or a fresh steering key | Start skiing |
 | Steer | A/D or Left/Right | Move within the slope, left/right of the skier |
 | Brake | Hold S, Down or Space | Hold right button on slope or Hold to brake |
@@ -64,6 +97,7 @@ the finish takes precedence over finishing; ended runs never restart themselves.
 | Restart | Tab to the action and activate; Enter confirms replacement | Restart practice slope or New mountain, then Replace run |
 | Help | F1 | Help |
 | Settings | Ctrl+, | Settings |
+| Mute | Ctrl+M | Mute sound in Settings |
 | Return to Arcade | Ctrl+H | Shared Arcade button or Back to Arcade |
 
 The most recent fresh keyboard steering press or intentional in-field pointer
@@ -72,20 +106,23 @@ steal keyboard control. Focus loss pauses; regaining focus requires deliberate
 resume. Overlays consume their input and held gameplay input must be released
 before it can control the resumed run. Help/settings return to a paused run.
 Reduced effects hides cosmetic tracks; tracks are bounded to 240 segments.
-The current game is silent; original audio is part of later presentation work.
+Original synthesized cues mark carving, ramps, crashes, gates, missed gates,
+creature warnings, catches and finishes. Ctrl+M or Settings mutes sound. Playback
+uses the desktop paplay service, with no audio device required for silent play.
+At most one owned process plays a cue; pause, mute and exit stop and reap it.
 
 ## Saves and records
 
 `$XDG_STATE_HOME/omarchy-retro-arcade/freeski.json` (or the equivalent
 `~/.local/state` path) is independent of all other games. Schema, rules and course
-versions are 2, 2 and 1 respectively; endless generator version is 1. The save contains the complete active run, separate
+versions are 3, 2 and 1 respectively; endless generator version is 1. The save contains the complete active run, separate
 record/preference fields and an exactly-once result marker. Practice is static. Free Ski stores its seed and generator version; the current
 chunk window is reconstructed exactly from seed and skier position, with no hidden
 mutable RNG state.
 
-Schema-1 and rules-1 practice saves migrate with their position, momentum, flight/recovery, records and
-preferences intact, then resume paused under the faster rules. Before rewriting,
-the original is retained as `freeski.schema-1-N.json` or `freeski.rules-1-N.json`. Invalid legacy values still
+Schema-1/2 and rules-1/2 saves migrate with their position, momentum, flight/recovery, records and
+preferences intact, then resume paused under the current rules. Old Free Ski records remain chase-off. Before rewriting,
+the original is retained as a non-overwriting schema/rules backup beside the save. Invalid legacy values still
 fail validation; backup failure leaves the original untouched.
 
 Native writes reuse the existing private atomic-storage helper. The headless

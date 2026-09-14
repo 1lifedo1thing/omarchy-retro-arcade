@@ -75,4 +75,5 @@ Stack includes offline Marathon and 40-line Sprint, local records and exact resu
 2048 is adapted from [Avi Barit (avibarit)](https://github.com/avibarit/2048), with permission reported by Tom Ballard. Original 2048 by [Gabriele Cirulli](https://github.com/gabrielecirulli/2048). [Controls, saves and credits](games/2048/README.md).
 
 FreeSki includes an authored 1,200-metre practice slope and seeded endless skiing,
-with carving, braking, jumps, crash recovery, separate records and suspended runs. [Controls and milestone status](games/freeski/README.md).
+optional creature pursuit and five Slalom courses, with medals, original sound,
+carving, braking, jumps, crash recovery, separate records and suspended runs. [Controls and milestone status](games/freeski/README.md).

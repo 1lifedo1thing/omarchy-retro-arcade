@@ -1,10 +1,11 @@
 # FreeSki acceptance and evidence
 
-Practice, simulation/save hardening and endless terrain are implemented. Tyler
-reported positive feedback on rules-2 movement and later on the endless pass
-overall. Detailed difficulty/variety acceptance, creature pursuit, Slalom and
-release presentation remain open.
-The full issue #14 remains open.
+The full local game is implemented: practice, endless terrain, optional creature
+pursuit, five Slalom courses, medals, sound and resumable runs. Tyler previously
+accepted the revised movement and responded positively to endless skiing. Human
+ratings of the new pursuit/course difficulty and final desktop acceptance remain
+open. The completion pass below records current checks; earlier sections are
+historical evidence for their named revisions. Issue #14 remains open.
 
 ## Choosing checks
 
@@ -33,10 +34,15 @@ cargo test -p omarchy-freeski --locked --lib
 freeski_evidence=$(mktemp -d /tmp/freeski-evidence.XXXXXX)
 cargo run -p omarchy-freeski --locked --no-default-features --example practice-evidence -- "$freeski_evidence/fixtures"
 cargo run -p omarchy-freeski --locked --no-default-features --example endless-evidence -- "$freeski_evidence/fixtures"
+cargo run -p omarchy-freeski --locked --no-default-features --example completion-evidence -- "$freeski_evidence/fixtures"
 ```
 
 The examples create synthetic saves through ordinary inputs. They are current
-commands, distinct from the **proposed** reusable replay runner in SYSTEM.md.
+commands. The `replay` example consumes an initial Save, absolute consecutive
+input tick numbers, a relative tick limit (1–1,000,000), optional per-tick expected
+Sim and optional final expected phase/ticks/distance. Files are limited to 1 MiB;
+Ready/Paused initial states resume deliberately. It reports the first divergence
+or a compact summary to stdout. See examples/replay.rs for the JSON structures.
 The native script takes the release binary, output directory and layout variant;
 its `FREESKI_FIXTURES` variable points at the generated fixture directory. See CI
 for the full invocation and native/Pillow dependencies. On a Wayland desktop,
@@ -68,21 +74,20 @@ before treating the lesson as reusable evidence.
 | ID | Acceptance area | Current evidence / status |
 | --- | --- | --- |
 | A1 | Movement/braking, continuous collision, jumping and single-event recovery | Practice engine tests pass, including high-speed sweeps, overlapping hazards, descent into a rock and safe recovery at every authored hazard |
-| A2 | Gates, penalties, finish ordering and exactly-once records | Practice fatal-crash precedence and records tests pass; Slalom gates/timing remain later work |
+| A2 | Gates, penalties, finish ordering and exactly-once records | Ordered downhill gates, one-time five-second misses, pole collision, finish precedence and record/unlock tests pass |
 | A3 | Connected seeds, recovery and bounded generation/memory | 128 seeds × 5 km production runs, zero reference crashes; four chunks / 72 obstacles and 240-segment trail cap; recovery corridor and overlap tests pass |
-| A4 | Creature warning, spawn, catch and isolation | Not implemented |
-| A5 | Five complete courses and calibrated medals/chase | Practice reference completes; Slalom and human calibration not implemented |
+| A4 | Creature warning, spawn, catch and isolation | Warning, bounded/blocked spawn, relative catch, physical terrain, protected recovery, chase-off and causal catch-before-crash tests pass |
+| A5 | Five complete courses and calibrated medals/chase | All five courses complete with zero reference crashes/misses; thresholds measured. Human medal/chase calibration pending |
 | A6 | Mouse/keyboard flows, handover, overlays, focus and compact targets | Frontend and native scenarios pass; rules-2 movement received positive human feedback; endless feel evaluation pending |
-| A7 | Save/reopen during jumps, recovery, pursuit and Slalom | Practice and endless jump/recovery continuation and native restoration pass; unsupported saves retained; pursuit/Slalom not implemented |
+| A7 | Save/reopen during jumps, recovery, pursuit and Slalom | Practice and endless jump/recovery continuation and native restoration pass; unsupported saves retained; pursuit warning/active/recovery/caught and Slalom progress/results also restored exactly |
 | A8 | Render-rate equivalence and resize independence | Frontend replay at 30/60/120 Hz and alternating window sizes produces identical tick state; backlog pause tested |
 | A9 | Actual theme/size/scale captures | Dark, light, compact, 200% X11 and local Wayland captures inspected |
 | A10 | Workspace, native switching, package/upgrade and desktop acceptance | Workspace/build/native/staged reinstall checks pass; actual Arch package build/install acceptance and human Wayland playtest pending |
-| A11 | Shelf/help/About, provenance, rules, controls and decisions | Practice and endless shelf/help/rules reviewed; creature/Slalom presentation remains later work |
+| A11 | Shelf/help/About, provenance, rules, controls and decisions | All modes have shelf/help/About, original geometry/sound provenance, rules and controls |
 
-Current runtime evidence is for `13fa3bf`, with documentation in `4dc1f8f`.
-The initial practice implementation was `acf6286`. Sections below are dated
-historical runs; planned APIs in [SYSTEM.md](SYSTEM.md) and [NEXT.md](NEXT.md) do
-not inherit a pass from these results.
+Current completion evidence is in the final dated section. The preceding endless
+implementation was `13fa3bf`, with documentation in `4dc1f8f`; initial practice was
+`acf6286`. Earlier results do not imply acceptance of later features.
 
 ## 12 September 2026 implementation evidence
 
@@ -248,3 +253,40 @@ Checked local Markdown links/anchors, referenced current commands and symbols,
 source consistency, scope/status language and whitespace. Runtime tests and native
 captures were not rerun because executable code and assets did not change; the
 252-test runtime result above remains evidence for `13fa3bf`, not a new run.
+
+
+## 13 September 2026 — whole-game completion
+
+The implementation pass adds Session, optional physical pursuit, five-course
+Slalom Cup, original audio, schema 3 migration and production-input replay/fixtures.
+Player physics remains rules 2 and terrain generator 1. Exact practice ramp/crash
+and endless chunk snapshots were captured independently from `13fa3bf` and are
+retained as Session regressions. Chase contact before a predicted crash must not
+retain that unrealized crash, recovery position, speed or heading.
+
+Completed checks before the implementation commit:
+
+| Check | Result |
+| --- | --- |
+| Workspace tests with required Stockfish 17.1 | PASS: 287 tests |
+| FreeSki without UI | PASS: 59 tests |
+| FreeSki UI/input/audio tests | PASS: 17 tests, including three new complete-mode flows |
+| Strict workspace Clippy / formatting | PASS |
+| Release Rust/native build | PASS |
+| Pinball theme/path/authored table | PASS: all three checks |
+| Desktop entry validation | PASS |
+| Bounded replay CLI | PASS: 120-tick chase continuation; intentional mismatch reports first divergence at tick 1,660 |
+| Production fixture generation | PASS: practice/endless jump/recovery, chase warning/active/recovery/caught, Slalom progress/finish/cup finish |
+| Dark and light native controls and exact fixture reopen | PASS |
+| Compact/200%, installed switching and upgrade | In progress at implementation commit; closeout below records final outcome |
+| Human difficulty and Omarchy playtest | Pending; automated reference routes are not human acceptance |
+
+Pursuit and course reference measurements are in TUNING.md. Native automation
+uses isolated XDG state and a disconnected audio server; waveform bounds and
+owned process cleanup are tested separately. No actual player save is used as a
+fixture. CI generates all twelve fixtures and exercises all four layouts, then
+checks an active-pursuit save across package reinstall.
+
+Transient local artifacts: `/tmp/freeski-complete-fixtures`,
+`/tmp/freeski-complete-native`, and `/tmp/freeski-complete-*.log`. The tracked tests,
+examples and CI commands reproduce the evidence after these files expire.

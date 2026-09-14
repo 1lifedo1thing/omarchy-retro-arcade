@@ -2,8 +2,8 @@
 
 Active baseline: rules 2, generator 1. Use the **2026-09-12 speed and steering**
 revision together with **2026-09-13 endless terrain** below; the initial table is
-historical. Runtime constants live in engine.rs/endless.rs/render.rs. The proposed
-pursuit policy in [NEXT.md](NEXT.md) has no calibrated numeric values yet.
+historical. Runtime constants live in engine.rs/endless.rs/render.rs. Pursuit and Slalom values from the completion pass appear at the end.
+[NEXT.md](NEXT.md) scopes human calibration.
 
 Tyler's later response to the endless pass was positive overall ("this is good").
 No duration, seed, input method or specific variety/difficulty findings were supplied;
@@ -107,3 +107,46 @@ boundaries also match across these render schedules and alternating window sizes
 Next human checks: terrain variety after several minutes, readable safe lines at
 full speed, braking before ramps, and whether edge corridors make runs too easy.
 Creature pursuit and Slalom remain separate future tuning sessions.
+
+
+### 2026-09-13: pursuit, Slalom and original sound
+
+Player movement and generator values remain unchanged. Pursuit is opt-in and
+separate from ordinary Free Ski records. These are measured implementation values;
+Tyler has not yet rated the new modes' difficulty.
+
+| Pursuit parameter | Value |
+| --- | --- |
+| Trigger / warning | 1,000 m / 180 ticks (3 s) |
+| Spawn candidates | Four gaps 42–60 m behind, five lateral offsets; 20 candidates |
+| Failed spawn retry | 60 ticks; counter saturates at 8, retries remain bounded |
+| Radius / catch radius | 0.95 m / 1.60 m combined with skier |
+| Maximum speed / acceleration | 56 m/s / 10 m/s² |
+| Turn rate / turning drag | 1.05 rad/s / 14 m/s² at maximum turning effort |
+| Braking / protected gap | 24 m/s² / 14 m |
+| Collision | Swept terrain and relative skier contact; no jump exemption |
+| Terrain query | Union of skier and creature chunk windows; at most 144 obstacles |
+
+A production Session with seed 17 from rest emits one warning and spawns at tick 1,660. From
+that saved pursuit state, straight descent is caught after 912 ticks (15.2 s),
+while the reference carving route remains active through 2,400 ticks (40 s) and
+increases separation continuously for at least half a second. This demonstrates
+control over pursuit, not human fairness or enjoyment. Tests retain the inputs.
+
+| Slalom course | Length / gates | Clean production time | Gold | Silver |
+| --- | --- | --- | --- | --- |
+| Pinecone Path | 760 m / 11 | 20.80 s | 23.00 s | 26.00 s |
+| Long Turns | 900 m / 12 | 25.27 s | 28.00 s | 31.50 s |
+| Split Pines | 1,020 m / 15 | 26.75 s | 29.50 s | 33.50 s |
+| Needle Run | 1,140 m / 18 | 29.77 s | 33.00 s | 37.50 s |
+| Summit Cup | 1,280 m / 22 | 32.98 s | 36.50 s | 41.50 s |
+
+All five clean runs use normal production physics from rest with zero crashes and
+zero misses. Gold allows about 10% over reference time and Silver about 25%; Bronze
+requires a valid finish. Misses cost 300 ticks (5 s). Human medal calibration remains
+open. Pole radius is defined in world.rs and uses the same collision engine.
+
+Sound is original 22,050 Hz mono 16-bit PCM, each cue shorter than 0.7 seconds.
+Carving hiss has lower amplitude than event cues and cannot interrupt one already
+playing. No playback time influences simulation. Reduced effects removes tracks
+and creature stride animation; warnings, geometry and outcomes remain readable.

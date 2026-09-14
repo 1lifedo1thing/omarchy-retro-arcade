@@ -79,6 +79,7 @@ pub fn draw(
             Color32::from_black_alpha(28),
         ));
         match o.kind {
+            Kind::Pole => {}
             Kind::Tree => {
                 p.line_segment(
                     [pos, pos - Vec2::new(0., 2.) * scale],
@@ -143,8 +144,62 @@ pub fn draw(
             }
         }
     }
-    let finish = at(0., world::FINISH);
-    if state.mode == Mode::Practice && field.expand(8. * scale).contains(finish) {
+    if state.mode == Mode::Slalom {
+        if let Some(course) = crate::course::course(state.course_index) {
+            for (index, gate) in course.gates.iter().enumerate() {
+                let centre = at(gate.x, gate.y);
+                if !field.expand(8. * scale).contains(centre) {
+                    continue;
+                }
+                let color = if index < state.slalom.next_gate {
+                    Color32::from_rgb(125, 145, 145)
+                } else if index == state.slalom.next_gate {
+                    Color32::from_rgb(25, 95, 180)
+                } else {
+                    Color32::from_rgb(180, 55, 50)
+                };
+                for side in [-1., 1.] {
+                    let base = at(gate.x + side * gate.half_width, gate.y);
+                    let top = base - Vec2::new(0., 4.) * scale;
+                    p.circle_stroke(base, (0.5 * scale).max(2.), Stroke::new(scale * 0.2, color));
+                    p.line_segment([base, top], Stroke::new(scale * 0.3, color));
+                    p.add(Shape::convex_polygon(
+                        vec![
+                            top,
+                            top + Vec2::new(-side as f32 * 2.2, 0.5) * scale,
+                            top + Vec2::new(0., 1.7) * scale,
+                        ],
+                        color,
+                        Stroke::NONE,
+                    ));
+                }
+                if index >= state.slalom.next_gate {
+                    p.text(
+                        centre - Vec2::new(0., 2.5) * scale,
+                        Align2::CENTER_CENTER,
+                        format!(
+                            "{}{}",
+                            index + 1,
+                            if index == state.slalom.next_gate {
+                                "  NEXT"
+                            } else {
+                                ""
+                            }
+                        ),
+                        FontId::monospace((1.5 * scale).max(10.)),
+                        color,
+                    );
+                }
+            }
+        }
+    }
+    let finish_distance = if state.mode == Mode::Slalom {
+        crate::course::course(state.course_index).map_or(world::FINISH, |c| c.length)
+    } else {
+        world::FINISH
+    };
+    let finish = at(0., finish_distance);
+    if state.mode != Mode::FreeSki && field.expand(8. * scale).contains(finish) {
         for n in -16..16 {
             let x = n as f32 * 2.5 * scale;
             let r = Rect::from_min_size(
@@ -156,10 +211,92 @@ pub fn draw(
         p.text(
             finish - Vec2::new(0., 4. * scale),
             Align2::CENTER_CENTER,
-            "PRACTICE FINISH",
+            if state.mode == Mode::Slalom {
+                "SLALOM FINISH"
+            } else {
+                "PRACTICE FINISH"
+            },
             FontId::monospace(1.7 * scale),
             ink,
         );
+    }
+    if state.chase_enabled && state.chase.phase == crate::chase::ChasePhase::Active {
+        let creature = point(field, sim, state.chase.position);
+        let separation = (state.chase.position.x - sim.position.x)
+            .hypot(state.chase.position.y - sim.position.y);
+        if !field.shrink(4. * scale).contains(creature) {
+            let marker = Pos2::new(
+                creature.x.clamp(field.left() + 65., field.right() - 65.),
+                creature.y.clamp(field.top() + 18., field.bottom() - 18.),
+            );
+            p.rect_filled(
+                Rect::from_center_size(marker, Vec2::new(122., 25.)),
+                4.,
+                Color32::from_rgb(65, 47, 72),
+            );
+            p.text(
+                marker,
+                Align2::CENTER_CENTER,
+                format!("CREATURE {:.0} m", separation),
+                FontId::monospace(12.),
+                Color32::WHITE,
+            );
+        } else {
+            // An original horned snow runner, with its feet at the collision point.
+            let fur = Color32::from_rgb(112, 72, 95);
+            let gold = Color32::from_rgb(240, 181, 86);
+            p.add(Shape::ellipse_filled(
+                creature + Vec2::new(0., 0.5) * scale,
+                Vec2::new(2.7, 0.9) * scale,
+                Color32::from_black_alpha(50),
+            ));
+            let stride = if reduced {
+                0.
+            } else {
+                (sim.ticks as f32 * 0.4).sin() * 0.5
+            };
+            for side in [-1., 1.] {
+                let foot = creature + Vec2::new(side, side * stride) * scale;
+                p.line_segment(
+                    [foot, creature + Vec2::new(side * 0.7, -1.7) * scale],
+                    Stroke::new(0.65 * scale, fur),
+                );
+            }
+            p.add(Shape::convex_polygon(
+                vec![
+                    creature + Vec2::new(-2., -1.) * scale,
+                    creature + Vec2::new(-1.7, -4.) * scale,
+                    creature + Vec2::new(0., -4.7) * scale,
+                    creature + Vec2::new(1.7, -4.) * scale,
+                    creature + Vec2::new(2., -1.) * scale,
+                ],
+                fur,
+                Stroke::new(0.2 * scale, ink),
+            ));
+            for side in [-1., 1.] {
+                p.add(Shape::convex_polygon(
+                    vec![
+                        creature + Vec2::new(side * 1.2, -3.6) * scale,
+                        creature + Vec2::new(side * 2.2, -5.3) * scale,
+                        creature + Vec2::new(side * 0.3, -4.4) * scale,
+                    ],
+                    gold,
+                    Stroke::NONE,
+                ));
+                p.circle_filled(
+                    creature + Vec2::new(side * 0.55, -3.) * scale,
+                    0.22 * scale,
+                    Color32::WHITE,
+                );
+            }
+            p.line_segment(
+                [
+                    creature + Vec2::new(-0.45, -2.2) * scale,
+                    creature + Vec2::new(0.45, -2.2) * scale,
+                ],
+                Stroke::new(0.2 * scale, gold),
+            );
+        }
     }
     let ground = point(field, sim, sim.position);
     p.add(Shape::ellipse_filled(
@@ -239,6 +376,8 @@ pub fn draw(
         Align2::LEFT_BOTTOM,
         if state.mode == Mode::Practice {
             "PRACTICE / 1,200 m"
+        } else if state.mode == Mode::Slalom {
+            "SLALOM / FIND YOUR LINE"
         } else {
             "FREE SKI / KEEP GOING"
         },

@@ -1,30 +1,23 @@
 //! Generate inspectable endless-mode saves through ordinary production inputs.
 use omarchy_freeski::{
-    endless::{self, CHUNK_LENGTH},
-    engine::{Input, Mode, Phase, Sim},
+    endless,
+    engine::{Input, Mode, Phase},
+    session::Session,
     storage::{self, Save},
-    world::{Kind, Obstacle},
+    world::Kind,
 };
 
 const EVIDENCE_SEED: u64 = 0x4652_4545_534b_4903;
 
-fn refresh(seed: u64, sim: &Sim, chunk: &mut u64, obstacles: &mut Vec<Obstacle>) {
-    let current = (sim.position.y / CHUNK_LENGTH).floor() as u64;
-    if current != *chunk {
-        *chunk = current;
-        *obstacles = endless::obstacles(seed, sim.position.y);
-    }
-}
-
-fn fresh_run() -> Save {
+fn fresh_run() -> Session {
     let mut save = Save::default();
     save.select_mode(Mode::FreeSki, EVIDENCE_SEED);
     save.run.start();
-    save
+    Session::new(save)
 }
 
-fn write(output: &std::path::Path, name: &str, save: &Save, obstacles: &[Obstacle]) {
-    storage::write(&output.join(name), save, obstacles).unwrap();
+fn write(output: &std::path::Path, name: &str, session: &Session) {
+    storage::write(&output.join(name), &session.state, &session.obstacles).unwrap();
 }
 
 fn main() {
@@ -35,65 +28,51 @@ fn main() {
     );
     std::fs::create_dir_all(&output).unwrap();
 
-    let mut save = fresh_run();
-    let mut chunk = u64::MAX;
-    let mut obstacles = vec![];
+    let mut session = fresh_run();
     let mut captured_jump = false;
     for _ in 0..20_000 {
-        refresh(EVIDENCE_SEED, &save.run, &mut chunk, &mut obstacles);
-        let heading = endless::reference_heading(EVIDENCE_SEED, &save.run);
-        save.run.step_mode(
-            Input {
-                heading,
-                brake: false,
-            },
-            &obstacles,
-            Mode::FreeSki,
-        );
-        if !captured_jump && save.run.jump.is_some_and(|elapsed| elapsed > 0.3) {
-            write(&output, "free-mid-jump.json", &save, &obstacles);
+        let heading = endless::reference_heading(EVIDENCE_SEED, &session.state.run);
+        session.step(Input {
+            heading,
+            brake: false,
+        });
+        if !captured_jump && session.state.run.jump.is_some_and(|elapsed| elapsed > 0.3) {
+            write(&output, "free-mid-jump.json", &session);
             captured_jump = true;
         }
-        if save.run.distance > 1_600. {
-            write(&output, "free-long-run.json", &save, &obstacles);
+        if session.state.run.distance > 1_600. {
+            write(&output, "free-long-run.json", &session);
             break;
         }
-        assert!(!save.run.ended());
+        assert!(!session.state.run.ended());
     }
     assert!(captured_jump);
-    assert!(save.run.distance > 1_600.);
-    assert_eq!(save.run.phase, Phase::Running);
+    assert!(session.state.run.distance > 1_600.);
+    assert_eq!(session.state.run.phase, Phase::Running);
 
     // Deliberately steer from the ordinary start into the first non-ramp
     // obstacle, then capture the engine-selected clear recovery position.
-    save = fresh_run();
-    chunk = u64::MAX;
-    obstacles.clear();
+    session = fresh_run();
     let target = endless::obstacles(EVIDENCE_SEED, 0.)
         .into_iter()
         .filter(|obstacle| obstacle.kind != Kind::Ramp)
         .min_by(|a, b| a.at.y.total_cmp(&b.at.y))
         .expect("opening chunk has a deliberate collision target");
     for _ in 0..8_000 {
-        refresh(EVIDENCE_SEED, &save.run, &mut chunk, &mut obstacles);
-        let heading =
-            (target.at.x - save.run.position.x).atan2((target.at.y - save.run.position.y).max(2.));
-        save.run.step_mode(
-            Input {
-                heading,
-                brake: false,
-            },
-            &obstacles,
-            Mode::FreeSki,
-        );
-        if save.run.tumble > 0 {
-            write(&output, "free-recovery.json", &save, &obstacles);
+        let heading = (target.at.x - session.state.run.position.x)
+            .atan2((target.at.y - session.state.run.position.y).max(2.));
+        session.step(Input {
+            heading,
+            brake: false,
+        });
+        if session.state.run.tumble > 0 {
+            write(&output, "free-recovery.json", &session);
             break;
         }
-        assert!(!save.run.ended());
+        assert!(!session.state.run.ended());
     }
-    assert!(save.run.tumble > 0);
-    assert_eq!(save.run.crashes, 1);
+    assert!(session.state.run.tumble > 0);
+    assert_eq!(session.state.run.crashes, 1);
 
     println!(
         "Generated endless long-run, mid-jump and recovery saves through production controls in {}",

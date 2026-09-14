@@ -19,6 +19,7 @@ jobs:
       - run: cargo test -p omarchy-freeski --locked --no-default-features
       - run: cargo run -p omarchy-freeski --locked --no-default-features --example practice-evidence -- /tmp/freeski-fixtures
       - run: cargo run -p omarchy-freeski --locked --no-default-features --example endless-evidence -- /tmp/freeski-fixtures
+      - run: cargo run -p omarchy-freeski --locked --no-default-features --example completion-evidence -- /tmp/freeski-fixtures
       - name: 2048 upstream rules and parity
         run: |
           node games/2048/upstream/test-game-logic.js
@@ -78,6 +79,8 @@ jobs:
         run: su builder -c "cd '$GITHUB_WORKSPACE' && cargo run -p omarchy-freeski --locked --no-default-features --example practice-evidence -- /tmp/freeski-fixtures"
       - name: Endless Free Ski suspended-run fixtures
         run: su builder -c "cd '$GITHUB_WORKSPACE' && cargo run -p omarchy-freeski --locked --no-default-features --example endless-evidence -- /tmp/freeski-fixtures"
+      - name: Pursuit and Slalom suspended-run fixtures
+        run: su builder -c "cd '$GITHUB_WORKSPACE' && cargo run -p omarchy-freeski --locked --no-default-features --example completion-evidence -- /tmp/freeski-fixtures"
       - name: Install and verify
         run: |
           pacman -U --noconfirm dist/arch/*.pkg.tar.zst
@@ -89,7 +92,7 @@ jobs:
           cp /tmp/arcade-upgrade/omarchy-solitaire/session.json /tmp/arcade-original.json
           su builder -c "cd '$GITHUB_WORKSPACE' && xvfb-run -a -s '-screen 0 1440x1100x24' env LIBGL_ALWAYS_SOFTWARE=1 FREESKI_FIXTURES=/tmp/freeski-fixtures python3 scripts/native-freeski.py /usr/bin/omarchy-retro-arcade /tmp/freeski-installed"
           mkdir -p /tmp/arcade-upgrade/omarchy-retro-arcade
-          cp /tmp/freeski-fixtures/free-mid-jump.json /tmp/arcade-upgrade/omarchy-retro-arcade/freeski.json
+          cp /tmp/freeski-fixtures/chase-active.json /tmp/arcade-upgrade/omarchy-retro-arcade/freeski.json
           chown -R builder:builder /tmp/arcade-upgrade
           su builder -c 'xvfb-run -a env LIBGL_ALWAYS_SOFTWARE=1 XDG_STATE_HOME=/tmp/arcade-upgrade omarchy-retro-arcade --game freeski --screenshot /tmp/freeski-before.png'
           cp /tmp/arcade-upgrade/omarchy-retro-arcade/freeski.json /tmp/freeski-original.json

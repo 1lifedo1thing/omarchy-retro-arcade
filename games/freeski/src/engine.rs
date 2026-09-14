@@ -21,6 +21,7 @@ pub enum Mode {
     #[default]
     Practice,
     FreeSki,
+    Slalom,
 }
 #[derive(Clone, Copy, Debug, Default, Serialize, Deserialize, PartialEq)]
 pub struct Point {
@@ -42,18 +43,46 @@ pub enum Phase {
     Paused,
     Finished,
     Crashed,
+    Caught,
 }
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug, Default, Serialize, Deserialize, PartialEq)]
 pub struct Input {
     /// Desired heading in radians, not a position.
     pub heading: f64,
     pub brake: bool,
 }
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Event {
     Jump,
     Crash,
     Finish,
+    Warning,
+    Spawn,
+    Caught,
+    Gate,
+    Missed,
+}
+
+/// The skier's physical path for one fixed tick. `end` is the contact point
+/// when a crash or finish stops movement; recovery relocation is excluded.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct TickSegment {
+    pub start: Point,
+    /// Uninterrupted skier endpoint for ordering actor contacts in this tick.
+    pub proposed_end: Point,
+    pub end: Point,
+    pub stop_fraction: f64,
+    pub crash_fraction: Option<f64>,
+    pub finish_fraction: Option<f64>,
+    pub ramp_fraction: Option<f64>,
+    pub proposed_speed: f64,
+    pub proposed_heading: f64,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct StepOutcome {
+    pub events: Vec<Event>,
+    pub segment: TickSegment,
 }
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Sim {
@@ -99,7 +128,7 @@ impl Sim {
         }
     }
     pub fn ended(&self) -> bool {
-        matches!(self.phase, Phase::Finished | Phase::Crashed)
+        matches!(self.phase, Phase::Finished | Phase::Crashed | Phase::Caught)
     }
     pub fn height(&self) -> f64 {
         self.jump.map(height).unwrap_or(0.)
@@ -110,7 +139,7 @@ impl Sim {
     pub fn valid_mode(&self, obstacles: &[Obstacle], mode: Mode) -> bool {
         let maximum_y = match mode {
             Mode::Practice => world::FINISH,
-            Mode::FreeSki => MAX_ENDLESS_DISTANCE,
+            Mode::FreeSki | Mode::Slalom => MAX_ENDLESS_DISTANCE,
         };
         [
             self.position.x,
@@ -133,7 +162,7 @@ impl Sim {
                 .jump
                 .is_none_or(|t| t.is_finite() && (0. ..JUMP_DURATION).contains(&t))
             && self.last_ramp.is_none_or(|id| {
-                mode == Mode::FreeSki
+                mode != Mode::Practice
                     || obstacles.iter().any(|o| o.id == id && o.kind == Kind::Ramp)
             })
             && (self.phase != Phase::Crashed || self.crashes == 3)
@@ -141,6 +170,7 @@ impl Sim {
             && (match mode {
                 Mode::Practice => self.phase != Phase::Finished || self.position.y == world::FINISH,
                 Mode::FreeSki => self.phase != Phase::Finished,
+                Mode::Slalom => true,
             })
             && (self.phase != Phase::Ready || *self == Self::default())
             && (self.tumble == 0 || (self.jump.is_none() && self.speed == 0.))
@@ -150,13 +180,25 @@ impl Sim {
         self.step_mode(input, obstacles, Mode::Practice)
     }
     pub fn step_mode(&mut self, input: Input, obstacles: &[Obstacle], mode: Mode) -> Vec<Event> {
+        self.step_outcome_mode(input, obstacles, mode, None).events
+    }
+    /// Step through one fixed tick and retain its physical segment. A custom
+    /// finish line lets Slalom share this exact movement/contact implementation.
+    pub fn step_outcome_mode(
+        &mut self,
+        input: Input,
+        obstacles: &[Obstacle],
+        mode: Mode,
+        custom_finish: Option<f64>,
+    ) -> StepOutcome {
+        let initial = self.position;
         if self.phase != Phase::Running {
-            return vec![];
+            return stationary_outcome(initial);
         }
         self.ticks += 1;
         if self.tumble > 0 {
             self.tumble -= 1;
-            return vec![];
+            return stationary_outcome(initial);
         }
         let protected = self.protection > 0;
         self.protection = self.protection.saturating_sub(1);
@@ -178,11 +220,12 @@ impl Sim {
                 .clamp(-world::HALF_WIDTH + RADIUS, world::HALF_WIDTH - RADIUS),
             y: a.y + self.heading.cos() * self.speed * DT,
         };
-        let finish = if mode == Mode::Practice && b.y >= world::FINISH && b.y > a.y {
-            Some((world::FINISH - a.y) / (b.y - a.y))
-        } else {
-            None
-        };
+        let proposed_speed = self.speed;
+        let proposed_heading = self.heading;
+        let finish_line = custom_finish.or((mode == Mode::Practice).then_some(world::FINISH));
+        let finish = finish_line
+            .filter(|y| y.is_finite() && b.y >= *y && b.y > a.y)
+            .map(|y| (y - a.y) / (b.y - a.y));
         // Find ramps first, so flight height can be evaluated at every contact time.
         let ramp = if self.jump.is_none() {
             obstacles
@@ -233,7 +276,7 @@ impl Sim {
         self.position = a.lerp(b, stop);
         self.position.y = self.position.y.min(match mode {
             Mode::Practice => world::FINISH,
-            Mode::FreeSki => MAX_ENDLESS_DISTANCE,
+            Mode::FreeSki | Mode::Slalom => MAX_ENDLESS_DISTANCE,
         });
         self.distance = self.distance.max(self.position.y);
         if crash.is_some_and(|t| t == stop) {
@@ -251,8 +294,9 @@ impl Sim {
             }
             events.push(Event::Crash);
         } else if finish.is_some() {
-            self.position.y = world::FINISH;
-            self.distance = world::FINISH;
+            let y = finish_line.unwrap_or(world::FINISH);
+            self.position.y = y;
+            self.distance = self.distance.max(y);
             self.phase = Phase::Finished;
             self.jump = None;
             events.push(Event::Finish);
@@ -260,7 +304,37 @@ impl Sim {
             let t = t + DT;
             self.jump = (t < JUMP_DURATION).then_some(t);
         }
-        events
+        StepOutcome {
+            events,
+            segment: TickSegment {
+                start: a,
+                proposed_end: b,
+                end: a.lerp(b, stop),
+                stop_fraction: stop,
+                crash_fraction: crash.filter(|t| *t == stop),
+                finish_fraction: finish.filter(|t| *t == stop),
+                ramp_fraction: ramp.map(|(t, _)| t),
+                proposed_speed,
+                proposed_heading,
+            },
+        }
+    }
+}
+
+fn stationary_outcome(at: Point) -> StepOutcome {
+    StepOutcome {
+        events: vec![],
+        segment: TickSegment {
+            start: at,
+            proposed_end: at,
+            end: at,
+            stop_fraction: 0.,
+            crash_fraction: None,
+            finish_fraction: None,
+            ramp_fraction: None,
+            proposed_speed: 0.,
+            proposed_heading: 0.,
+        },
     }
 }
 pub fn height(elapsed: f64) -> f64 {
@@ -274,7 +348,7 @@ pub fn clear_mode(p: Point, obstacles: &[Obstacle], mode: Mode) -> bool {
     p.x.abs() <= world::HALF_WIDTH - RADIUS
         && (match mode {
             Mode::Practice => (0. ..world::FINISH).contains(&p.y),
-            Mode::FreeSki => (0. ..MAX_ENDLESS_DISTANCE).contains(&p.y),
+            Mode::FreeSki | Mode::Slalom => (0. ..MAX_ENDLESS_DISTANCE).contains(&p.y),
         })
         && obstacles
             .iter()

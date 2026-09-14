@@ -8,7 +8,7 @@ contract, existing game order, saves and approved artwork in root AGENTS.md.
 - Start with [README.md](README.md) and [docs/PLAN.md](docs/PLAN.md) for current
   capabilities and next work. Do not repeat completed project setup.
 - For cross-module design or new modes, read [docs/SYSTEM.md](docs/SYSTEM.md).
-  The next pursuit pass is scoped in [docs/NEXT.md](docs/NEXT.md).
+  The next playtest is scoped in [docs/NEXT.md](docs/NEXT.md).
 - For behavior changes, read [docs/RULES.md](docs/RULES.md) and the active revision
   in [docs/TUNING.md](docs/TUNING.md). Tyler liked the rules-2 speed and turning.
 - For checks and closeout, use [docs/VERIFICATION.md](docs/VERIFICATION.md) and
@@ -20,7 +20,7 @@ contract, existing game order, saves and approved artwork in root AGENTS.md.
 
 - Keep fixed-tick simulation independent of UI, audio, filesystem and wall time.
   Full-run gameplay, replay and reference evidence should converge on the shared
-  session path planned in SYSTEM.md. Direct engine calls remain useful for focused
+  session path described in SYSTEM.md. Direct engine calls remain useful for focused
   physics tests; never add test-only movement or collision exemptions.
 - State owns outcomes. Rendering/resize cannot change physics, terrain or records.
   Terrain is versioned and reproducible; cache and cosmetic effects stay bounded.

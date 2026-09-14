@@ -151,6 +151,7 @@ fn obstacle_radius(kind: Kind) -> f64 {
         Kind::Tree => 1.4,
         Kind::Rock => 1.2,
         Kind::Ramp => 1.8,
+        Kind::Pole => 0.3,
     }
 }
 

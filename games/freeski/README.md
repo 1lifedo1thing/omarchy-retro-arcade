@@ -2,15 +2,12 @@
 
 An original SkiFree-inspired downhill skiing game inside Omarchy Arcade.
 
-Choose **Practice** for the authored 1,200-metre learning slope, or **Free Ski**
-for a seeded endless mountain. Both use the same carving, brakes, jumps, trees,
-rocks and three crash allowances. Free Ski keeps a separate distance record and
-creates a new mountain for each new run. Creature pursuit, Slalom and sound remain
-later milestones.
-
-Tyler's follow-up playtest found the revised speed and turning felt good, and his
-overall response to the endless pass was positive. Detailed terrain difficulty
-and variety playtesting remains open.
+Choose **Practice** for the authored 1,200-metre learning slope, **Free Ski**
+for a seeded endless mountain with optional creature pursuit, or **Slalom** for
+five courses unlocked in order. All use the same fast carving, brakes, jumps and
+three crash allowances. Free Ski keeps separate chase-on/off distance records.
+Slalom adds ordered gates, five-second missed-gate penalties and local medals.
+Original sound, creature and course artwork are included.
 
 Build with `scripts/build.sh`, choose FreeSki at the end of the Arcade shelf, or run:
 
@@ -21,10 +18,13 @@ Build with `scripts/build.sh`, choose FreeSki at the end of the Arcade shelf, or
 Enter starts. Hold A/D or Left/Right to turn up to 90°; release to keep your heading. Moving the mouse
 left/right of the skier selects pointer steering. Hold S, Down, Space, the right
 mouse button on the slope, or the visible brake button to slow down. Ramps launch
-automatically. Esc pauses/resumes; Ctrl+H returns to Arcade. Settings: Ctrl+,.
+automatically. Esc pauses/resumes; Ctrl+H returns to Arcade. Settings: Ctrl+,. Ctrl+M mutes sound.
 
-Choose a mode before starting. From a paused run, use **Try endless Free Ski** or
-**Switch to practice**; confirm before replacing unfinished progress.
+Before starting, P/F/L select Practice/Free Ski/Slalom, C toggles pursuit and 1–5
+select unlocked courses. These choices also have clickable controls. Enable pursuit before a Free Ski run; the creature
+warns after 1,000 m. Slalom starts with Pinecone Path and unlocks the next course
+on completion. Pause/results offer mode changes; confirm before replacing an
+unfinished run.
 
 Runs save on pause, close, shelf exit, results and five-second simulation
 checkpoints, then reopen paused. Restarting unfinished progress requires confirmation.
@@ -34,7 +34,7 @@ explicit archive/reset; playing without saving is also available.
 - [Rules, controls, save behavior and limitations](docs/RULES.md)
 - [What comes next](docs/PLAN.md)
 - [System design and ownership](docs/SYSTEM.md)
-- [Next implementation: optional pursuit](docs/NEXT.md)
+- [Next playtest](docs/NEXT.md)
 - [Milestone 1 implementation and human acceptance](docs/MILESTONE-1.md)
 - [Issue #14 requirements snapshot](docs/REQUIREMENTS.md)
 - [Tuning and reference runs](docs/TUNING.md)
@@ -44,8 +44,9 @@ explicit archive/reset; playing without saving is also available.
 Run `cargo test -p omarchy-freeski --locked` for engine, storage and frontend checks;
 add `--no-default-features` for the desktop-independent engine/storage suite.
 `scripts/native-freeski.py` exercises the real app under Xvfb. The
-`practice-evidence` and `endless-evidence` examples generate suspended-run fixtures
-through ordinary production inputs for native reopen checks.
+`practice-evidence`, `endless-evidence` and `completion-evidence` examples generate suspended-run fixtures
+through ordinary production inputs for native reopen checks. The `replay` example
+accepts a bounded JSON input schedule through the same Session as the app.
 
 New code and original assets are GPL-3.0-or-later. No SkiFree artwork, sounds,
 courses or creature design are bundled. This game has no standalone launcher.

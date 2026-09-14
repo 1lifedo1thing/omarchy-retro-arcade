@@ -143,3 +143,29 @@
   and faithful saved continuation. Proposed recovery/fairness policies and
   acceptance cases are specified in `games/freeski/docs/NEXT.md`; numeric pursuit
   values remain uncalibrated. Slalom follows one complete course at a time.
+
+## 2026-09-13 — FreeSki complete local modes and shared simulation
+
+FreeSki's live app, replay and production fixture examples now use one Rust
+`Session` tick. Existing rules-2 speed, steering, flight and recovery remain the
+baseline. Engine outcomes expose physical movement/contact fractions so pursuit
+and Slalom can share event ordering without treating recovery relocation as play.
+
+The remaining issue #14 modes are local: opt-in creature pursuit with independent
+distance records, and five authored Slalom courses with sequential unlocks,
+ordered gates, five-second misses and time-based medals. Pursuit uses bounded
+physical movement and the union of both actors' terrain windows; rendering does
+not decide catches. Slalom uses the same skier physics and separate course times.
+
+Schema 3 adds causal pursuit/objective state, records and mute preference while
+retaining validated schema-1/2 originals before migration. Old endless runs remain
+chase-off. Original creature/gate geometry and synthesized PCM cues add no new
+asset download or runtime dependency; sound follows the existing optional paplay
+convention and owns at most one process, stopped/reaped at lifecycle boundaries.
+
+Full-run fixtures and a bounded JSON replay command provide repeatable cases
+through production inputs. Course thresholds and pursuit evasion have reference
+runs; human difficulty ratings and actual package installation remain separate
+acceptance evidence. See FreeSki VERIFICATION.md for the completion pass results.
+The existing Arcade window, game order, desktop identity, package and other saves
+are preserved.

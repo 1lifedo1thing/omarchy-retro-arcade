@@ -8,8 +8,9 @@ pub enum Kind {
     Tree,
     Rock,
     Ramp,
+    Pole,
 }
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Obstacle {
     pub id: usize,
     pub at: Point,
@@ -21,6 +22,7 @@ impl Obstacle {
             Kind::Tree => 1.4,
             Kind::Rock => 1.2,
             Kind::Ramp => 1.8,
+            Kind::Pole => 0.3,
         }
     }
     pub fn height(self) -> f64 {
@@ -28,6 +30,7 @@ impl Obstacle {
             Kind::Tree => 8.,
             Kind::Rock => 0.65,
             Kind::Ramp => 0.,
+            Kind::Pole => 1.2,
         }
     }
 }

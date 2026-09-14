@@ -343,7 +343,7 @@ impl eframe::App for Arcade {
             ui.heading("Omarchy Arcade");ui.label(concat!("Version ",env!("CARGO_PKG_VERSION")));ui.label("Native games. A community project for Omarchy.");
             ui.hyperlink_to("2048: Avi Barit (avibarit)", "https://github.com/avibarit/2048");
             ui.hyperlink_to("Original 2048: Gabriele Cirulli", "https://github.com/gabrielecirulli/2048");
-            ui.label("FreeSki: original downhill skiing and artwork by Omarchy Arcade contributors.");
+            ui.label("FreeSki: original downhill skiing, five Slalom courses, creature design and synthesized sound by Omarchy Arcade contributors.");
             ui.label("Original game artwork and engines; credits and licences are included with the app.");ui.label("Ctrl+H returns to Arcade. Each game keeps its own controls and saves.");
         });
         }
