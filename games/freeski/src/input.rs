@@ -6,10 +6,19 @@ pub struct Controls {
     target: f64,
     pointer: Option<Pos2>,
     armed: bool,
+    retain_heading: bool,
 }
 impl Controls {
     pub fn clear(&mut self) {
         *self = Self::default();
+    }
+    /// Re-evaluate a released keyboard heading for each simulation tick. A crash
+    /// may reset heading between two ticks rendered in the same frame.
+    pub fn for_tick(&self, mut input: Input, current_heading: f64) -> Input {
+        if self.retain_heading {
+            input.heading = current_heading;
+        }
+        input
     }
     pub fn sample(
         &mut self,
@@ -29,6 +38,7 @@ impl Controls {
             Key::Space,
         ];
         if !self.armed {
+            self.retain_heading = true;
             self.pointer = i.pointer.latest_pos();
             if !keys.iter().any(|k| i.key_down(*k)) && !i.pointer.any_down() {
                 self.armed = true;
@@ -80,6 +90,7 @@ impl Controls {
         }
         let right = i.key_down(Key::D) || i.key_down(Key::ArrowRight);
         let left = i.key_down(Key::A) || i.key_down(Key::ArrowLeft);
+        self.retain_heading = !self.mouse && right == left;
         let heading = if self.mouse {
             self.target
         } else if right == left {

@@ -14,6 +14,14 @@ pub const JUMP_DURATION: f64 = 1.2;
 pub const JUMP_HEIGHT: f64 = 2.5;
 pub const PROTECTION_TICKS: u32 = 90;
 pub const TUMBLE_TICKS: u32 = 42;
+/// A corruption guard, far beyond the distance a one-year run can normally reach.
+pub const MAX_ENDLESS_DISTANCE: f64 = 2_000_000_000.;
+#[derive(Clone, Copy, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
+pub enum Mode {
+    #[default]
+    Practice,
+    FreeSki,
+}
 #[derive(Clone, Copy, Debug, Default, Serialize, Deserialize, PartialEq)]
 pub struct Point {
     pub x: f64,
@@ -97,6 +105,13 @@ impl Sim {
         self.jump.map(height).unwrap_or(0.)
     }
     pub fn valid(&self, obstacles: &[Obstacle]) -> bool {
+        self.valid_mode(obstacles, Mode::Practice)
+    }
+    pub fn valid_mode(&self, obstacles: &[Obstacle], mode: Mode) -> bool {
+        let maximum_y = match mode {
+            Mode::Practice => world::FINISH,
+            Mode::FreeSki => MAX_ENDLESS_DISTANCE,
+        };
         [
             self.position.x,
             self.position.y,
@@ -107,8 +122,8 @@ impl Sim {
         .iter()
         .all(|n| n.is_finite())
             && self.position.x.abs() <= world::HALF_WIDTH - RADIUS + 1e-8
-            && (0. ..=world::FINISH).contains(&self.position.y)
-            && (self.position.y..=world::FINISH).contains(&self.distance)
+            && (0. ..=maximum_y).contains(&self.position.y)
+            && (self.position.y..=maximum_y).contains(&self.distance)
             && (0. ..=MAX_SPEED).contains(&self.speed)
             && self.heading.abs() <= MAX_HEADING
             && self.crashes <= 3
@@ -117,17 +132,24 @@ impl Sim {
             && self
                 .jump
                 .is_none_or(|t| t.is_finite() && (0. ..JUMP_DURATION).contains(&t))
-            && self
-                .last_ramp
-                .is_none_or(|id| obstacles.iter().any(|o| o.id == id && o.kind == Kind::Ramp))
+            && self.last_ramp.is_none_or(|id| {
+                mode == Mode::FreeSki
+                    || obstacles.iter().any(|o| o.id == id && o.kind == Kind::Ramp)
+            })
             && (self.phase != Phase::Crashed || self.crashes == 3)
             && (self.crashes != 3 || self.phase == Phase::Crashed)
-            && (self.phase != Phase::Finished || self.position.y == world::FINISH)
+            && (match mode {
+                Mode::Practice => self.phase != Phase::Finished || self.position.y == world::FINISH,
+                Mode::FreeSki => self.phase != Phase::Finished,
+            })
             && (self.phase != Phase::Ready || *self == Self::default())
             && (self.tumble == 0 || (self.jump.is_none() && self.speed == 0.))
             && self.ticks < HZ as u64 * 60 * 60 * 24 * 365
     }
     pub fn step(&mut self, input: Input, obstacles: &[Obstacle]) -> Vec<Event> {
+        self.step_mode(input, obstacles, Mode::Practice)
+    }
+    pub fn step_mode(&mut self, input: Input, obstacles: &[Obstacle], mode: Mode) -> Vec<Event> {
         if self.phase != Phase::Running {
             return vec![];
         }
@@ -156,7 +178,7 @@ impl Sim {
                 .clamp(-world::HALF_WIDTH + RADIUS, world::HALF_WIDTH - RADIUS),
             y: a.y + self.heading.cos() * self.speed * DT,
         };
-        let finish = if b.y >= world::FINISH && b.y > a.y {
+        let finish = if mode == Mode::Practice && b.y >= world::FINISH && b.y > a.y {
             Some((world::FINISH - a.y) / (b.y - a.y))
         } else {
             None
@@ -209,7 +231,10 @@ impl Sim {
             events.push(Event::Jump);
         }
         self.position = a.lerp(b, stop);
-        self.position.y = self.position.y.min(world::FINISH);
+        self.position.y = self.position.y.min(match mode {
+            Mode::Practice => world::FINISH,
+            Mode::FreeSki => MAX_ENDLESS_DISTANCE,
+        });
         self.distance = self.distance.max(self.position.y);
         if crash.is_some_and(|t| t == stop) {
             self.crashes += 1;
@@ -219,7 +244,7 @@ impl Sim {
             if self.crashes == 3 {
                 self.phase = Phase::Crashed;
             } else {
-                self.position = recovery(self.position, obstacles);
+                self.position = recovery(self.position, obstacles, mode);
                 self.distance = self.distance.max(self.position.y);
                 self.tumble = TUMBLE_TICKS;
                 self.protection = PROTECTION_TICKS;
@@ -243,13 +268,19 @@ pub fn height(elapsed: f64) -> f64 {
     4. * JUMP_HEIGHT * t * (1. - t)
 }
 pub fn clear(p: Point, obstacles: &[Obstacle]) -> bool {
+    clear_mode(p, obstacles, Mode::Practice)
+}
+pub fn clear_mode(p: Point, obstacles: &[Obstacle], mode: Mode) -> bool {
     p.x.abs() <= world::HALF_WIDTH - RADIUS
-        && (0. ..world::FINISH).contains(&p.y)
+        && (match mode {
+            Mode::Practice => (0. ..world::FINISH).contains(&p.y),
+            Mode::FreeSki => (0. ..MAX_ENDLESS_DISTANCE).contains(&p.y),
+        })
         && obstacles
             .iter()
             .all(|o| (p.x - o.at.x).hypot(p.y - o.at.y) > o.radius() + RADIUS + 2.)
 }
-fn recovery(p: Point, obstacles: &[Obstacle]) -> Point {
+fn recovery(p: Point, obstacles: &[Obstacle], mode: Mode) -> Point {
     // Search sideways and uphill only: recovery never manufactures distance.
     for dy in [0., -3., -6., -9.] {
         for dx in [0., -4., 4., -8., 8., -12., 12., -20., 20., -30., 30.] {
@@ -257,7 +288,7 @@ fn recovery(p: Point, obstacles: &[Obstacle]) -> Point {
                 x: (p.x + dx).clamp(-world::HALF_WIDTH + RADIUS, world::HALF_WIDTH - RADIUS),
                 y: (p.y + dy).max(0.),
             };
-            if clear(q, obstacles) {
+            if clear_mode(q, obstacles, mode) {
                 return q;
             }
         }
@@ -265,7 +296,7 @@ fn recovery(p: Point, obstacles: &[Obstacle]) -> Point {
     // The authored course reserves these two hazard-free boundary corridors.
     for x in [-36., 36.] {
         let q = Point { x, y: p.y };
-        if clear(q, obstacles) {
+        if clear_mode(q, obstacles, mode) {
             return q;
         }
     }

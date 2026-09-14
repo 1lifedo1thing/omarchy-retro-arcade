@@ -1,5 +1,6 @@
 use crate::{
-    engine::{Phase, Point, DT},
+    endless,
+    engine::{Mode, Phase, Point, DT},
     input::Controls,
     render,
     storage::{self, Save},
@@ -28,6 +29,8 @@ pub struct App {
     help: bool,
     settings: bool,
     restart: bool,
+    pending_mode: Option<Mode>,
+    obstacle_chunk: Option<u64>,
     leave: bool,
     pause_reason: String,
     tracks: VecDeque<(Point, Point)>,
@@ -57,10 +60,13 @@ impl App {
             help: false,
             settings: false,
             restart: false,
+            pending_mode: None,
+            obstacle_chunk: None,
             leave: false,
             pause_reason: "Your run is saved. Resume when you are ready.".into(),
             tracks: VecDeque::new(),
         };
+        app.refresh_obstacles();
         app.flush();
         Ok(app)
     }
@@ -101,8 +107,36 @@ impl App {
         self.last = Instant::now();
         self.flush();
     }
+    fn refresh_obstacles(&mut self) {
+        if self.state.mode == Mode::FreeSki {
+            let chunk = (self.state.run.position.y / endless::CHUNK_LENGTH) as u64;
+            if self.obstacle_chunk != Some(chunk) {
+                self.obstacles = self.state.obstacles();
+                self.obstacle_chunk = Some(chunk);
+            }
+        } else if self.obstacle_chunk.is_some() {
+            self.obstacles = world::practice();
+            self.obstacle_chunk = None;
+        }
+    }
+    fn mountain_seed() -> u64 {
+        use std::time::{SystemTime, UNIX_EPOCH};
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_nanos() as u64
+    }
     fn new_run(&mut self) {
-        self.state.restart();
+        let mode = self.pending_mode.take().unwrap_or(self.state.mode);
+        let seed = if mode == Mode::FreeSki {
+            Self::mountain_seed()
+        } else {
+            0
+        };
+        self.state.select_mode(mode, seed);
+        self.obstacles = self.state.obstacles();
+        self.obstacle_chunk = None;
+        self.refresh_obstacles();
         self.restart = false;
         self.controls.clear();
         self.tracks.clear();
@@ -156,6 +190,7 @@ impl App {
                     self.settings = false;
                 } else if self.restart {
                     self.restart = false;
+                    self.pending_mode = None;
                 } else if !self.recovery {
                     if self.state.run.phase == Phase::Running {
                         self.pause("Take a breath. Your run is saved.");
@@ -175,6 +210,7 @@ impl App {
         let mut restart = false;
         let mut help = false;
         let mut settings = false;
+        let mut mode_choice = None;
         egui::CentralPanel::default()
             .frame(
                 egui::Frame::NONE
@@ -186,16 +222,26 @@ impl App {
                 ui.horizontal(|ui| {
                     ui.heading(egui::RichText::new("FreeSki").size(34.).monospace());
                     ui.separator();
-                    ui.label("PRACTICE SLOPE");
+                    if self.state.run.phase == Phase::Ready && !self.blocked() {
+                        for (mode, label) in [(Mode::Practice, "Practice"), (Mode::FreeSki, "Free Ski")] {
+                            if ui.selectable_label(self.state.mode == mode, label).clicked() && self.state.mode != mode {
+                                mode_choice = Some(mode);
+                            }
+                        }
+                    } else {
+                        ui.label(if self.state.mode == Mode::Practice { "PRACTICE SLOPE" } else { "ENDLESS FREE SKI" });
+                    }
                 });
                 ui.horizontal_wrapped(|ui| {
-                    ui.strong(format!("{:04.0} / 1200 m", self.state.run.distance));
+                    ui.strong(if self.state.mode == Mode::Practice {
+                        format!("{:04.0} / 1200 m", self.state.run.distance)
+                    } else { format!("{:04.0} m", self.state.run.distance) });
                     ui.separator();
                     ui.label(format!("{} crashes left", 3 - self.state.run.crashes));
                     ui.separator();
                     ui.label(format!("{:02.0} km/h", self.state.run.speed * 3.6));
                     ui.separator();
-                    ui.label(format!("Best {:.0} m", self.state.best_distance));
+                    ui.label(format!("Best {:.0} m", self.state.best()));
                     if self.state.run.tumble > 0 {
                         ui.colored_label(Color32::from_rgb(225, 153, 78), "Recovering");
                     } else if self.state.run.protection > 0 {
@@ -236,7 +282,9 @@ impl App {
                 if !self.writable && !self.recovery {
                     ui.label("Playing without saving. The original save is retained.");
                 }
-                let (title, hint) = world::lesson(self.state.run.position.y);
+                let (title, hint) = if self.state.mode == Mode::Practice {
+                    world::lesson(self.state.run.position.y)
+                } else { ("ONE MORE RUN", "Find a line through the trees. Ramps are optional. Three crashes end the run.") };
                 ui.add_space(6.);
                 ui.label(egui::RichText::new(title).monospace());
                 ui.label(hint);
@@ -248,13 +296,17 @@ impl App {
                 render::draw(
                     ui,
                     field,
-                    &self.state.run,
+                    &self.state,
                     &self.obstacles,
                     self.theme.accent,
                     self.state.reduced_effects,
                     &tracks,
                 );
             });
+        if let Some(mode) = mode_choice {
+            self.pending_mode = Some(mode);
+            self.new_run();
+        }
         if pause {
             self.pause("Take a breath. Your run is saved.");
         }
@@ -295,7 +347,13 @@ impl App {
                     while self.accumulator + 1e-12 >= DT && self.state.run.phase == Phase::Running {
                         self.accumulator = (self.accumulator - DT).max(0.);
                         let before = self.state.run.position;
-                        self.state.run.step(input, &self.obstacles);
+                        self.refresh_obstacles();
+                        self.state.run.step_mode(
+                            self.controls.for_tick(input, self.state.run.heading),
+                            &self.obstacles,
+                            self.state.mode,
+                        );
+                        self.refresh_obstacles();
                         if !self.state.reduced_effects
                             && self.state.run.jump.is_none()
                             && self.state.run.tumble == 0
@@ -303,7 +361,7 @@ impl App {
                         {
                             let after = self.state.run.position;
                             if (before.x - after.x).hypot(before.y - after.y) < 1.
-                                && after.y > before.y
+                                && (after.x - before.x).hypot(after.y - before.y) > 0.001
                             {
                                 self.tracks.push_back((before, after));
                             }
@@ -340,6 +398,7 @@ impl App {
                 }
                 if ui.button("Keep this run  Esc").clicked() {
                     self.restart = false;
+                    self.pending_mode = None;
                 }
             });
         } else if self.help || self.settings {
@@ -349,7 +408,7 @@ impl App {
                     ui.heading("Leave your first tracks");
                     ui.label("Hold A / D or Left / Right to turn up to 90°. Release to keep your direction; turn the opposite way to point downhill. Move the pointer left or right of the skier to aim your turns. The last steering input takes control.");
                     ui.label("Hold S, Down, Space, the right mouse button on the slope, or Hold to brake. Striped ramps launch you automatically. Jump over low rocks; trees still cause a crash.");
-                    ui.label("Three crashes end your run. The gold ring marks protection after recovery. Cross the finish flags to complete the 1,200 m practice slope.");
+                    ui.label("Three crashes end your run. The gold ring marks protection after recovery. Practice ends at 1,200 m. Free Ski keeps generating new terrain; each new run is a new mountain, with its own distance record separate from practice.");
                     ui.label("Esc pauses or resumes. Ctrl+H returns to Arcade. Runs save automatically and reopen paused. Ctrl+, opens settings.");
                     ui.separator();ui.label("Original game and artwork by Omarchy Arcade contributors. GPL-3.0-or-later.");
                 } else {
@@ -373,7 +432,30 @@ impl App {
                 if self.error.is_some() && self.writable && ui.button("Retry saving").clicked() {
                     self.flush();
                 }
-                if ui.button("Restart practice slope").clicked() {
+                if ui
+                    .button(if self.state.mode == Mode::Practice {
+                        "Restart practice slope"
+                    } else {
+                        "New mountain"
+                    })
+                    .clicked()
+                {
+                    self.pending_mode = None;
+                    self.restart = true;
+                }
+                if ui
+                    .button(if self.state.mode == Mode::Practice {
+                        "Try endless Free Ski"
+                    } else {
+                        "Switch to practice"
+                    })
+                    .clicked()
+                {
+                    self.pending_mode = Some(if self.state.mode == Mode::Practice {
+                        Mode::FreeSki
+                    } else {
+                        Mode::Practice
+                    });
                     self.restart = true;
                 }
                 if ui.button("Settings").clicked() {
@@ -393,14 +475,38 @@ impl App {
                 });
                 ui.label(format!(
                     "Distance {:.0} m  /  Best {:.0} m",
-                    self.state.run.distance, self.state.best_distance
+                    self.state.run.distance,
+                    self.state.best()
                 ));
                 ui.label(format!(
                     "{} crashes  /  {:.1} seconds skiing",
                     self.state.run.crashes,
                     self.state.run.ticks as f64 / 60.
                 ));
-                if ui.button("New practice run  Enter").clicked() || enter {
+                if ui
+                    .button(if self.state.mode == Mode::Practice {
+                        "New practice run  Enter"
+                    } else {
+                        "New mountain  Enter"
+                    })
+                    .clicked()
+                    || enter
+                {
+                    self.new_run();
+                }
+                if ui
+                    .button(if self.state.mode == Mode::Practice {
+                        "Try endless Free Ski"
+                    } else {
+                        "Switch to practice"
+                    })
+                    .clicked()
+                {
+                    self.pending_mode = Some(if self.state.mode == Mode::Practice {
+                        Mode::FreeSki
+                    } else {
+                        Mode::Practice
+                    });
                     self.new_run();
                 }
                 if ui.button("Back to Arcade").clicked() {
@@ -670,6 +776,105 @@ mod tests {
         assert_eq!(runs[0], runs[1]);
         assert_eq!(runs[1], runs[2]);
     }
+    #[test]
+    fn released_heading_does_not_resurrect_after_a_crash_between_render_ticks() {
+        let mut runs = vec![];
+        for hz in [30, 60, 120] {
+            let mut h = Harness::new();
+            h.app.state.run = crate::engine::Sim {
+                phase: Phase::Running,
+                position: Point { x: -18., y: 98. },
+                distance: 98.,
+                speed: 50.,
+                heading: 0.4,
+                ..Default::default()
+            };
+            h.app.accumulator = 0.;
+            for _ in 0..hz * 2 {
+                h.frame(vec![], 1. / hz as f64);
+            }
+            assert_eq!(h.app.state.run.crashes, 1);
+            assert_eq!(h.app.state.run.heading, 0.);
+            runs.push(h.app.state.run.clone());
+        }
+        assert_eq!(runs[0], runs[1]);
+        assert_eq!(runs[1], runs[2]);
+    }
+
+    #[test]
+    fn modes_confirm_replacement_and_preserve_records_and_suspended_terrain() {
+        let mut h = Harness::new();
+        h.app.state.best_distance = world::FINISH;
+        h.app.state.completions = 2;
+        h.click("Free Ski");
+        assert_eq!(h.app.state.mode, Mode::FreeSki);
+        assert_ne!(h.app.state.seed, 0);
+        h.click("Start skiing  Enter");
+        for _ in 0..240 {
+            h.frame(vec![], DT);
+        }
+        h.key(Key::Escape);
+        let saved = h.app.state.clone();
+        h.click("Switch to practice");
+        h.click("Keep this run  Esc");
+        assert_eq!(h.app.state, saved);
+        h.app.suspend();
+        let reopened = App::open(h.app.path.clone()).unwrap();
+        assert_eq!(reopened.state, h.app.state);
+        assert_eq!(
+            reopened
+                .obstacles
+                .iter()
+                .map(|o| (o.id, o.at))
+                .collect::<Vec<_>>(),
+            h.app
+                .obstacles
+                .iter()
+                .map(|o| (o.id, o.at))
+                .collect::<Vec<_>>()
+        );
+        h.click("Switch to practice");
+        h.click("Replace run  Enter");
+        assert_eq!(h.app.state.mode, Mode::Practice);
+        assert_eq!(h.app.state.run.phase, Phase::Ready);
+        assert_eq!(h.app.state.best_distance, world::FINISH);
+        assert_eq!(h.app.state.completions, 2);
+        assert_eq!(
+            h.app.state.free_best_distance,
+            saved.free_best_distance.max(saved.run.distance)
+        );
+    }
+
+    #[test]
+    fn endless_crosses_chunks_equally_at_different_render_rates() {
+        let mut results = vec![];
+        for hz in [30, 60, 120] {
+            let mut h = Harness::new();
+            h.app.state.select_mode(Mode::FreeSki, 42);
+            h.app.obstacle_chunk = None;
+            h.app.refresh_obstacles();
+            h.app.begin();
+            h.app.accumulator = 0.;
+            // Follow an ordinary held mouse heading across multiple chunk boundaries.
+            // Each schedule supplies the same neutral heading on a reserved edge corridor.
+            h.app.state.run.position.x = -36.;
+            for frame in 0..hz * 40 {
+                h.size = if frame % 2 == 0 {
+                    Vec2::new(900., 760.)
+                } else {
+                    Vec2::new(1280., 900.)
+                };
+                h.frame(vec![], 1. / hz as f64);
+            }
+            assert!(h.app.state.run.distance > 1200.);
+            assert_eq!(h.app.state.run.phase, Phase::Running);
+            assert_eq!(h.app.state.run.ticks, 2400);
+            results.push(h.app.state.clone());
+        }
+        assert_eq!(results[0], results[1]);
+        assert_eq!(results[1], results[2]);
+    }
+
     #[test]
     fn backlog_pauses_without_skipping_ticks_and_invalid_save_stays_intact() {
         let mut h = Harness::new();

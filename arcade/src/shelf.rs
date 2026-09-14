@@ -15,7 +15,7 @@ impl Game {
             Self::Bubble => "PUZZLE / 20 LEVELS",
             Self::Blast => "ARENA / SOLO + LOCAL",
             Self::TwentyFortyEight => "PUZZLE / 2048",
-            Self::FreeSki => "SPORT / PRACTICE SKIING",
+            Self::FreeSki => "SPORT / DOWNHILL SKIING",
         }
     }
     fn crop(self) -> Rect {

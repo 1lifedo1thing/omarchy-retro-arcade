@@ -1,6 +1,7 @@
 //! One private atomic document; records/preferences are independent of the attempt.
 use crate::{
-    engine::{Phase, Sim, RULES_VERSION},
+    endless,
+    engine::{Mode, Phase, Sim, MAX_ENDLESS_DISTANCE, RULES_VERSION},
     world::{self, Obstacle},
 };
 use serde::{Deserialize, Serialize};
@@ -17,8 +18,16 @@ pub struct Save {
     pub version: u32,
     pub rules_version: u32,
     pub course_version: u32,
+    #[serde(default)]
+    pub mode: Mode,
+    #[serde(default)]
+    pub seed: u64,
+    #[serde(default = "default_generator_version")]
+    pub generator_version: u32,
     pub run: Sim,
     pub best_distance: f64,
+    #[serde(default)]
+    pub free_best_distance: f64,
     pub completions: u64,
     pub result_recorded: bool,
     pub reduced_effects: bool,
@@ -26,11 +35,15 @@ pub struct Save {
 impl Default for Save {
     fn default() -> Self {
         Self {
-            version: 1,
+            version: 2,
             rules_version: RULES_VERSION,
             course_version: world::COURSE_VERSION,
+            mode: Mode::Practice,
+            seed: 0,
+            generator_version: endless::GENERATOR_VERSION,
             run: Sim::default(),
             best_distance: 0.,
+            free_best_distance: 0.,
             completions: 0,
             result_recorded: false,
             reduced_effects: false,
@@ -38,30 +51,85 @@ impl Default for Save {
     }
 }
 impl Save {
+    pub fn obstacles(&self) -> Vec<Obstacle> {
+        match self.mode {
+            Mode::Practice => world::practice(),
+            Mode::FreeSki => endless::obstacles(self.seed, self.run.position.y),
+        }
+    }
+    pub fn best(&self) -> f64 {
+        match self.mode {
+            Mode::Practice => self.best_distance,
+            Mode::FreeSki => self.free_best_distance.max(self.run.distance),
+        }
+    }
     pub fn valid(&self, obstacles: &[Obstacle]) -> bool {
-        self.version == 1
+        let active = match self.mode {
+            Mode::Practice => obstacles,
+            // Endless terrain is canonical from seed and position, but simulation
+            // validity itself only needs numeric bounds. Avoid generation until
+            // after those bounds are known to be safe.
+            Mode::FreeSki => &[],
+        };
+        self.version == 2
             && self.rules_version == RULES_VERSION
             && self.course_version == world::COURSE_VERSION
-            && self.run.valid(obstacles)
+            && self.generator_version == endless::GENERATOR_VERSION
+            && self.run.valid_mode(active, self.mode)
+            && self.run.last_ramp.is_none_or(|id| match self.mode {
+                Mode::Practice => active
+                    .iter()
+                    .any(|obstacle| obstacle.id == id && obstacle.kind == world::Kind::Ramp),
+                Mode::FreeSki => endless::is_ramp(self.seed, id),
+            })
             && self.best_distance.is_finite()
             && (0. ..=world::FINISH).contains(&self.best_distance)
+            && self.free_best_distance.is_finite()
+            && (0. ..=MAX_ENDLESS_DISTANCE).contains(&self.free_best_distance)
             && (!self.result_recorded
-                || (self.run.ended() && self.best_distance >= self.run.distance))
+                || (self.run.ended()
+                    && match self.mode {
+                        Mode::Practice => self.best_distance >= self.run.distance,
+                        Mode::FreeSki => self.free_best_distance >= self.run.distance,
+                    }))
             && (self.completions == 0 || self.best_distance == world::FINISH)
     }
     pub fn record_result(&mut self) {
         if self.run.ended() && !self.result_recorded {
-            self.best_distance = self.best_distance.max(self.run.distance);
-            if self.run.phase == Phase::Finished {
-                self.completions = self.completions.saturating_add(1);
+            match self.mode {
+                Mode::Practice => {
+                    self.best_distance = self.best_distance.max(self.run.distance);
+                    if self.run.phase == Phase::Finished {
+                        self.completions = self.completions.saturating_add(1);
+                    }
+                }
+                Mode::FreeSki => {
+                    self.free_best_distance = self.free_best_distance.max(self.run.distance);
+                }
             }
             self.result_recorded = true;
         }
     }
     pub fn restart(&mut self) {
+        if self.mode == Mode::FreeSki {
+            self.free_best_distance = self.free_best_distance.max(self.run.distance);
+        }
         self.run = Sim::default();
         self.result_recorded = false;
     }
+    pub fn select_mode(&mut self, mode: Mode, seed: u64) {
+        if self.mode == Mode::FreeSki {
+            self.free_best_distance = self.free_best_distance.max(self.run.distance);
+        }
+        self.mode = mode;
+        self.seed = seed;
+        self.generator_version = endless::GENERATOR_VERSION;
+        self.run = Sim::default();
+        self.result_recorded = false;
+    }
+}
+fn default_generator_version() -> u32 {
+    1
 }
 pub fn path() -> Result<PathBuf, String> {
     std::env::var_os("XDG_STATE_HOME")
@@ -85,8 +153,17 @@ pub fn load(path: &Path, obstacles: &[Obstacle]) -> Result<Save, String> {
     }
     let mut save: Save = serde_json::from_slice(&bytes)
         .map_err(|_| "Unreadable FreeSki save. Original retained.".to_string())?;
-    let legacy = save.rules_version == 1;
-    if legacy {
+    let legacy_schema = save.version == 1;
+    let legacy_rules = save.rules_version == 1;
+    if legacy_schema
+        && (save.mode != Mode::Practice
+            || save.seed != 0
+            || save.generator_version != 1
+            || save.free_best_distance != 0.)
+    {
+        return Err("Invalid schema-1 FreeSki save. Original retained.".into());
+    }
+    if legacy_rules {
         // Rules 2 widens the old numeric bounds without changing state shape.
         // Validate the old limits before accepting this explicit migration.
         if save.run.speed > 22. || save.run.heading.abs() > 1.35 {
@@ -94,15 +171,19 @@ pub fn load(path: &Path, obstacles: &[Obstacle]) -> Result<Save, String> {
         }
         save.rules_version = RULES_VERSION;
     }
+    if legacy_schema {
+        save.version = 2;
+    }
     if !save.valid(obstacles) {
         return Err("Incompatible or invalid FreeSki save. Original retained.".into());
     }
-    if legacy {
+    if legacy_schema || legacy_rules {
         // Preserve the original inode before a later atomic save replaces it.
         // Reopening without a write reuses the matching backup.
         let mut retained = false;
         for n in 1..=10000 {
-            let backup = path.with_extension(format!("rules-1-{n}.json"));
+            let label = if legacy_rules { "rules-1" } else { "schema-1" };
+            let backup = path.with_extension(format!("{label}-{n}.json"));
             match fs::hard_link(path, &backup) {
                 Ok(()) => {
                     retained = true;
@@ -114,7 +195,7 @@ pub fn load(path: &Path, obstacles: &[Obstacle]) -> Result<Save, String> {
                         break;
                     }
                 }
-                Err(e) => return Err(format!("Could not retain rules-1 save: {e}")),
+                Err(e) => return Err(format!("Could not retain legacy save: {e}")),
             }
         }
         if !retained {

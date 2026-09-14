@@ -1,5 +1,5 @@
 use crate::{
-    engine::{Phase, Point, Sim},
+    engine::{Mode, Phase, Point, Sim},
     world::{self, Kind, Obstacle},
 };
 use eframe::egui::{self, Align2, Color32, FontId, Pos2, Rect, Shape, Stroke, Vec2};
@@ -20,12 +20,13 @@ pub fn point(field: Rect, sim: &Sim, p: Point) -> Pos2 {
 pub fn draw(
     ui: &egui::Ui,
     field: Rect,
-    sim: &Sim,
+    state: &crate::storage::Save,
     obstacles: &[Obstacle],
     accent: Color32,
     reduced: bool,
     tracks: &[(Point, Point)],
 ) {
+    let sim = &state.run;
     arcade_presentation::bezel(ui.painter(), field, accent);
     let p = ui.painter().with_clip_rect(field);
     let light = !ui.visuals().dark_mode;
@@ -143,7 +144,7 @@ pub fn draw(
         }
     }
     let finish = at(0., world::FINISH);
-    if field.expand(8. * scale).contains(finish) {
+    if state.mode == Mode::Practice && field.expand(8. * scale).contains(finish) {
         for n in -16..16 {
             let x = n as f32 * 2.5 * scale;
             let r = Rect::from_min_size(
@@ -236,7 +237,11 @@ pub fn draw(
     p.text(
         field.left_bottom() + Vec2::new(12., -10.),
         Align2::LEFT_BOTTOM,
-        "PRACTICE / 1,200 m",
+        if state.mode == Mode::Practice {
+            "PRACTICE / 1,200 m"
+        } else {
+            "FREE SKI / KEEP GOING"
+        },
         FontId::monospace(12.),
         ink,
     );

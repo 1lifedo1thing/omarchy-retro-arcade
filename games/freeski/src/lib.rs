@@ -2,6 +2,7 @@
 #[cfg(feature = "ui")]
 pub mod app;
 pub mod collision;
+pub mod endless;
 pub mod engine;
 #[cfg(feature = "ui")]
 mod input;
