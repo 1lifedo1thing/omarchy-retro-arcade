@@ -184,6 +184,7 @@ impl App {
         }
         let was_running = self.session.state.run.phase == Phase::Running && !self.blocked();
         let mut enter = false;
+        let mut fast_key = false;
         ctx.input_mut(|i| {
             if focused && self.session.state.run.phase == Phase::Ready && !self.blocked() {
                 for (key, mode) in [
@@ -251,6 +252,24 @@ impl App {
             if !self.help && !self.settings && !self.recovery {
                 enter = i.consume_key(egui::Modifiers::NONE, Key::Enter);
             }
+            if focused && self.session.state.run.phase == Phase::Running && !self.blocked() {
+                let fast_press = i.events.iter().find_map(|event| match event {
+                    egui::Event::Key {
+                        key: Key::F,
+                        pressed: true,
+                        repeat,
+                        modifiers,
+                        ..
+                    } => Some((*repeat, *modifiers)),
+                    _ => None,
+                });
+                if let Some((repeat, modifiers)) = fast_press {
+                    fast_key = !repeat && modifiers == egui::Modifiers::NONE;
+                    // Consume repeats and modified presses too, so a focused UI
+                    // control cannot reinterpret them as activation.
+                    i.consume_key(modifiers, Key::F);
+                }
+            }
         });
         let mut field = Rect::NOTHING;
         let mut brake = false;
@@ -259,6 +278,7 @@ impl App {
         let mut restart = false;
         let mut help = false;
         let mut settings = false;
+        let mut fast_button = false;
         let mut mode_choice = None;
         egui::CentralPanel::default()
             .frame(
@@ -296,6 +316,16 @@ impl App {
                                     _ => restart = ui.button("New run").clicked(),
                                 }
                                 if self.session.state.run.phase == Phase::Running {
+                                    fast_button = ui
+                                        .add(menu::button(
+                                            if self.session.state.run.fast_mode {
+                                                "FAST ON  F"
+                                            } else {
+                                                "Fast  F"
+                                            },
+                                            self.session.state.run.fast_mode,
+                                        ))
+                                        .clicked();
                                     let b = ui.add(egui::Button::new("Hold to brake").sense(Sense::click_and_drag()));
                                     brake = b.is_pointer_button_down_on();
                                 }
@@ -309,6 +339,12 @@ impl App {
                             ui.label(format!("{} crashes left", 3 - self.session.state.run.crashes));
                             ui.separator();
                             ui.label(format!("{:02.0} km/h", self.session.state.run.speed * 3.6));
+                            if self.session.state.run.fast_mode {
+                                ui.colored_label(arcade_presentation::AMBER, "FAST");
+                            }
+                            if self.session.state.legacy_run {
+                                ui.label("Legacy run");
+                            }
                             ui.separator();
                             if self.session.state.mode == Mode::Slalom {
                                 ui.label(format!("{:.2} s + {:.0} s", self.session.state.run.ticks as f64 / 60., self.session.state.slalom.penalty_ticks as f64 / 60.));
@@ -376,6 +412,9 @@ impl App {
         if let Some(mode) = mode_choice {
             self.pending_mode = Some(mode);
             self.new_run();
+        }
+        if (fast_key || fast_button) && self.session.state.run.toggle_fast_mode() {
+            self.flush();
         }
         if pause {
             self.pause("Take a breath. Your run is saved.");
@@ -577,6 +616,7 @@ impl App {
                     menu::control(ui, "Slalom", "L · 1–5 courses", "Pass between ordered gates. Each miss adds five seconds. Finish to earn a medal and unlock the next course.");
                 } else {
                     menu::control(ui, "Steer", "A / D or ← / →", "Hold to turn up to 90°. Release to keep your heading. Move the pointer left or right of the skier to aim with the mouse.");
+                    menu::control(ui, "Fast tuck", "F", "Toggle fast mode in any active run. It raises your top speed from 216 to 324 km/h; turn early and avoid obstacles.");
                     menu::control(ui, "Brake", "S / ↓ / Space", "Or hold the right mouse button on the slope. Striped ramps launch you; low rocks can be jumped, trees cannot.");
                     menu::control(ui, "Pause", "Esc", "Enter resumes. Ctrl+H returns to Arcade. Your run saves and reopens paused.");
                 }
@@ -606,6 +646,32 @@ GPL-3.0-or-later",
                     "Settings",
                     "Your preferences save automatically and apply to every FreeSki mode.",
                 );
+                if let Some(records) = &self.session.state.legacy_records {
+                    ui.label(
+                        egui::RichText::new("Previous records retained from earlier rules.")
+                            .size(13.)
+                            .color(menu::muted(ui)),
+                    );
+                    ui.collapsing("Previous records", |ui| {
+                        ui.label(format!(
+                            "Practice: {:.0} m · {} completions",
+                            records.best_distance, records.completions
+                        ));
+                        ui.label(format!(
+                            "Free Ski: {:.0} m · Pursuit: {:.0} m",
+                            records.free_best_distance, records.chase_best_distance
+                        ));
+                        for (index, best) in records.slalom_best.iter().enumerate() {
+                            let course = course::course(index as u8).unwrap();
+                            let result = best.map_or_else(
+                                || "—".to_owned(),
+                                |ticks| format!("{:.2} s", ticks as f64 / 60.),
+                            );
+                            ui.label(format!("{}: {result}", course.name));
+                        }
+                    });
+                    ui.separator();
+                }
                 if menu::setting(
                     ui,
                     &mut self.session.state.muted,
@@ -648,6 +714,14 @@ GPL-3.0-or-later",
                         (
                             "CRASHES LEFT",
                             format!("{} / 3", 3 - self.session.state.run.crashes),
+                        ),
+                        (
+                            "PACE",
+                            if self.session.state.run.fast_mode {
+                                "FAST".to_owned()
+                            } else {
+                                "NORMAL".to_owned()
+                            },
                         ),
                     ],
                 );
@@ -1024,8 +1098,12 @@ mod tests {
             ],
             DT,
         );
-        for _ in 0..120 {
+        // The faster buildup reaches a higher entry speed; verify sustained
+        // braking actually slows each tick and reaches rest within three seconds.
+        for _ in 0..180 {
+            let before = h.app.session.state.run.speed;
             h.frame(vec![], DT);
+            assert!(h.app.session.state.run.speed <= before);
         }
         assert!(h.app.session.state.run.speed < 0.01);
         h.frame(
@@ -1208,8 +1286,8 @@ mod tests {
             h.app.refresh_obstacles();
             h.app.begin();
             h.app.accumulator = 0.;
-            // Follow an ordinary held mouse heading across multiple chunk boundaries.
-            // Each schedule supplies the same neutral heading on a reserved edge corridor.
+            // Identical neutral input now encounters generator-2 edge hazards.
+            // Rendering cadence must not change crossings, crashes or the result.
             h.app.session.state.run.position.x = -36.;
             for frame in 0..hz * 40 {
                 h.size = if frame % 2 == 0 {
@@ -1219,9 +1297,11 @@ mod tests {
                 };
                 h.frame(vec![], 1. / hz as f64);
             }
-            assert!(h.app.session.state.run.distance > 1200.);
-            assert_eq!(h.app.session.state.run.phase, Phase::Running);
-            assert_eq!(h.app.session.state.run.ticks, 2400);
+            assert!(h.app.session.state.run.distance > crate::endless::CHUNK_LENGTH);
+            assert_eq!(h.app.session.state.run.phase, Phase::Crashed);
+            assert_eq!(h.app.session.state.run.crashes, 3);
+            assert!(h.app.session.state.run.ticks < 2400);
+            assert!(h.app.session.state.valid(&h.app.session.obstacles));
             results.push(h.app.session.state.clone());
         }
         assert_eq!(results[0], results[1]);
@@ -1325,5 +1405,77 @@ mod tests {
         let before = h.app.session.state.mode;
         h.key(Key::F);
         assert_eq!(h.app.session.state.mode, before);
+    }
+
+    #[test]
+    fn fast_mode_requires_fresh_unmodified_running_action_and_has_mouse_control() {
+        let mut h = Harness::new();
+        h.key(Key::Enter);
+        assert!(!h.app.session.state.run.fast_mode);
+
+        h.frame(vec![Harness::key_event(Key::F, true)], DT);
+        assert!(h.app.session.state.run.fast_mode);
+        h.frame(
+            vec![Event::Key {
+                key: Key::F,
+                physical_key: None,
+                pressed: true,
+                repeat: true,
+                modifiers: Modifiers::NONE,
+            }],
+            DT,
+        );
+        assert!(h.app.session.state.run.fast_mode);
+        h.frame(vec![Harness::key_event(Key::F, false)], DT);
+
+        h.frame(
+            vec![Event::Key {
+                key: Key::F,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers: Modifiers::CTRL,
+            }],
+            DT,
+        );
+        assert!(h.app.session.state.run.fast_mode);
+        h.frame(vec![Harness::key_event(Key::F, false)], DT);
+
+        h.key(Key::F);
+        assert!(!h.app.session.state.run.fast_mode);
+        h.key(Key::Escape);
+        h.key(Key::F);
+        assert!(!h.app.session.state.run.fast_mode);
+        h.key(Key::Enter);
+        h.click("Fast  F");
+        assert!(h.app.session.state.run.fast_mode);
+
+        h.app.suspend();
+        assert!(
+            App::open(h.app.path.clone())
+                .unwrap()
+                .session
+                .state
+                .run
+                .fast_mode
+        );
+    }
+
+    #[test]
+    fn settings_keep_previous_rules_records_readable() {
+        let mut h = Harness::new();
+        h.app.session.state.legacy_records = Some(storage::LegacyRecords {
+            best_distance: world::FINISH,
+            free_best_distance: 7_626.,
+            chase_best_distance: 2_014.,
+            completions: 2,
+            slalom_best: [Some(3_600), None, None, None, None],
+        });
+        h.click("Settings");
+        h.label("Previous records retained from earlier rules.");
+        h.click("Previous records");
+        h.label("Practice: 1200 m · 2 completions");
+        h.label("Free Ski: 7626 m · Pursuit: 2014 m");
+        h.label("Pinecone Path: 60.00 s");
     }
 }

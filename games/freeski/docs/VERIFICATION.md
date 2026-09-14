@@ -533,3 +533,61 @@ not establish acceptance at every theme/scale or completion of every mode.
   accounts, current source observations and proposed tuning experiments.
 - DOCS ONLY: no runtime behavior changed and no new runtime checks were run.
   Documentation links, content and diff were checked before commit.
+
+### Rules 3 difficulty and fast mode — 2026-09-14
+
+Tyler approved the difficulty audit and F-key fast mode. Four GPT-5.6 Sol medium
+workers implemented the independent movement/UI, pursuit, terrain and Slalom
+areas; the parent integrated storage, replay, native checks and documentation and
+reviewed the combined behavior. Rules/schema/generator versions are now 3/4/2.
+Approved artwork and steering authority remain unchanged.
+
+- PASS: workspace formatting, strict all-target Clippy, 308 workspace tests with
+  real required Stockfish, and 77 headless FreeSki tests.
+- PASS: release Arcade and preserved C++ Pinball builds, three Pinball CTest
+  checks, and desktop-entry validation.
+- PASS: production Practice/endless/pursuit/Slalom fixture generation. All five
+  Slalom courses have clean normal and fast reference runs; targets are in TUNING.md.
+- PASS: independent optimized `difficulty-evidence` run, 32 seeds × four input
+  strategies × two pace selections, up to 200 seconds each. Normal route: 27 caught,
+  five surviving; fast route: 32 surviving without crashes. Both fixed-edge
+  strategies crashed out in every seed. Maximum unprotected stationary spell:
+  132 ticks. These controllers know the terrain; this is not a human escape rate.
+- PASS: original rock-stall and overlapping-tree-cusp regressions, physical edge
+  pursuit, detour serialization, and protected-gap/terrain contact ordering.
+- PASS: migration retains original bytes, old terrain and previous records;
+  resumed legacy finishes cannot earn current-rule medals, and old course unlocks
+  survive. Fast mode and causal state continue exactly after restoration.
+- PASS: native FreeSki controls/lifecycle in dark, light, compact and 200% variants;
+  fast-mode screenshots inspected, compact header remains short. Keyboard repeat,
+  paused-key isolation and mouse fast-button activation are covered. Twelve
+  suspended fixtures restore exactly, including fast Slalom progress/results.
+- PASS: final native chase fixture resumed with F fast mode; both actors advanced,
+  then pause and shelf return retained the complete resulting state. The final
+  dark rerun also exercised the visible mouse fast button.
+- PASS: native one-window switching across eleven games, existing-save paths,
+  Solitaire continuation and a real Stockfish reply. This checks shared integration;
+  it is not new human acceptance of the other games.
+- PASS: staged install layout and executable; a disposable copy of Tyler's actual
+  old save migrated through the native staged binary with its run, terrain,
+  preferences, records and unlocks retained. Reinstall and reopening retained the
+  migrated save byte-for-byte. Actual user data was not reset for these checks.
+- PASS: actual Wayland app closed normally and reopened with the updated release.
+  Compared all prior run/chase fields, terrain identity, records, preferences and
+  unlocks after the explicit schema migration. The updated game was left open.
+- NOT RUN: a new Arch package build or system pacman install/upgrade. Staged
+  installation is separate evidence from installed-release acceptance.
+- HUMAN PENDING: difficulty, speed and Slalom acceptance of this revision, tracked
+  in PLAYTESTS.md. Earlier approval applies to the previously exercised build.
+
+The corpus is reproducible with `cargo run -p omarchy-freeski --locked
+--no-default-features --release --example difficulty-evidence`. Replay schedules
+may include `toggle_fast: true` before an input tick, using the same running-only
+action as the UI. All fixture generation uses ordinary production inputs.
+
+Local evidence uses `/tmp/freeski-difficulty-`: workspace/headless/Clippy/build
+logs, `final-corpus.json`, `fixtures/`, `native/` and `upgrade/`. Compact display
+evidence preceded the final pursuit-only refinement; the other display variants
+used the final movement and pursuit code. Intermediate checks exposed obsolete
+rules-2 timing and permanent-edge-lane assertions; their replacements check the
+new behavior, including identical crash outcomes at different rendering rates.

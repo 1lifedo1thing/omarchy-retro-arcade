@@ -4,7 +4,7 @@ use omarchy_freeski::{
         MAX_SPEED_PURSUER, RECOVERY_SAFE_GAP, SPAWN_RETRY_TICKS, TRIGGER_DISTANCE, WARNING_TICKS,
     },
     endless,
-    engine::{Event, Input, Phase, Point, Sim, DT},
+    engine::{Event, Input, Phase, Point, Sim, DT, MAX_SPEED},
     session::Session,
     storage::Save,
     world::{Kind, Obstacle, HALF_WIDTH},
@@ -37,6 +37,8 @@ fn active(at: Point, speed: f64, heading: f64) -> Chase {
         warning_ticks: 0,
         retry_ticks: 0,
         failed_retries: 0,
+        detour: None,
+        detour_ticks: 0,
     }
 }
 
@@ -169,7 +171,27 @@ fn protection_holds_a_physical_gap_and_expiry_is_not_an_instant_catch() {
 }
 
 #[test]
-fn committed_turns_gain_separation_but_straight_skiing_is_caught() {
+fn protected_gap_wins_when_terrain_contact_is_later_in_the_tick() {
+    let skier = Point { x: 0., y: 114.5 };
+    let tree = Obstacle {
+        id: 71,
+        at: Point { x: 0., y: 103.5 },
+        kind: Kind::Tree,
+    };
+    let chase = active(Point { x: 0., y: 100. }, MAX_SPEED_PURSUER, 0.);
+    let plan = chase.plan_tick(tick(skier, skier, 1_200., 0., true, &[tree]));
+    assert!(plan.catch_fraction.is_none());
+    let end = plan.creature_end.expect("active actor moves");
+    assert!(
+        (end.x - skier.x).hypot(end.y - skier.y) >= RECOVERY_SAFE_GAP - 1e-4,
+        "later terrain contact must not cross the protected gap: {end:?}"
+    );
+    assert!(end.y < tree.at.y - tree.radius() - 0.95);
+    assert_eq!(plan.finish().speed, 0.);
+}
+
+#[test]
+fn normal_speed_pursuit_catches_straight_and_zigzagging_skiers() {
     fn run(evasive: bool) -> (bool, usize, f64, f64) {
         let mut skier = Point { x: 0., y: 1_100. };
         let mut chase = active(Point { x: 0., y: 1_052. }, 56., 0.);
@@ -184,10 +206,10 @@ fn committed_turns_gain_separation_but_straight_skiing_is_caught() {
             } else {
                 0.
             };
-            skier.x =
-                (skier.x + heading.sin() * 50. / 60.).clamp(-HALF_WIDTH + 0.65, HALF_WIDTH - 0.65);
-            skier.y += heading.cos() * 50. / 60.;
-            let plan = chase.plan_tick(tick(start, skier, skier.y, 50., false, &[]));
+            skier.x = (skier.x + heading.sin() * MAX_SPEED / 60.)
+                .clamp(-HALF_WIDTH + 0.65, HALF_WIDTH - 0.65);
+            skier.y += heading.cos() * MAX_SPEED / 60.;
+            let plan = chase.plan_tick(tick(start, skier, skier.y, MAX_SPEED, false, &[]));
             if let Some(contact) = plan.catch_fraction {
                 chase = plan.commit(contact);
                 let separation = (skier.x - chase.position.x).hypot(skier.y - chase.position.y);
@@ -210,9 +232,10 @@ fn committed_turns_gain_separation_but_straight_skiing_is_caught() {
         straight.0,
         "higher straight speed must eventually close the gap"
     );
+    assert!(evasive.0, "ordinary zigzagging must not defeat pursuit");
     assert!(
-        evasive.1 > straight.1 + 60,
-        "committed turns should create measurable separation: {straight:?} / {evasive:?}"
+        straight.1 <= 240 && evasive.1 <= 240,
+        "normal-speed catches should close a 48 m gap within four seconds: {straight:?} / {evasive:?}"
     );
 }
 
@@ -231,8 +254,8 @@ fn actor_cannot_claim_infinite_immunity_at_a_slope_edge() {
     let mut caught = false;
     for _ in 0..1_800 {
         let start = skier;
-        skier.y += 50. / 60.;
-        let plan = chase.plan_tick(tick(start, skier, skier.y, 50., false, &[]));
+        skier.y += MAX_SPEED / 60.;
+        let plan = chase.plan_tick(tick(start, skier, skier.y, MAX_SPEED, false, &[]));
         if let Some(contact) = plan.catch_fraction {
             chase = plan.commit(contact);
             caught = true;
@@ -240,7 +263,10 @@ fn actor_cannot_claim_infinite_immunity_at_a_slope_edge() {
         }
         chase = plan.finish();
     }
-    assert!(caught, "edge corridor must not make pursuit impossible");
+    assert!(
+        caught,
+        "edge corridor must not make pursuit impossible: skier={skier:?} chase={chase:?}"
+    );
     assert!(chase.position.x.abs() <= HALF_WIDTH - 0.95 + 1e-8);
 }
 
@@ -255,11 +281,105 @@ fn serialized_pursuit_round_trips_and_invalid_numbers_are_rejected() {
     let mut invalid = restored;
     invalid.position.x = f64::NAN;
     assert!(!invalid.valid());
+
+    let mut invalid_detour = chase;
+    invalid_detour.detour = Some(Point {
+        x: f64::NAN,
+        y: 1_240.,
+    });
+    invalid_detour.detour_ticks = 10;
+    assert!(!invalid_detour.valid());
+}
+
+#[test]
+fn blocked_route_keeps_one_bounded_detour_across_ticks_and_restore() {
+    let tree = Obstacle {
+        id: 88,
+        at: Point { x: 0., y: 106. },
+        kind: Kind::Tree,
+    };
+    let skier = Point { x: 0., y: 220. };
+    let mut chase = active(Point { x: 0., y: 100. }, 60., 0.);
+
+    chase = chase
+        .plan_tick(tick(skier, skier, 1_200., 60., false, &[tree]))
+        .finish();
+    let waypoint = chase.detour.expect("blocked route selects a detour");
+    assert!(chase.detour_ticks > 0);
+    assert_ne!(waypoint.x, 0.);
+
+    // The first physical contact may replace the anticipatory probe with a
+    // tangent that points away from the obstacle. Once selected, that side
+    // must remain stable rather than alternating every tick.
+    for _ in 0..5 {
+        chase = chase
+            .plan_tick(tick(skier, skier, 1_200., 60., false, &[tree]))
+            .finish();
+    }
+    let detour_side = chase
+        .detour
+        .map(|point| (point.x - chase.position.x).signum())
+        .expect("contact keeps a physical escape detour");
+    for _ in 0..25 {
+        chase = chase
+            .plan_tick(tick(skier, skier, 1_200., 60., false, &[tree]))
+            .finish();
+        if let Some(point) = chase.detour {
+            assert_eq!(
+                (point.x - chase.position.x).signum(),
+                detour_side,
+                "detour must not oscillate"
+            );
+        }
+    }
+
+    let restored: Chase = serde_json::from_slice(&serde_json::to_vec(&chase).unwrap()).unwrap();
+    assert_eq!(restored, chase);
+    assert!(restored.valid());
+}
+
+#[test]
+fn normal_speed_is_overhauled_while_fast_mode_can_open_distance() {
+    fn separation_after(skier_speed: f64, ticks: usize) -> (f64, bool) {
+        let mut skier = Point { x: 0., y: 1_100. };
+        let mut chase = active(Point { x: 0., y: 1_052. }, MAX_SPEED_PURSUER, 0.);
+        for _ in 0..ticks {
+            let start = skier;
+            skier.y += skier_speed * DT;
+            let plan = chase.plan_tick(tick(start, skier, skier.y, skier_speed, false, &[]));
+            if let Some(contact) = plan.catch_fraction {
+                chase = plan.commit(contact);
+                return (
+                    (skier.x - chase.position.x).hypot(skier.y - chase.position.y),
+                    true,
+                );
+            }
+            chase = plan.finish();
+        }
+        (
+            (skier.x - chase.position.x).hypot(skier.y - chase.position.y),
+            false,
+        )
+    }
+
+    let normal = separation_after(60., 300);
+    let fast = separation_after(90., 300);
+    assert!(
+        normal.1,
+        "ordinary straight skiing must be caught: {normal:?}"
+    );
+    assert!(
+        !fast.1,
+        "clean fast skiing should earn an escape window: {fast:?}"
+    );
+    assert!(
+        fast.0 > 80.,
+        "fast mode should open meaningful space: {fast:?}"
+    );
 }
 
 #[test]
 fn creature_routes_around_the_obstacle_that_stalled_a_live_chase() {
-    let seed = 1_789_397_975_898_612_373;
     let skier = Point {
         x: 9.907_216_461_272_625,
         y: 4_127.612_807_737_195,
@@ -272,23 +392,32 @@ fn creature_routes_around_the_obstacle_that_stalled_a_live_chase() {
         0.041_664_817_448_891_55,
         0.004_073_432_536_034_538,
     );
-    let obstacles = endless::obstacles(seed, chase.position.y);
     let start = chase.position;
-    let nearest = obstacles
-        .iter()
-        .min_by(|a, b| {
-            let da = (a.at.x - start.x).hypot(a.at.y - start.y);
-            let db = (b.at.x - start.x).hypot(b.at.y - start.y);
-            da.total_cmp(&db)
-        })
-        .unwrap();
-    assert_eq!(nearest.id, 705);
+    // Recreate the exact failure geometry independently of generator revisions:
+    // the actor starts on the combined collision boundary of a rock directly
+    // between it and the skier.
+    let obstacles = vec![Obstacle {
+        id: 705,
+        at: Point {
+            x: start.x,
+            y: start.y + 2.15,
+        },
+        kind: Kind::Rock,
+    }];
+    let mut stationary = 0;
+    let mut longest_stationary = 0;
 
     for _ in 0..600 {
         let previous = chase.position;
         chase = chase
             .plan_tick(tick(skier, skier, skier.y, 50., false, &obstacles))
             .finish();
+        if (chase.position.x - previous.x).hypot(chase.position.y - previous.y) <= 1e-6 {
+            stationary += 1;
+            longest_stationary = longest_stationary.max(stationary);
+        } else {
+            stationary = 0;
+        }
         assert!(chase.valid(), "escape produced invalid pursuit state");
         assert!(
             (chase.position.x - previous.x).hypot(chase.position.y - previous.y)
@@ -314,6 +443,73 @@ fn creature_routes_around_the_obstacle_that_stalled_a_live_chase() {
         chase.position,
         chase.speed
     );
+    assert!(
+        longest_stationary <= 90,
+        "physical detour took too long to clear contact: {longest_stationary} ticks"
+    );
+}
+
+#[test]
+fn creature_escapes_the_overlapping_tree_cusp_from_the_seed_corpus() {
+    let obstacles = vec![
+        Obstacle {
+            id: 1_226,
+            at: Point {
+                x: 19.502_379_864_449_09,
+                y: 2_447.804_688_127_233_5,
+            },
+            kind: Kind::Tree,
+        },
+        Obstacle {
+            id: 1_232,
+            at: Point {
+                x: 22.566_163_282_746_23,
+                y: 2_450.975_535_189_299,
+            },
+            kind: Kind::Tree,
+        },
+    ];
+    let start = Point {
+        x: 21.619_497_248_068_452,
+        y: 2_448.824_646_001_051,
+    };
+    let skier = Point { x: 0., y: 11_714. };
+    let mut chase = active(start, 18., -0.487_997_409_082_274_74);
+    let mut stationary = 0;
+    let mut longest_stationary = 0;
+
+    for _ in 0..300 {
+        let previous = chase.position;
+        chase = chase
+            .plan_tick(tick(skier, skier, skier.y, MAX_SPEED, false, &obstacles))
+            .finish();
+        if distance_for_test(chase.position, previous) <= 1e-6 {
+            stationary += 1;
+            longest_stationary = longest_stationary.max(stationary);
+        } else {
+            stationary = 0;
+        }
+        for obstacle in &obstacles {
+            assert!(
+                distance_for_test(chase.position, obstacle.at) >= obstacle.radius() + 0.95 - 1e-5,
+                "creature crossed obstacle {}",
+                obstacle.id
+            );
+        }
+    }
+
+    assert!(
+        distance_for_test(chase.position, start) > 20.,
+        "creature remained trapped in overlapping trees: {chase:?}"
+    );
+    assert!(
+        longest_stationary <= 100,
+        "overlapping-tree escape stalled for {longest_stationary} ticks"
+    );
+}
+
+fn distance_for_test(a: Point, b: Point) -> f64 {
+    (a.x - b.x).hypot(a.y - b.y)
 }
 
 fn chase_session() -> Session {
@@ -322,7 +518,7 @@ fn chase_session() -> Session {
     state.run = Sim {
         phase: Phase::Running,
         position: Point { x: 0., y: 1_100. },
-        speed: 50.,
+        speed: MAX_SPEED,
         distance: 1_100.,
         ..Sim::default()
     };
@@ -363,7 +559,7 @@ fn production_session_freezes_warning_and_pursuit_while_paused() {
 }
 
 #[test]
-fn production_session_catches_a_straight_run_and_evasive_turns_buy_space() {
+fn production_session_normal_speed_pursuit_is_formidable() {
     fn run(evasive: bool) -> (bool, usize, f64, usize) {
         let mut session = chase_session();
         let mut widest: f64 = 0.;
@@ -403,10 +599,10 @@ fn production_session_catches_a_straight_run_and_evasive_turns_buy_space() {
     let straight = run(false);
     let evasive = run(true);
     assert!(straight.0, "straight capped-speed skiing should be caught");
-    assert!(evasive.1 > straight.1 + 60, "{straight:?} / {evasive:?}");
+    assert!(evasive.0, "ordinary zigzagging must not defeat pursuit");
     assert!(
-        evasive.3 >= 30,
-        "evasive carving should increase separation for at least half a second: {evasive:?}"
+        straight.1 <= 240 && evasive.1 <= 240,
+        "normal-speed catches should close a 48 m gap within four seconds: {straight:?} / {evasive:?}"
     );
 }
 

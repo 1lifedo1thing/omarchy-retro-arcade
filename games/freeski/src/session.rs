@@ -13,6 +13,7 @@ use crate::{
 struct CacheKey {
     mode: Mode,
     seed: u64,
+    generator: u32,
     course: u8,
     chunk: i64,
     creature_chunk: Option<i64>,
@@ -45,6 +46,7 @@ impl Session {
         let key = CacheKey {
             mode: self.state.mode,
             seed: self.state.seed,
+            generator: self.state.generator_version,
             course: self.state.course_index,
             chunk,
             creature_chunk: (self.state.mode == Mode::FreeSki
@@ -58,16 +60,21 @@ impl Session {
         self.obstacles = match self.state.mode {
             Mode::Practice => world::practice(),
             Mode::FreeSki => {
-                let mut obstacles = endless::obstacles(self.state.seed, self.state.run.position.y);
+                let mut obstacles = endless::obstacles_versioned(
+                    self.state.seed,
+                    self.state.run.position.y,
+                    self.state.generator_version,
+                );
                 if key.creature_chunk.is_some() && key.creature_chunk != Some(key.chunk) {
-                    obstacles.extend(endless::obstacles(
+                    obstacles.extend(endless::obstacles_versioned(
                         self.state.seed,
                         self.state.chase.position.y,
+                        self.state.generator_version,
                     ));
                     obstacles.sort_by_key(|obstacle| obstacle.id);
                     obstacles.dedup_by_key(|obstacle| obstacle.id);
                 }
-                debug_assert!(obstacles.len() <= 144);
+                debug_assert!(obstacles.len() <= 176);
                 obstacles
             }
             Mode::Slalom => course::course(self.state.course_index)

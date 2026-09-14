@@ -2,9 +2,9 @@
 
 The issue #14 playable scope is implemented: practice, seeded endless Free Ski,
 optional creature pursuit, five Slalom courses, local medals, sound, keyboard and
-mouse controls, and resumable runs. The completion pass preserves the rules-2
-speed and turning baseline. Tyler's September 14 playtest now reopens speed and
-difficulty while retaining approval of the controls. [Verification](VERIFICATION.md)
+mouse controls, and resumable runs. The September 14 difficulty revision adds faster rules-3 movement, an F-key fast
+tuck, stronger pursuit and more demanding endless terrain while retaining the
+approved steering response. [Verification](VERIFICATION.md)
 records checks and separates automated evidence from human acceptance.
 
 | Area | Delivered behavior |
@@ -18,8 +18,7 @@ records checks and separates automated evidence from human acceptance.
 
 The next work is a focused playtest and any fixes it reveals, described in
 [NEXT.md](NEXT.md). [Human playtests](PLAYTESTS.md) track acceptance separately from
-automation; the [difficulty audit](DIFFICULTY-AUDIT.md) records research and proposed
-responses to the latest feedback. Do not reopen completed feature setup. Medal
+automation; the [difficulty audit](DIFFICULTY-AUDIT.md) records the research behind this revision. Do not reopen completed feature setup. Medal
 targets have production reference runs; those establish feasibility, not human
 difficulty. Keep issue #14 open until
 its remaining desktop/release acceptance is recorded.

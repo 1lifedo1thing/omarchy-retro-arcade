@@ -46,8 +46,8 @@ remain appropriate for focused physics tests.
 
 Run identity comprises mode, chase option, seed/course and applicable schema,
 rules/course/generator versions. Save owns this identity and every causal field:
-skier position, speed, heading, flight, crash/protection timers, tick count,
-pursuit phase/position/motion/timers and ordered Slalom progress. Session stores
+skier position, speed, heading, flight, crash/protection timers, tick count, fast-mode selection,
+pursuit phase/position/motion/timers and bounded navigation waypoints and ordered Slalom progress. Session stores
 one Save and a derived obstacle cache. Tracks, sound, focus and wall time are not
 causal state and do not survive restoration.
 
@@ -63,15 +63,18 @@ are independent record domains. Restart/mode selection banks applicable unfinish
 distance and resets the attempt while preserving records/preferences. Finishing a
 Slalom course unlocks the next one once. UI cannot award progress through drawing.
 
-Schema 3 preserves validated schema-1/2 and rules-1/2 saves, retaining original
-bytes before migration. Legacy Free Ski becomes chase-off. Unsupported/corrupt
+Schema 4 preserves validated schema-1/2/3 and rules-1/2 saves, retaining original
+bytes before migration. Earlier records remain separate and readable, unlocks
+survive, and a resumed legacy attempt banks only into retained records. New
+attempts start the current record domain. Legacy Free Ski without pursuit remains chase-off. Unsupported/corrupt
 files remain intact under the explicit recovery flow. Restore pauses a running
 attempt without spending timers or changing its causal state.
 
 ## Bounded work and repeatable evidence
 
-Generator 1 reconstructs whole chunks beyond the view, with bounded placement
-retries and omission fallback. Pursuit queries terrain around both actors so a
+Generator 2 reconstructs whole chunks beyond the view, with bounded placement
+retries and omission fallback. Generator 1 remains available for restored runs;
+the terrain cache key includes generator version. Pursuit queries terrain around both actors so a
 lagging creature still collides with its world. The cache has an explicit bound;
 it never grows with total distance. The 128-seed reference corpus proves sampled
 routes, not every player trajectory or a human difficulty rating.

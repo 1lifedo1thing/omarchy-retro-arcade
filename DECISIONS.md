@@ -225,3 +225,29 @@ simulation ticks, and respect reduced effects. One unsaved landing-puff record
 lives in App; it is cleared with other cosmetics when replacing runs. Collision
 shapes, physics, terrain, save schema, compact menus and shared cabinet materials
 are preserved. No external assets or runtime dependencies are introduced.
+
+## 2026-09-14: FreeSki difficulty, fast tuck and retained record domains
+
+Tyler's human playtest approved controls, collisions, jumping, pause, artwork and
+sound but found speed and pursuit too forgiving. He approved the difficulty audit
+and explicitly requested F-key fast mode. Rules 3 raises the normal cap to 60 m/s
+and adds a 90 m/s fast toggle in every active mode, with gradual acceleration and
+deceleration. Steering authority is unchanged. F retains its Ready-screen mode
+shortcut; during play only a fresh unmodified press toggles pace. A compact mouse
+button, status indicator and help text expose the same action. Fast mode is saved
+causal state and replay supports the same toggle command.
+
+Pursuit receives stronger motion and bounded persistent obstacle navigation while
+retaining physical collisions, warnings and protected recovery. Generator 2 adds
+edge pressure, a narrower varying clear route and more hazards with bounded
+placement. Practice geometry stays approachable. Slalom geometry stays unchanged;
+medal targets are recalibrated against clean normal and fast production-input runs.
+A second pursuer, NPC skiers and freestyle tricks remain outside this revision.
+
+Schema 4 retains validated older saves and original bytes. Migrated active runs
+keep their generator version, position and causal state, resume paused and display
+Legacy run. Their results bank into retained records until replaced. New runs use
+the revised difficulty's record domain; prior scores are readable in Settings and
+course unlocks survive. This avoids comparing old medal targets/terrain against
+new rules or regenerating hazards beneath a suspended skier. Chase-on/off records
+remain separate. No existing user state is reset for validation or screenshots.

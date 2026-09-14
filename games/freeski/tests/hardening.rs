@@ -186,6 +186,7 @@ fn schema_one_migration_is_lossless_and_retains_original_bytes() {
     let mut value = serde_json::to_value(Save::default()).unwrap();
     let object = value.as_object_mut().unwrap();
     object.insert("version".into(), 1.into());
+    object.insert("rules_version".into(), 2.into());
     for field in ["mode", "seed", "generator_version", "free_best_distance"] {
         object.remove(field);
     }
@@ -195,9 +196,13 @@ fn schema_one_migration_is_lossless_and_retains_original_bytes() {
     std::fs::write(&path, &bytes).unwrap();
 
     let migrated = storage::load(&path, &world::practice()).unwrap();
-    assert_eq!(migrated.version, 3);
+    assert_eq!(migrated.version, 4);
     assert_eq!(migrated.mode, Mode::Practice);
-    assert_eq!(migrated.best_distance, 300.);
+    assert_eq!(
+        migrated.legacy_records.as_ref().unwrap().best_distance,
+        300.
+    );
+    assert_eq!(migrated.best_distance, 0.);
     assert!(migrated.reduced_effects);
     assert_eq!(std::fs::read(&path).unwrap(), bytes);
     assert_eq!(
@@ -219,6 +224,8 @@ fn schema_two_migration_preserves_active_endless_run_and_original_bytes() {
     let mut value = serde_json::to_value(&save).unwrap();
     let object = value.as_object_mut().unwrap();
     object.insert("version".into(), 2.into());
+    object.insert("rules_version".into(), 2.into());
+    object.insert("generator_version".into(), 1.into());
     for field in [
         "chase_enabled",
         "chase",
@@ -235,11 +242,16 @@ fn schema_two_migration_preserves_active_endless_run_and_original_bytes() {
     std::fs::write(&path, &bytes).unwrap();
 
     let migrated = storage::load(&path, &world::practice()).unwrap();
-    assert_eq!(migrated.version, 3);
+    assert_eq!(migrated.version, 4);
     assert_eq!(migrated.mode, Mode::FreeSki);
     assert_eq!(migrated.seed, 0x5152);
     assert_eq!(migrated.run.position.y, 2_345.);
-    assert_eq!(migrated.free_best_distance, 1_999.);
+    assert_eq!(
+        migrated.legacy_records.as_ref().unwrap().free_best_distance,
+        1_999.
+    );
+    assert_eq!(migrated.free_best_distance, 0.);
+    assert_eq!(migrated.generator_version, 1);
     assert!(!migrated.chase_enabled);
     assert_eq!(migrated.unlocked_courses, 1);
     assert!(migrated.reduced_effects);

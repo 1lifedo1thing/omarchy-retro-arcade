@@ -38,11 +38,15 @@ with tempfile.TemporaryDirectory(prefix='arcade-freeski-') as tmp:
         # before the faster run reaches trees. The toolbar has a fixed logical origin.
         click(460*scale,96*scale);time.sleep(2.3)
         key(ord('d'),hold=.25);capture('skiing')
+        key(ord('f'),hold=.8);assert read()['run']['fast_mode'];capture('fast-mode')
         key(0xff1b);paused=read();assert paused['run']['phase']=='Paused';assert paused['run']['distance']>10
+        assert paused['run']['fast_mode']
         capture('paused');time.sleep(.3);assert read()==paused
+        key(ord('f'));assert read()==paused
         key(ord('a'),hold=.1);assert read()==paused
         # Returning focus must not resume, even with a held steering key.
         key(0xff0d);time.sleep(.2)
+        click(365*scale,96*scale);assert not read()['run']['fast_mode']
         x.XSetInputFocus(display,x.XDefaultRootWindow(display),1,0);x.XFlush(display);time.sleep(.3)
         unfocused=read();assert unfocused['run']['phase']=='Paused'
         x.XSetInputFocus(display,w,1,0);x.XFlush(display);time.sleep(.3);assert read()==unfocused
@@ -72,6 +76,16 @@ with tempfile.TemporaryDirectory(prefix='arcade-freeski-') as tmp:
                 assert loaded==expected, (fixture,loaded,expected)
                 capture(fixture)
                 time.sleep(.3);assert read()==loaded
+                if fixture == 'chase-active':
+                    before=loaded
+                    key(0xff0d);key(ord('f'));time.sleep(.8);key(0xff1b)
+                    loaded=read()
+                    assert loaded['run']['phase']=='Paused'
+                    assert loaded['run']['fast_mode']
+                    assert loaded['run']['distance']>before['run']['distance']
+                    assert loaded['chase']['position']!=before['chase']['position']
+                    capture('chase-fast')
+                    key(ord('h'),True);key(0xff0d);assert read()==loaded
                 key(ord('q'),True);app.wait(timeout=8)
                 assert read()==loaded
         save.unlink()  # Only this script's disposable state, after closing the app.

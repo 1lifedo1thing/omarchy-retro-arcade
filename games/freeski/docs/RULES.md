@@ -1,10 +1,10 @@
-# FreeSki rules v2
+# FreeSki rules v3
 
 Practice is an authored 1,200-metre run. Free Ski continues across seeded terrain,
 with optional creature pursuit and separate distance records. Slalom has five
 courses, sequential unlocks, ordered gates, penalties and medals. A third crash
 ends an attempt; a creature catch ends a chase. Practice and Slalom also end at
-their finish flags. Player movement remains rules 2; save schema is 3.
+their finish flags. Player movement uses rules 3; save schema is 4.
 
 ## Movement and camera
 
@@ -16,10 +16,13 @@ Braking can bring the skier to rest. Turning sideways slows descent. At the slop
 edge, outward lateral movement is constrained; downhill movement still follows
 heading. Ordinary movement never jumps to the pointer or travels uphill.
 
-Speed builds gradually to 50 m/s in about 9.7 seconds on straight snow.
+Speed builds gradually to 60 m/s on straight snow. F toggles fast tuck during any
+active run, raising the cap to 90 m/s without changing steering authority. The
+toggle is also a visible button. There is no cooldown or stamina bar. Leaving fast
+mode sheds excess speed gradually; braking still works in either mode.
 The fixed 96 × 96 m view shows the same terrain at every supported window size.
-The skier sits 12% down the view, leaving 84.48 m (about 1.69 seconds at maximum
-speed) of downhill look-ahead. The HUD is outside the collision playfield. Resize
+The skier sits 12% down the view, leaving 84.48 m (about 1.41 seconds at normal top
+speed or 0.94 seconds in fast mode) of downhill look-ahead. The HUD is outside the collision playfield. Resize
 changes projection only. Rendering does not mutate physics or obstacle locations.
 A backlog above 250 ms pauses clearly instead of dropping simulation time.
 
@@ -34,7 +37,9 @@ Practice completions and Free Ski distance records are separate.
 The generator reconstructs bounded chunks from the seed and generator version.
 Only nearby chunks remain in memory; future terrain is prepared beyond the visible
 view before it can appear. Trees, rocks, optional ramp jumps and open stretches
-vary by seed, with a connected clear route and reserved edge recovery corridors.
+vary by seed, with a connected clear route. Generator 2 narrows and varies that
+route and places hazards across both outer edges; a fixed edge line is no longer
+a safe route. Edge hazards are separated so recovery retains a clear fallback.
 Density rises to a fixed cap. Enable Creature pursuit before starting to add the
 chase described below.
 
@@ -44,10 +49,10 @@ The option defaults off. At 1,000 m the creature gives a visible warning lasting
 three simulation seconds before seeking a clear spawn behind the skier. A blocked
 spawn retries at bounded intervals. Active pursuit never teleports: it accelerates,
 turns and collides with terrain in world coordinates. If the forward routes are
-blocked, it checks wider escape headings and turns away from the obstacle before
-resuming pursuit; contact still stops movement rather than passing through terrain.
-Its higher straight speed
-creates pressure; slower turning and turning drag reward deliberate carving.
+blocked, it chooses a bounded, persistent detour and physically turns around
+terrain; contact still stops movement rather than passing through obstacles.
+Its higher ordinary straight speed creates pressure. Fast tuck can outrun it on
+clear snow, while obstacle hits and poorly timed turns risk losing that advantage.
 The creature is drawn at its physical position, with a labelled distance marker
 when outside the view. The warning remains visible when muted.
 
@@ -81,8 +86,8 @@ Circular collision footprints use analytic swept intervals, including descent in
 an obstacle during the tick. Ramp contact starts flight at its contact time.
 
 One collision spends one of three allowances. After a nonfatal crash, a bounded
-search selects nearby clear snow to the side or uphill, with two reserved edge
-corridors as fallback in both terrain modes. Recovery never increases downhill
+search selects nearby clear snow to the side or uphill, with collision-validated edge
+positions as fallback. Recovery never increases downhill
 records. A 0.7-second tumble stops movement, followed by 1.5 seconds of visible
 collision protection. Pause freezes both timers. A fatal collision at or before
 the finish takes precedence over finishing; ended runs never restart themselves.
@@ -95,6 +100,7 @@ the finish takes precedence over finishing; ended runs never restart themselves.
 | Ready pursuit option | C in Free Ski | Creature pursuit checkbox |
 | Start | Enter or a fresh steering key | Start skiing |
 | Steer | A/D or Left/Right | Move within the slope, left/right of the skier |
+| Fast tuck | F during a running attempt | Fast / FAST ON button |
 | Brake | Hold S, Down or Space | Hold right button on slope or Hold to brake |
 | Pause/resume | Esc; Enter resumes | Pause / Resume skiing |
 | Restart | Tab to the action and activate; Enter confirms replacement | Restart practice slope or New mountain, then Replace run |
@@ -121,15 +127,22 @@ At most one owned process plays a cue; pause, mute and exit stop and reap it.
 
 `$XDG_STATE_HOME/omarchy-retro-arcade/freeski.json` (or the equivalent
 `~/.local/state` path) is independent of all other games. Schema, rules and course
-versions are 3, 2 and 1 respectively; endless generator version is 1. The save contains the complete active run, separate
-record/preference fields and an exactly-once result marker. Practice is static. Free Ski stores its seed and generator version; the current
-chunk window is reconstructed exactly from seed and skier position, with no hidden
-mutable RNG state.
+versions are 4, 3 and 1 respectively; new endless mountains use generator 2.
+The save contains the active run including fast mode and pursuit navigation state,
+separate record/preference fields and an exactly-once result marker. Practice is
+static. Free Ski reconstructs terrain from seed, position and generator version.
 
-Schema-1/2 and rules-1/2 saves migrate with their position, momentum, flight/recovery, records and
-preferences intact, then resume paused under the current rules. Old Free Ski records remain chase-off. Before rewriting,
-the original is retained as a non-overwriting schema/rules backup beside the save. Invalid legacy values still
-fail validation; backup failure leaves the original untouched.
+Validated schema-1/2/3 and rules-1/2 saves migrate and resume paused. Original bytes
+are retained in a non-overwriting backup before rewriting. Position, momentum,
+flight/recovery, mode, seed, timers, preferences and course unlocks survive. Old
+active mountains keep generator 1 until replaced; they never regenerate beneath
+the player. Old scores move into retained records visible in Settings. A migrated
+attempt is labelled Legacy run and banks into those records until restart or mode
+selection starts the new record domain. Fresh attempts use the new rules and
+terrain, with normal and fast tuck available within the same run; existing
+pursuit-on/off record separation remains. Old Slalom times do not award newly
+calibrated medals. Invalid legacy states still fail validation, and failed backup
+creation leaves the original untouched.
 
 Native writes reuse the existing private atomic-storage helper. The headless
 runner supplies an equivalent temp/write/sync/rename/directory-sync implementation;

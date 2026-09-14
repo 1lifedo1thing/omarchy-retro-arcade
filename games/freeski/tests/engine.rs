@@ -337,15 +337,15 @@ fn speed_builds_gradually_and_quarter_turn_traverses_without_downhill_drift() {
     for _ in 0..60 {
         s.step(Input::default(), &[]);
     }
-    assert!((6.0..6.5).contains(&s.speed));
+    assert!((8.5..9.0).contains(&s.speed));
     for _ in 60..300 {
         s.step(Input::default(), &[]);
     }
-    assert!((28.0..30.0).contains(&s.speed));
+    assert!((39.0..41.0).contains(&s.speed));
     for _ in 300..600 {
         s.step(Input::default(), &[]);
     }
-    assert_eq!(s.speed, 50.);
+    assert_eq!(s.speed, 60.);
     for side in [-1., 1.] {
         let mut turn = running();
         turn.speed = 10.;
@@ -377,6 +377,8 @@ fn rules_one_migration_retains_original_run_records_and_preferences() {
     let path = dir.path().join("freeski.json");
     let items = world::practice();
     let mut old = Save {
+        version: 3,
+        generator_version: 1,
         rules_version: 1,
         best_distance: world::FINISH,
         completions: 3,
@@ -392,7 +394,14 @@ fn rules_one_migration_retains_original_run_records_and_preferences() {
     let migrated = storage::load(&path, &items).unwrap();
     old.rules_version = RULES_VERSION;
     old.run.pause();
-    assert_eq!(migrated, old);
+    assert_eq!(migrated.run, old.run);
+    assert_eq!(migrated.reduced_effects, old.reduced_effects);
+    assert_eq!(migrated.legacy_records.as_ref().unwrap().completions, 3);
+    assert_eq!(
+        migrated.legacy_records.as_ref().unwrap().best_distance,
+        world::FINISH
+    );
+    assert_eq!(migrated.completions, 0);
     assert_eq!(storage::load(&path, &items).unwrap(), migrated);
     assert!(!path.with_extension("rules-1-2.json").exists());
     assert_eq!(std::fs::read(&path).unwrap(), bytes);

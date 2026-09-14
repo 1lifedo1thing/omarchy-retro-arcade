@@ -100,13 +100,11 @@ fn main() {
     let mut progress_save = Save::default();
     assert!(progress_save.select_course(0));
     progress_save.run.start();
+    assert!(progress_save.run.toggle_fast_mode());
     let mut slalom = Session::new(progress_save);
     while slalom.state.run.distance < 360. {
-        let heading = course::reference_heading(slalom.state.course_index, &slalom.state.run);
-        slalom.step(Input {
-            heading,
-            brake: false,
-        });
+        let input = course::reference_input(slalom.state.course_index, &slalom.state.run);
+        slalom.step(input);
         assert!(!slalom.state.run.ended());
     }
     write(&output, "slalom-progress.json", &slalom);
@@ -118,13 +116,11 @@ fn main() {
             assert!(slalom.state.select_course(index));
             slalom.refresh();
             slalom.state.run.start();
+            assert!(slalom.state.run.toggle_fast_mode());
         }
         for _ in 0..20_000 {
-            let heading = course::reference_heading(index, &slalom.state.run);
-            slalom.step(Input {
-                heading,
-                brake: false,
-            });
+            let input = course::reference_input(index, &slalom.state.run);
+            slalom.step(input);
             if slalom.state.run.ended() {
                 break;
             }

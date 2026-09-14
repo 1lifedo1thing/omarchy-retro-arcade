@@ -45,3 +45,11 @@ documented in [TUNING.md](TUNING.md).
 
 The [difficulty audit](DIFFICULTY-AUDIT.md) recommends the next iteration. Research
 and proposals do not count as completed playtesting or implemented changes.
+
+## 2026-09-14 — difficulty changes approved, retest pending
+
+Tyler approved implementing the proposed pursuit, speed and terrain changes and
+explicitly requested F-key fast mode. This authorizes the implementation; it is
+not a playtest of the resulting build. Preserve the first session's observations
+above. Next human pass should start a new mountain and compare normal/fast chase
+pressure, then cover Slalom and saved continuation. Record the tested revision.

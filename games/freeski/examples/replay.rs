@@ -24,6 +24,9 @@ struct Replay {
 struct TickInput {
     tick: u64,
     input: Input,
+    /// Equivalent to the fresh F/button action before this tick.
+    #[serde(default)]
+    toggle_fast: bool,
     #[serde(default)]
     expected: Option<Sim>,
 }
@@ -101,6 +104,9 @@ fn main() -> Result<(), String> {
         }
         if !scheduled.input.heading.is_finite() {
             return Err(format!("non-finite heading at tick {}", scheduled.tick));
+        }
+        if scheduled.toggle_fast {
+            session.state.run.toggle_fast_mode();
         }
         for event in session.step(scheduled.input) {
             events.push((scheduled.tick, event));

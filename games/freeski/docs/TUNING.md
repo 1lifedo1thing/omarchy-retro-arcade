@@ -1,8 +1,72 @@
 # FreeSki tuning register
 
-Active baseline: rules 2, generator 1. Use the **2026-09-12 speed and steering**
-revision together with **2026-09-13 endless terrain** below; the initial table is
-historical. Runtime constants live in engine.rs/endless.rs/render.rs. Pursuit and Slalom values from the completion pass appear at the end.
+## Current rules 3 — 2026-09-14 difficulty revision
+
+Tyler approved implementing the difficulty audit, including F-key fast mode. The
+following values supersede the historical rules-2 values below. Human acceptance
+of these changes is still pending in [PLAYTESTS.md](PLAYTESTS.md).
+
+| Player parameter | Current value |
+| --- | --- |
+| Normal / fast cap | 60 / 90 m/s (216 / 324 km/h) |
+| Downhill acceleration term | 9 m/s², with existing drag and turning losses |
+| Straight buildup from rest | Normal: 487 ticks / 8.12 s; fast: 832 ticks / 13.87 s |
+| Leaving fast mode | At least 12 m/s² deceleration while above normal cap; stronger braking retained |
+| Turning / airborne authority | Unchanged: 1.6 rad/s / 40% |
+| Forward view | Unchanged 84.48 m: 1.41 s at normal cap, 0.94 s at fast cap |
+| Fast selection | F or the visible button during running play; persisted, no cooldown |
+
+Generator 2 uses a 13 m reserved route, increased lateral variation and at most
+22 objects per 128 m chunk. Both edges contain hazards with separated downhill
+bands, leaving a validated recovery fallback. The opening retains 92 m of clear
+snow. Windows are bounded at 88 obstacles, or 176 for disjoint actor windows.
+Generator 1 remains reproducible for existing active mountains; restart uses 2.
+
+| Pursuit parameter | Current value |
+| --- | --- |
+| Maximum speed / acceleration | 82 m/s / 16 m/s² |
+| Desired speed before cornering | Skier speed + 18 m/s, bounded to 48–82 m/s |
+| Turn rate / turning drag | 1.6 rad/s / 7 m/s² at maximum turning effort |
+| Anticipatory probe | 0.75 seconds of speed, bounded to 24–56 m |
+| Detour lifetime / minimum commitment | At most 120 ticks / 30 ticks before clear direct-route release |
+| Contact momentum | 65% retained, with an 18 m/s floor; actual movement still stops at contact |
+| Warning / recovery | Unchanged 1,000 m / 180 ticks; protected 14 m gap |
+
+Navigation uses bounded full-circle escape selection at contact, including
+obstacle cusps and slope edges. Close contact permits outward travel within a
+small numeric boundary tolerance, never travel through the obstacle. Protection
+and terrain contacts are ordered by their fractions, so later terrain cannot
+override an earlier recovery boundary.
+
+The production `difficulty-evidence` corpus uses 32 seeds, up to 12,000 ticks each,
+four input strategies and both speed modes. At ordinary pace, 27/32 perfect-route
+runs were caught; 5 survived the full 200 seconds. All 32 fast-route runs survived
+without crashes. Straight-input runs all ended in a catch or three crashes; both
+fixed-edge strategies crashed out in every seed at either pace. The longest
+unprotected stationary spell was 132 ticks (2.2 s), with no permanent stall seen
+in this sample. This controller knows the generator's route; these are feasibility
+and pressure measurements, not human escape rates or universal guarantees.
+
+| Slalom course | Normal reference | Fast reference | Gold | Silver |
+| --- | --- | --- | --- | --- |
+| Pinecone Path | 18.13 s | 17.37 s | 19.17 s | 22.00 s |
+| Long Turns | 21.72 s | 20.72 s | 23.00 s | 26.00 s |
+| Split Pines | 22.90 s | 21.55 s | 24.00 s | 27.00 s |
+| Needle Run | 25.27 s | 23.63 s | 26.00 s | 30.00 s |
+| Summit Cup | 27.80 s | 25.85 s | 28.50 s | 32.50 s |
+
+These are production-input reference runs with zero crashes/misses. Fast references
+use braking before tight turns. They establish feasibility, not human difficulty.
+Course geometry and five-second miss penalties remain unchanged. Earlier times
+are retained separately, so new medals use only the current rules' records.
+
+## Historical tuning and observations
+
+
+Historical baseline: rules 2, generator 1. The **2026-09-12 speed and steering**
+and **2026-09-13 endless terrain** sections record that revision, superseded by
+rules 3 above. Runtime constants live in engine.rs/endless.rs/render.rs. Earlier
+pursuit and Slalom measurements below remain evidence for their named revision.
 [NEXT.md](NEXT.md) scopes human calibration.
 
 Tyler's later response to the endless pass was positive overall ("this is good").

@@ -3,10 +3,14 @@ use crate::{
     world::{self, Kind, Obstacle},
 };
 use serde::{Deserialize, Serialize};
-pub const RULES_VERSION: u32 = 2;
+pub const RULES_VERSION: u32 = 3;
 pub const HZ: u32 = 60;
 pub const DT: f64 = 1. / HZ as f64;
-pub const MAX_SPEED: f64 = 50.;
+/// Normal downhill speed cap. Kept as the compatibility-facing maximum name.
+pub const MAX_SPEED: f64 = 60.;
+pub const FAST_MAX_SPEED: f64 = 90.;
+pub const ACCELERATION: f64 = 9.;
+pub const OVERSPEED_DECELERATION: f64 = 12.;
 pub const MAX_HEADING: f64 = std::f64::consts::FRAC_PI_2;
 pub const TURN_RATE: f64 = 1.6;
 pub const RADIUS: f64 = 0.65;
@@ -89,6 +93,10 @@ pub struct Sim {
     pub phase: Phase,
     pub position: Point,
     pub speed: f64,
+    /// The player-selected fast tuck. This is simulation state so saves and
+    /// deterministic continuation retain the exact speed mode.
+    #[serde(default)]
+    pub fast_mode: bool,
     pub heading: f64,
     pub ticks: u64,
     pub crashes: u8,
@@ -105,6 +113,7 @@ impl Default for Sim {
             phase: Phase::Ready,
             position: Point::default(),
             speed: 0.,
+            fast_mode: false,
             heading: 0.,
             ticks: 0,
             crashes: 0,
@@ -126,6 +135,13 @@ impl Sim {
         if self.phase == Phase::Running {
             self.phase = Phase::Paused;
         }
+    }
+    pub fn toggle_fast_mode(&mut self) -> bool {
+        if self.phase != Phase::Running {
+            return false;
+        }
+        self.fast_mode = !self.fast_mode;
+        true
     }
     pub fn ended(&self) -> bool {
         matches!(self.phase, Phase::Finished | Phase::Crashed | Phase::Caught)
@@ -153,7 +169,7 @@ impl Sim {
             && self.position.x.abs() <= world::HALF_WIDTH - RADIUS + 1e-8
             && (0. ..=maximum_y).contains(&self.position.y)
             && (self.position.y..=maximum_y).contains(&self.distance)
-            && (0. ..=MAX_SPEED).contains(&self.speed)
+            && (0. ..=FAST_MAX_SPEED).contains(&self.speed)
             && self.heading.abs() <= MAX_HEADING
             && self.crashes <= 3
             && self.tumble <= TUMBLE_TICKS
@@ -209,11 +225,22 @@ impl Sim {
         };
         let turn = TURN_RATE * DT * if self.jump.is_some() { 0.4 } else { 1. };
         self.heading += (desired - self.heading).clamp(-turn, turn);
-        let accel = 6.5 * self.heading.cos()
+        let accel = ACCELERATION * self.heading.cos()
             - 0.05 * self.speed
             - 4.5 * self.heading.sin().abs()
             - if input.brake { 18. } else { 0. };
-        self.speed = (self.speed + accel * DT).clamp(0., MAX_SPEED);
+        let cap = if self.fast_mode {
+            FAST_MAX_SPEED
+        } else {
+            MAX_SPEED
+        };
+        self.speed = if self.speed > cap {
+            // Leaving fast mode should feel physical. Bleed excess speed over
+            // time while retaining stronger braking/turning deceleration.
+            (self.speed + (accel.min(0.) - OVERSPEED_DECELERATION) * DT).clamp(cap, FAST_MAX_SPEED)
+        } else {
+            (self.speed + accel * DT).clamp(0., cap)
+        };
         let a = self.position;
         let b = Point {
             x: (a.x + self.heading.sin() * self.speed * DT)
@@ -367,7 +394,8 @@ fn recovery(p: Point, obstacles: &[Obstacle], mode: Mode) -> Point {
             }
         }
     }
-    // The authored course reserves these two hazard-free boundary corridors.
+    // Authored terrain reserves both edges; endless terrain keeps at least one
+    // fallback clear at each hazard level. Always validate before relocating.
     for x in [-36., 36.] {
         let q = Point { x, y: p.y };
         if clear_mode(q, obstacles, mode) {

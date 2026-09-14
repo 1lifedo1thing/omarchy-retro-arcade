@@ -1,4 +1,4 @@
-# Next: difficulty tuning and remaining human acceptance
+# Next: human acceptance of the difficulty revision
 
 Pursuit and the five-course Slalom Cup are implemented. The previous extraction
 and pursuit brief was completed in the whole-game pass. See PLAN.md for scope,
@@ -6,23 +6,26 @@ SYSTEM.md for ownership and VERIFICATION.md for actual checks.
 
 Tyler's first recorded [human playtest](PLAYTESTS.md) approves controls, jumping,
 collisions, pause, art and sound. Practice and a separate Free Ski chase were
-exercised. Warning and catch work, but speed and difficulty need revision; possible
-yeti sticking is unconfirmed. The [difficulty audit](DIFFICULTY-AUDIT.md) proposes
-reliable pursuit followed by coupled speed/pursuit comparisons. Those proposals
-are not implemented or accepted tuning values.
+exercised. Warning and catch worked, but speed and difficulty needed revision;
+possible yeti sticking was unconfirmed. The approved [difficulty audit](DIFFICULTY-AUDIT.md)
+now informs rules 3: 60 m/s normal speed, 90 m/s fast tuck, stronger pursuit and
+new terrain. Latest technical evidence belongs in VERIFICATION.md; human acceptance
+of the revision remains open.
 
 The remaining human checks include:
 
-1. Start Free Ski with Creature pursuit enabled. Ski past 1,000 m, read the warning,
-   then try committed turns around terrain. Observe whether the creature's approach
-   and catch are understandable, and whether evasion feels useful.
+1. Start a new Free Ski mountain with Creature pursuit enabled (a restored Legacy
+   run retains old terrain). Compare ordinary skiing with F / the Fast button.
+   Ski past 1,000 m and test chase pressure, obstacle detours and difficult but
+   earned escapes. Record any unprotected stall with its seed and position.
 2. Complete Pinecone Path with keyboard steering, then with mouse steering. Check
    that the next gate, five-second misses, finish, medal and next-course unlock are
    clear. Continue through Summit Cup to assess the difficulty progression.
 3. Pause during a chase or race, return to Arcade, and reopen. Check audio, input
    ownership and saved continuation on the actual Omarchy desktop.
 4. Compare ordinary and reduced effects, mute, compact size and desktop scaling.
-   The current view exposes 84.48 m downhill; report any hazard revealed too late.
+   The view exposes 84.48 m downhill, just 0.94 s at fast cap; report hazards
+   revealed too late, especially during jumps and turns.
 
 Record date, source revision, seed/course, input method, screen conditions,
 observed problem and a specific tuning hypothesis. Reference runs are automated

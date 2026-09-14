@@ -6,7 +6,7 @@
 //! recovery relocation is deliberately not a movement segment.
 
 use crate::{
-    engine::{Point, Sim, HZ, MAX_HEADING},
+    engine::{Input, Point, Sim, HZ, MAX_HEADING},
     world::{Kind, Obstacle},
 };
 use serde::{Deserialize, Serialize};
@@ -140,27 +140,75 @@ pub fn crosses_finish(course: &Course, progress: &CourseProgress, from: Point, t
 }
 
 /// Production-input reference steering for repeatable course feasibility runs.
-/// It looks along the authored centre line and never alters simulation state.
+/// It anticipates the next authored gate and never alters simulation state.
 pub fn reference_heading(index: u8, sim: &Sim) -> f64 {
     let Some(course) = course(index) else {
         return 0.;
     };
-    let target = course
+    let next_gate = course
         .gates
         .iter()
-        .find(|gate| gate.y > sim.position.y)
-        .map(|gate| Point {
-            x: gate.x,
-            y: gate.y,
+        .enumerate()
+        .find(|(_, gate)| gate.y > sim.position.y);
+    let target_gate_index = next_gate.map(|(gate_index, gate)| {
+        let remaining = gate.y - sim.position.y;
+        let crossing_x = sim.position.x + sim.heading.tan() * remaining;
+        let committed =
+            remaining <= sim.speed * 0.18 && (crossing_x - gate.x).abs() <= gate.half_width * 0.75;
+        if committed && gate_index + 1 < course.gates.len() {
+            gate_index + 1
+        } else {
+            gate_index
+        }
+    });
+    let (target, half_width, approach_x) = target_gate_index
+        .map(|gate_index| (gate_index, &course.gates[gate_index]))
+        .map(|(gate_index, gate)| {
+            (
+                Point {
+                    x: gate.x,
+                    y: gate.y,
+                },
+                gate.half_width,
+                gate_index
+                    .checked_sub(1)
+                    .map_or(0., |previous| course.gates[previous].x),
+            )
         })
-        .unwrap_or(Point {
-            x: 0.,
-            y: course.length,
-        });
-    let target_x = target.x;
-    (target_x - sim.position.x)
-        .atan2((target.y - sim.position.y).max(10.))
+        .unwrap_or((
+            Point {
+                x: 0.,
+                y: course.length,
+            },
+            0.,
+            course.gates.last().map_or(0., |gate| gate.x),
+        ));
+    // Compensate for the finite turn rate by steering from the skier's projected
+    // position. This leaves real clearance from the arrival-side pole at both
+    // normal and fast speed without moving the authored centre line.
+    let horizon = 0.25 + sim.speed / 300.;
+    let projected_x = sim.position.x + sim.heading.sin() * sim.speed * horizon;
+    let projected_y = sim.position.y + sim.heading.cos() * sim.speed * horizon;
+    let arrival_side = (target.x - approach_x).signum();
+    let target_x = target.x + arrival_side * half_width * 0.8;
+    (target_x - projected_x)
+        // Keep correcting toward the safe gate window until the line is
+        // actually crossed. A large fixed denominator lets a faster skier
+        // coast into a pole during the final few metres.
+        .atan2((target.y - projected_y).max(2.))
         .clamp(-MAX_HEADING, MAX_HEADING)
+}
+
+/// Production controls for a clean authored-course reference run. Fast mode
+/// remains useful on open sections but brakes for the tightest direction
+/// changes, demonstrating that the higher cap is a skill choice rather than a
+/// free time reduction.
+pub fn reference_input(index: u8, sim: &Sim) -> Input {
+    let heading = reference_heading(index, sim);
+    Input {
+        heading,
+        brake: sim.fast_mode && sim.speed > 68. && (heading - sim.heading).abs() > 0.12,
+    }
 }
 
 pub fn course(index: u8) -> Option<Course> {
@@ -207,9 +255,9 @@ struct CourseSpec {
     silver_ticks: u64,
 }
 
-// Medal targets are calibrated from the production-input reference runs in
-// tests/slalom.rs. Gold allows roughly 10% and Silver roughly 25% over those
-// repeatable no-penalty runs; Bronze requires only a valid finish.
+// Medal targets are calibrated from the fast-capable production-input reference
+// runs in tests/slalom.rs. Gold allows roughly 10% and Silver roughly 25% over
+// those repeatable no-penalty runs; Bronze requires only a valid finish.
 static SPECS: [CourseSpec; 5] = [
     CourseSpec {
         name: "Pinecone Path",
@@ -234,8 +282,8 @@ static SPECS: [CourseSpec; 5] = [
             (29., 470., Kind::Tree),
             (-28., 610., Kind::Tree),
         ],
-        gold_ticks: 1_380,
-        silver_ticks: 1_560,
+        gold_ticks: 1_150,
+        silver_ticks: 1_320,
     },
     CourseSpec {
         name: "Long Turns",
@@ -262,8 +310,8 @@ static SPECS: [CourseSpec; 5] = [
             (-31., 705., Kind::Tree),
             (29., 825., Kind::Rock),
         ],
-        gold_ticks: 1_680,
-        silver_ticks: 1_890,
+        gold_ticks: 1_380,
+        silver_ticks: 1_560,
     },
     CourseSpec {
         name: "Split Pines",
@@ -295,8 +343,8 @@ static SPECS: [CourseSpec; 5] = [
             (-29., 775., Kind::Tree),
             (29., 900., Kind::Tree),
         ],
-        gold_ticks: 1_770,
-        silver_ticks: 2_010,
+        gold_ticks: 1_440,
+        silver_ticks: 1_620,
     },
     CourseSpec {
         name: "Needle Run",
@@ -332,8 +380,8 @@ static SPECS: [CourseSpec; 5] = [
             (-30., 908., Kind::Tree),
             (30., 1024., Kind::Tree),
         ],
-        gold_ticks: 1_980,
-        silver_ticks: 2_250,
+        gold_ticks: 1_560,
+        silver_ticks: 1_800,
     },
     CourseSpec {
         name: "Summit Cup",
@@ -375,7 +423,7 @@ static SPECS: [CourseSpec; 5] = [
             (-29., 1065., Kind::Tree),
             (29., 1173., Kind::Tree),
         ],
-        gold_ticks: 2_190,
-        silver_ticks: 2_490,
+        gold_ticks: 1_710,
+        silver_ticks: 1_950,
     },
 ];

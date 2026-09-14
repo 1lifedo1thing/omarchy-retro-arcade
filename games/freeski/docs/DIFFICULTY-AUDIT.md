@@ -1,5 +1,11 @@
 # SkiFree difficulty audit — 2026-09-14
 
+Implementation status: Tyler approved the first four recommendations on September
+14, including F-key fast mode. The subsequent rules-3 revision implements those
+changes; see [current tuning](TUNING.md) and [verification](VERIFICATION.md).
+The comparisons below describe the pre-change fc9a45a baseline. A second pursuer
+and additional game modes remain deferred.
+
 ## Finding and evidence limits
 
 Tyler's [human report](PLAYTESTS.md) approves movement controls, collisions,

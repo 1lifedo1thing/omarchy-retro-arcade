@@ -1,6 +1,6 @@
 use omarchy_freeski::{
     course::{
-        course, crosses_finish, medal, reference_heading, CourseProgress, GateOutcome, Medal,
+        course, crosses_finish, medal, reference_input, CourseProgress, GateOutcome, Medal,
         COURSE_COUNT, MISSED_GATE_PENALTY_TICKS,
     },
     engine::{Input, Mode, Phase, Point, Sim},
@@ -305,20 +305,19 @@ fn session_awards_a_slalom_result_and_unlock_exactly_once() {
 }
 
 #[test]
-fn every_course_has_a_no_crash_production_physics_reference_run() {
-    let mut observed = Vec::new();
-    for index in 0..COURSE_COUNT {
+fn every_course_has_clean_normal_and_fast_production_physics_reference_runs() {
+    fn run(index: u8, fast: bool) -> (Sim, CourseProgress) {
         let course = course(index).unwrap();
         let mut sim = Sim::default();
         let mut progress = CourseProgress::default();
         sim.start();
+        if fast {
+            assert!(sim.toggle_fast_mode());
+        }
         while !sim.ended() && sim.ticks < 12_000 {
             let finish = progress.all_resolved(&course).then_some(course.length);
             let outcome = sim.step_outcome_mode(
-                Input {
-                    heading: reference_heading(index, &sim),
-                    brake: false,
-                },
+                reference_input(index, &sim),
                 &course.obstacles,
                 Mode::Slalom,
                 finish,
@@ -334,17 +333,31 @@ fn every_course_has_a_no_crash_production_physics_reference_run() {
             }
             progress.cross_segment(&course, outcome.segment.start, outcome.segment.end);
         }
-        assert_eq!(sim.phase, Phase::Finished, "course {index}");
-        assert_eq!(sim.crashes, 0, "course {index}");
-        assert_eq!(progress.missed, 0, "course {index}");
-        assert!(progress.all_resolved(&course));
-        assert!(
-            sim.ticks <= course.gold_ticks,
-            "course {index}: {} ticks",
-            sim.ticks
-        );
-        observed.push(sim.ticks);
+        (sim, progress)
     }
-    assert_eq!(observed, [1_248, 1_516, 1_605, 1_786, 1_979]);
-    eprintln!("Slalom reference ticks: {observed:?}");
+
+    let mut normal = Vec::new();
+    let mut fast = Vec::new();
+    for index in 0..COURSE_COUNT {
+        let course = course(index).unwrap();
+        let (sim, progress) = run(index, false);
+        assert_eq!(sim.phase, Phase::Finished, "normal course {index}");
+        assert_eq!(sim.crashes, 0, "normal course {index}");
+        assert_eq!(progress.missed, 0, "normal course {index}");
+        assert!(progress.all_resolved(&course));
+        assert!(sim.ticks <= course.silver_ticks, "normal course {index}");
+        normal.push(sim.ticks);
+
+        let (sim, progress) = run(index, true);
+        assert_eq!(sim.phase, Phase::Finished, "fast course {index}");
+        assert_eq!(sim.crashes, 0, "fast course {index}");
+        assert_eq!(progress.missed, 0, "fast course {index}");
+        assert!(progress.all_resolved(&course));
+        assert!(sim.ticks <= course.gold_ticks, "fast course {index}");
+        fast.push(sim.ticks);
+    }
+    eprintln!("Slalom normal reference ticks: {normal:?}");
+    eprintln!("Slalom fast reference ticks: {fast:?}");
+    assert_eq!(normal, [1_088, 1_303, 1_374, 1_516, 1_668]);
+    assert_eq!(fast, [1_042, 1_243, 1_293, 1_418, 1_551]);
 }

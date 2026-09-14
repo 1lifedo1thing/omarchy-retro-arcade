@@ -18,7 +18,8 @@ Build with `scripts/build.sh`, choose FreeSki at the end of the Arcade shelf, or
 Enter starts. Hold A/D or Left/Right to turn up to 90°; release to keep your heading. Moving the mouse
 left/right of the skier selects pointer steering. Hold S, Down, Space, the right
 mouse button on the slope, or the visible brake button to slow down. Ramps launch
-automatically. Esc pauses/resumes; Ctrl+H returns to Arcade. Settings: Ctrl+,. Ctrl+M mutes sound.
+automatically. Press F during a run (or click Fast) to toggle a faster tuck; it
+raises the speed cap from 60 to 90 m/s. Esc pauses/resumes; Ctrl+H returns to Arcade. Settings: Ctrl+,. Ctrl+M mutes sound.
 
 Before starting, P/F/L select Practice/Free Ski/Slalom, C toggles pursuit and 1–5
 select unlocked courses. These choices also have clickable controls. Enable pursuit before a Free Ski run; the creature
@@ -28,7 +29,8 @@ unfinished run.
 
 Runs save on pause, close, shelf exit, results and five-second simulation
 checkpoints, then reopen paused. Restarting unfinished progress requires confirmation.
-Records and preferences survive restarts. Invalid saves remain untouched until an
+Records and preferences survive restarts. Earlier-rule records remain available
+in Settings; new runs use the revised difficulty records, with course unlocks retained. Invalid saves remain untouched until an
 explicit archive/reset; playing without saving is also available.
 
 - [Rules, controls, save behavior and limitations](docs/RULES.md)
