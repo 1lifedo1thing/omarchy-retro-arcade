@@ -189,3 +189,12 @@ down from 269, at the tested native sizes. Course choices appear only at Ready.
 Dialogs inherit the shared popup frame, square control geometry and brass borders,
 with ink/ivory/brass cabinet materials and 32 px actions. This supersedes the
 previous 28 px padding/44 px action design without changing game rules or saves.
+
+## 2026-09-14: Escape steering for blocked FreeSki pursuit
+
+A live creature stalled against a rock because all five target-facing probes
+entered the collision circle. Append four wider deterministic escape probes so
+it can turn away and route around contact. Keep exact swept contact, bounded turn
+rate/speed, and existing save fields. The fix changes pursuit decisions only;
+it neither teleports the actor nor changes the player's movement. The exact
+observed geometry is retained as a bounded-motion/nonpenetration regression.

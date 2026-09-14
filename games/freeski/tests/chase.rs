@@ -1,10 +1,10 @@
 use omarchy_freeski::{
     chase::{
         Chase, ChaseEvent, ChasePhase, TickInput, CATCH_RADIUS, MAX_FAILED_RETRIES,
-        RECOVERY_SAFE_GAP, SPAWN_RETRY_TICKS, TRIGGER_DISTANCE, WARNING_TICKS,
+        MAX_SPEED_PURSUER, RECOVERY_SAFE_GAP, SPAWN_RETRY_TICKS, TRIGGER_DISTANCE, WARNING_TICKS,
     },
     endless,
-    engine::{Event, Input, Phase, Point, Sim},
+    engine::{Event, Input, Phase, Point, Sim, DT},
     session::Session,
     storage::Save,
     world::{Kind, Obstacle, HALF_WIDTH},
@@ -255,6 +255,65 @@ fn serialized_pursuit_round_trips_and_invalid_numbers_are_rejected() {
     let mut invalid = restored;
     invalid.position.x = f64::NAN;
     assert!(!invalid.valid());
+}
+
+#[test]
+fn creature_routes_around_the_obstacle_that_stalled_a_live_chase() {
+    let seed = 1_789_397_975_898_612_373;
+    let skier = Point {
+        x: 9.907_216_461_272_625,
+        y: 4_127.612_807_737_195,
+    };
+    let mut chase = active(
+        Point {
+            x: -0.811_865_154_729_933_3,
+            y: 1_477.808_252_123_179,
+        },
+        0.041_664_817_448_891_55,
+        0.004_073_432_536_034_538,
+    );
+    let obstacles = endless::obstacles(seed, chase.position.y);
+    let start = chase.position;
+    let nearest = obstacles
+        .iter()
+        .min_by(|a, b| {
+            let da = (a.at.x - start.x).hypot(a.at.y - start.y);
+            let db = (b.at.x - start.x).hypot(b.at.y - start.y);
+            da.total_cmp(&db)
+        })
+        .unwrap();
+    assert_eq!(nearest.id, 705);
+
+    for _ in 0..600 {
+        let previous = chase.position;
+        chase = chase
+            .plan_tick(tick(skier, skier, skier.y, 50., false, &obstacles))
+            .finish();
+        assert!(chase.valid(), "escape produced invalid pursuit state");
+        assert!(
+            (chase.position.x - previous.x).hypot(chase.position.y - previous.y)
+                <= MAX_SPEED_PURSUER * DT + 1e-9,
+            "escape must use ordinary bounded actor motion"
+        );
+        for obstacle in obstacles
+            .iter()
+            .filter(|obstacle| obstacle.kind != Kind::Ramp)
+        {
+            assert!(
+                (chase.position.x - obstacle.at.x).hypot(chase.position.y - obstacle.at.y)
+                    >= obstacle.radius() + 0.95 - 1e-5,
+                "creature crossed obstacle {}",
+                obstacle.id
+            );
+        }
+    }
+
+    assert!(
+        chase.position.y > start.y + 20.,
+        "creature remained stalled at {:?} with speed {}",
+        chase.position,
+        chase.speed
+    );
 }
 
 fn chase_session() -> Session {

@@ -419,3 +419,30 @@ helper now allows 300 ms for overlay painting before saving an image. No game
 input or simulation timing was changed to accommodate the driver. Final captures
 are under `/tmp/freeski-compact/{dark,light,compact,200,lifecycle}` and logs use
 `/tmp/freeski-compact-*.log`. Human acceptance of this revision remains separate.
+
+### Pursuit obstacle-stall fix — 2026-09-14
+
+A Sol medium agent implemented the bounded escape-heading fix and a regression
+from the observed rock contact. Parent review and independent replay confirmed
+zero movement in 600 old-policy ticks versus 300.86 m after the fix. Each regression
+tick checks valid state, maximum movement and obstacle nonpenetration. The original
+player save was read for diagnosis and never replaced with test state.
+
+| Check | Result |
+| --- | --- |
+| Exact observed rock-contact regression | PASS; old policy stalls, corrected policy escapes |
+| FreeSki all targets / headless | PASS: 77 / 61 tests |
+| Workspace fmt / strict Clippy / tests | PASS: 290 tests with required Stockfish, serial run |
+| Independent 33-seed production Session sweep | PASS: valid saves throughout; longest unprotected stationary spell 140 ticks, no permanent stall in sampled runs |
+| Production chase/Slalom fixtures and release build | PASS |
+| Native active-pursuit continuation | PASS: actor moved 130.2 m during resumed play; exact state retained through shelf return and normal close/reopen |
+| Actual Omarchy/Wayland relaunch | PASS: complete parsed player save unchanged; fixed app left open |
+| New package/install / unchanged Pinball C++ checks | Not run; previous package artifact predates the fix |
+| Human pursuit-balance acceptance | Pending; the fix does not claim a human fairness rating |
+
+Supplemental local diagnostics are `/tmp/freeski-chase-before.log`,
+`/tmp/freeski-chase-after.log`, `/tmp/freeski-chase-corpus.log`, and
+`/tmp/freeski-chase-native.log`; captures are under `/tmp/freeski-chase-native`.
+Temporary probe sources were removed from the repository; the focused regression
+remains in `tests/chase.rs`. TUNING.md records corpus bounds and the observed state.
+No player movement constants, causal save fields or menus changed in this pass.

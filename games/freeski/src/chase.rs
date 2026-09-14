@@ -264,7 +264,12 @@ fn move_actor(chase: &Chase, input: TickInput<'_>) -> (Point, f64, f64) {
 
 fn collision_aware_heading(from: Point, target: Point, obstacles: &[Obstacle]) -> f64 {
     let desired = heading_to(from, target);
-    for offset in [0., -0.55, 0.55, -1.05, 1.05] {
+    // The wider candidates matter after an exact contact. Every heading within
+    // 90 degrees of an obstacle can still point into its collision circle, so
+    // the old five probes could all fail and repeatedly choose `desired` while
+    // the creature stood against the same obstacle. The escape probes let it
+    // turn physically away from the contact before resuming pursuit.
+    for offset in [0., -0.55, 0.55, -1.05, 1.05, -1.75, 1.75, -2.35, 2.35] {
         let heading = wrap_angle(desired + offset);
         let probe = Point {
             x: (from.x + heading.sin() * LOOK_AHEAD)
@@ -275,8 +280,8 @@ fn collision_aware_heading(from: Point, target: Point, obstacles: &[Obstacle]) -
             return heading;
         }
     }
-    // No local route is clear. Turning toward the least severe candidate and
-    // stopping on exact contact is deterministic and cannot phase geometry.
+    // No sampled local route is clear. Keep turning toward the target while
+    // the exact sweep below holds position at any contact boundary.
     desired
 }
 

@@ -43,7 +43,10 @@ chase described below.
 The option defaults off. At 1,000 m the creature gives a visible warning lasting
 three simulation seconds before seeking a clear spawn behind the skier. A blocked
 spawn retries at bounded intervals. Active pursuit never teleports: it accelerates,
-turns and collides with terrain in world coordinates. Its higher straight speed
+turns and collides with terrain in world coordinates. If the forward routes are
+blocked, it checks wider escape headings and turns away from the obstacle before
+resuming pursuit; contact still stops movement rather than passing through terrain.
+Its higher straight speed
 creates pressure; slower turning and turning drag reward deliberate carving.
 The creature is drawn at its physical position, with a labelled distance marker
 when outside the view. The warning remains visible when muted.

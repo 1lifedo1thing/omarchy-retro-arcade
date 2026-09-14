@@ -150,3 +150,33 @@ Sound is original 22,050 Hz mono 16-bit PCM, each cue shorter than 0.7 seconds.
 Carving hiss has lower amplitude than event cues and cannot interrupt one already
 playing. No playback time influences simulation. Reduced effects removes tracks
 and creature stride animation; warnings, geometry and outcomes remain readable.
+
+### 2026-09-14: creature stalled against a rock
+
+Tyler reported that the creature appeared to stop chasing. The observed run used
+seed 1789397975898612373 with pursuit enabled. At the saved result, the skier had
+reached 4,127.61 m while the active creature remained at 1,477.81 m with speed
+0.0417 m/s. The creature was approximately 2 nanometres outside rock 705's combined
+collision radius. Replaying 600 production pursuit ticks from that actor state
+produced no measurable movement. This confirms a steering deadlock, rather than
+chase being disabled or a missing renderer marker. The terminal run itself correctly
+stops all simulation; the diagnostic isolates the already-stalled actor state.
+
+The old avoidance policy only tried headings within 1.05 radians of the direction
+to the skier, then retried the blocked direct heading. Near contact, every one of
+those candidates can point into the same rock. The contact sweep prevented
+penetration but the policy never selected an escape direction.
+
+The corrected policy retains the original five probes, followed by ±1.75 and
+±2.35 radian escape probes. Selection and work remain bounded; actor turn rate,
+speed, acceleration, swept collision and player physics are unchanged. No causal
+fields or save migration are added. Existing saved pursuit resumes under the
+corrected policy on its next active simulation tick.
+
+The exact observed actor state now travels 300.86 m in 600 ticks, physically
+turning around the rock. A supplemental production Session sweep of seeds 0–31
+and the observed seed, each for up to 12,000 ticks or a terminal result, kept every
+save valid. The longest consecutive stationary active spell outside protection was
+140 ticks (2.33 s); six of 33 runs were caught. This bounded sample demonstrates
+recovery from the tested stalls, not universal pathfinding or human balance.
+The prior dated pursuit measurements remain evidence for their original revision.
