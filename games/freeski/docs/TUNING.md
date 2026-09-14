@@ -180,3 +180,16 @@ save valid. The longest consecutive stationary active spell outside protection w
 140 ticks (2.33 s); six of 33 runs were caught. This bounded sample demonstrates
 recovery from the tested stalls, not universal pathfinding or human balance.
 The prior dated pursuit measurements remain evidence for their original revision.
+
+### 2026-09-14: first recorded human difficulty feedback
+
+Tyler exercised Practice and a separate Free Ski run. Controls, obstacles,
+crashing, jumping, pause/focus behavior, art and sound received positive feedback.
+The warning and yeti catch work well, but speed and difficulty feel insufficient.
+The previously accepted 50 m/s cap is therefore open for reconsideration;
+steering feel remains approved. A possible recurring yeti stall is uncertain.
+
+The [human log](PLAYTESTS.md) records tested and untested areas. The
+[difficulty audit](DIFFICULTY-AUDIT.md) compares original SkiFree accounts with
+current behavior and proposes coupled speed/pursuit trials. No tuning values or
+gameplay changed in this documentation pass, and no new simulations were run.

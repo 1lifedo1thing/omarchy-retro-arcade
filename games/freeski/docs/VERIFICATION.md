@@ -518,3 +518,18 @@ fixture and reduced-effects clicks. An initial compact driver run failed because
 a ctypes mouse coordinate was a float; integer coordinates fixed the harness,
 and the full compact rerun and 200% run passed. No gameplay change was made to
 accommodate the driver.
+
+### Human playtest record and difficulty research — 2026-09-14
+
+The [human log](PLAYTESTS.md) records Tyler's Practice and separate Free Ski run.
+He reports both control methods, collisions, jumps, third-crash termination,
+pause/focus handling, presentation, warning and yeti catching working well.
+This updates the prior pending artwork acceptance for exercised play. It does
+not establish acceptance at every theme/scale or completion of every mode.
+
+- HUMAN OPEN: speed and difficulty are insufficient; possible yeti sticking is
+  unconfirmed. Remaining mode, persistence and release checks are listed in the log.
+- RESEARCH: [difficulty audit](DIFFICULTY-AUDIT.md) distinguishes historical
+  accounts, current source observations and proposed tuning experiments.
+- DOCS ONLY: no runtime behavior changed and no new runtime checks were run.
+  Documentation links, content and diff were checked before commit.

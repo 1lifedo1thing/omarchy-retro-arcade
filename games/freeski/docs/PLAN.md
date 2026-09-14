@@ -3,8 +3,9 @@
 The issue #14 playable scope is implemented: practice, seeded endless Free Ski,
 optional creature pursuit, five Slalom courses, local medals, sound, keyboard and
 mouse controls, and resumable runs. The completion pass preserves the rules-2
-speed and turning Tyler liked. [Verification](VERIFICATION.md) records checks and
-separates automated evidence from human acceptance.
+speed and turning baseline. Tyler's September 14 playtest now reopens speed and
+difficulty while retaining approval of the controls. [Verification](VERIFICATION.md)
+records checks and separates automated evidence from human acceptance.
 
 | Area | Delivered behavior |
 | --- | --- |
@@ -16,9 +17,11 @@ separates automated evidence from human acceptance.
 | Presentation | Original skier, terrain, gate and creature geometry; original synthesized cues; mute/reduced effects |
 
 The next work is a focused playtest and any fixes it reveals, described in
-[NEXT.md](NEXT.md). Do not reopen completed feature setup or change the accepted
-movement baseline without evidence. Medal targets have production reference runs;
-those runs establish feasibility, not human difficulty. Keep issue #14 open until
+[NEXT.md](NEXT.md). [Human playtests](PLAYTESTS.md) track acceptance separately from
+automation; the [difficulty audit](DIFFICULTY-AUDIT.md) records research and proposed
+responses to the latest feedback. Do not reopen completed feature setup. Medal
+targets have production reference runs; those establish feasibility, not human
+difficulty. Keep issue #14 open until
 its remaining desktop/release acceptance is recorded.
 
 [System design](SYSTEM.md) owns responsibility boundaries, [rules](RULES.md) owns
