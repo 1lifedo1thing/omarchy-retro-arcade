@@ -11,6 +11,8 @@ pub mod engine;
 #[cfg(feature = "ui")]
 mod input;
 #[cfg(feature = "ui")]
+mod menu;
+#[cfg(feature = "ui")]
 mod render;
 pub mod session;
 pub mod storage;

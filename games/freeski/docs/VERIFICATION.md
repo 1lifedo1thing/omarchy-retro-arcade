@@ -357,3 +357,38 @@ The old release executable was replaced by the tested completion build on the
 actual Wayland desktop. The running player save was never used to generate test
 fixtures or reset to obtain screenshots. Next work is scoped in NEXT.md; issue
 #14 has not been closed or externally updated by this pass.
+
+### Menu design pass — 2026-09-13
+
+The menu pass replaces cramped default dialogs with padded panels, grouped
+secondary actions, a prominent primary action, readable results and preferences,
+and two short help pages. Start/mode/course controls now sit on an opaque themed
+surface. This is a FreeSki presentation change; movement rules and save schema
+are unchanged.
+
+| Check | Result |
+| --- | --- |
+| Workspace formatting and strict all-target Clippy | PASS |
+| Workspace tests, required Stockfish 17.1 | PASS: 289, serial execution |
+| Final FreeSki all-target tests | PASS: 76, including compact help/preferences visibility and run isolation |
+| Release Rust/native build | PASS |
+| Pinball theme/path/authored table and desktop entry | PASS |
+| Native menu captures: dark, light, compact, 200% | PASS: all four; start/modes, pause, restart, settings, help, results, recovery and shelf return |
+| Full FreeSki native lifecycle with all twelve fixtures | PASS: dark; normal mouse/keyboard, exact restore, focus, mode/pursuit controls and future-save retention |
+| Actual Omarchy/Wayland relaunch | PASS: current player's full parsed save unchanged after normal close/reopen |
+| Human visual acceptance | Pending Tyler's review of the reopened game |
+| Arch package rebuild/install | Not run for this presentation-only pass; the earlier package artifact predates these menus |
+
+The initial parallel workspace run failed the unrelated Chess engine-timeout
+assertion. The complete serial run passed with the required real engine. The
+menu screenshot driver's first attempt passed floating-point coordinates to X11;
+integer coordinates corrected the driver, and all four final runs passed.
+
+Reproduce menu evidence with `scripts/native-freeski-menus.py BINARY OUTPUT
+[dark|light|compact|200]` under Xvfb, with Pillow and `FREESKI_FIXTURES` pointing to
+the production example's fixtures. Use distinct X displays for concurrent runs.
+The existing full lifecycle driver includes the new toolbar coordinates. Native
+checks use disposable XDG directories and a disconnected audio server; these are
+separate from human Omarchy acceptance. Final temporary captures are in
+`/tmp/freeski-menus/{dark,light,compact,200,lifecycle}`, with logs at
+`/tmp/freeski-menu-*.log`.

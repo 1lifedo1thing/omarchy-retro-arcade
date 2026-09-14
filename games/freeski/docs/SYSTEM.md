@@ -94,3 +94,11 @@ This document does not authorize delegation or choose its backend/model. Use
 small discriminating checks while editing and applicable combined gates after
 integration. Keep environment prerequisites separate from game rules and report
 headless, native, package and human acceptance distinctly.
+
+## Menu presentation
+
+`menu.rs` owns FreeSki panel sizing, typography, spacing, themed controls and stat
+cards. `app.rs` owns actions and transitions. Menus use 28 px padding, 44 px action
+targets, a bounded 480 px content width and viewport-aware vertical overflow. The
+help guide separates controls from run types; both pages keep their close action
+visible at the supported compact size. Styles are scoped to FreeSki UI containers.

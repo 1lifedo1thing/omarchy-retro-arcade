@@ -169,3 +169,13 @@ runs; human difficulty ratings and actual package installation remain separate
 acceptance evidence. See FreeSki VERIFICATION.md for the completion pass results.
 The existing Arcade window, game order, desktop identity, package and other saves
 are preserved.
+
+
+## 2026-09-13: FreeSki menu design
+
+FreeSki owns a small presentation module for padded panels, text hierarchy,
+primary/secondary actions, preferences and results. The start controls use an
+opaque themed surface so artwork does not compete with labels. Menu actions stay
+in App; simulation, storage and other games do not depend on the components. Help
+uses two short pages to fit compact windows. Native menu screenshots supplement
+state-transition tests at dark/light themes, compact size and 200% scale.
