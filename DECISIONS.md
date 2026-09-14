@@ -198,3 +198,13 @@ it can turn away and route around contact. Keep exact swept contact, bounded tur
 rate/speed, and existing save fields. The fix changes pursuit decisions only;
 it neither teleports the actor nor changes the player's movement. The exact
 observed geometry is retained as a bounded-motion/nonpenetration regression.
+
+## 2026-09-14: Original FreeSki yeti artwork
+
+Replace the horned runner with a shaggy white yeti: broad hunched shoulders, long
+clawed arms, a dark face, red eyes and fangs. Its native vector geometry lives in
+`games/freeski/src/yeti.rs` and scales with the snowfield. Running poses use saved
+ticks and actor speed, stop when stationary, and respect reduced effects. Turns
+away show the back of its head. The renderer remains read-only and anchored to
+the physical actor; pursuit policy, collision shape and save schema are unchanged.
+No external artwork, image files or runtime dependencies were added.

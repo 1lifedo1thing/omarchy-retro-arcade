@@ -232,69 +232,24 @@ pub fn draw(
             p.rect_filled(
                 Rect::from_center_size(marker, Vec2::new(122., 25.)),
                 4.,
-                Color32::from_rgb(65, 47, 72),
+                Color32::from_rgb(38, 57, 66),
             );
             p.text(
                 marker,
                 Align2::CENTER_CENTER,
-                format!("CREATURE {:.0} m", separation),
+                format!("YETI {:.0} m", separation),
                 FontId::monospace(12.),
                 Color32::WHITE,
             );
         } else {
-            // An original horned snow runner, with its feet at the collision point.
-            let fur = Color32::from_rgb(112, 72, 95);
-            let gold = Color32::from_rgb(240, 181, 86);
-            p.add(Shape::ellipse_filled(
-                creature + Vec2::new(0., 0.5) * scale,
-                Vec2::new(2.7, 0.9) * scale,
-                Color32::from_black_alpha(50),
-            ));
-            let stride = if reduced {
-                0.
-            } else {
-                (sim.ticks as f32 * 0.4).sin() * 0.5
-            };
-            for side in [-1., 1.] {
-                let foot = creature + Vec2::new(side, side * stride) * scale;
-                p.line_segment(
-                    [foot, creature + Vec2::new(side * 0.7, -1.7) * scale],
-                    Stroke::new(0.65 * scale, fur),
-                );
-            }
-            p.add(Shape::convex_polygon(
-                vec![
-                    creature + Vec2::new(-2., -1.) * scale,
-                    creature + Vec2::new(-1.7, -4.) * scale,
-                    creature + Vec2::new(0., -4.7) * scale,
-                    creature + Vec2::new(1.7, -4.) * scale,
-                    creature + Vec2::new(2., -1.) * scale,
-                ],
-                fur,
-                Stroke::new(0.2 * scale, ink),
-            ));
-            for side in [-1., 1.] {
-                p.add(Shape::convex_polygon(
-                    vec![
-                        creature + Vec2::new(side * 1.2, -3.6) * scale,
-                        creature + Vec2::new(side * 2.2, -5.3) * scale,
-                        creature + Vec2::new(side * 0.3, -4.4) * scale,
-                    ],
-                    gold,
-                    Stroke::NONE,
-                ));
-                p.circle_filled(
-                    creature + Vec2::new(side * 0.55, -3.) * scale,
-                    0.22 * scale,
-                    Color32::WHITE,
-                );
-            }
-            p.line_segment(
-                [
-                    creature + Vec2::new(-0.45, -2.2) * scale,
-                    creature + Vec2::new(0.45, -2.2) * scale,
-                ],
-                Stroke::new(0.2 * scale, gold),
+            crate::yeti::draw(
+                &p,
+                creature,
+                scale,
+                sim.ticks,
+                state.chase.speed,
+                state.chase.heading,
+                reduced,
             );
         }
     }

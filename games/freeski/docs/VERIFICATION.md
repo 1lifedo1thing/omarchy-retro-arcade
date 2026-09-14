@@ -446,3 +446,34 @@ Supplemental local diagnostics are `/tmp/freeski-chase-before.log`,
 Temporary probe sources were removed from the repository; the focused regression
 remains in `tests/chase.rs`. TUNING.md records corpus bounds and the observed state.
 No player movement constants, causal save fields or menus changed in this pass.
+
+### Original scary yeti redesign — 2026-09-14
+
+Replaced the horned runner with hand-authored layered vector artwork in
+`src/yeti.rs`: shaggy white fur, hunched shoulders, long clawed arms, a dark
+snarling face, red eyes and fangs. Stride amplitude follows actor speed and
+reduced effects; saved ticks keep pause frames still. Escape headings can show
+the back of its head. The actor's physical position, chase policy, collision
+shape, player movement and save fields are unchanged. Asset provenance is in
+`assets/README.md`. This pass was implemented and reviewed without subagents.
+
+- PASS: workspace fmt, strict all-target Clippy and all 290 workspace tests,
+  run serially with the required real Stockfish engine.
+- PASS: release build and native close-pursuit screenshots in dark/light themes,
+  compact size and 200% scale. Inspected the actual running artwork at each size.
+  The temporary native helper resumed the existing production seed-17 fixture
+  through normal controls in disposable XDG directories.
+- PASS: full dark native FreeSki lifecycle, all twelve production fixtures,
+  steering handover, pause/focus/help isolation, shelf switching, normal reopen
+  and invalid-save retention.
+- PASS: normal close/reopen of the actual Wayland game retained the complete
+  parsed player save. The updated game was left open.
+- NOT RUN: new package/install and unchanged Pinball C++ checks; previous package
+  evidence predates this presentation revision.
+- PENDING: Tyler's visual acceptance. Automated native captures are separate
+  from human Omarchy playtesting.
+
+Temporary evidence is under `/tmp/freeski-yeti-native`, including the four close
+views and lifecycle captures. Build, Clippy, test and lifecycle logs use the
+`/tmp/freeski-yeti-` prefix. The close-up preview is a magnified native screenshot,
+not a separate mockup or replacement game state.

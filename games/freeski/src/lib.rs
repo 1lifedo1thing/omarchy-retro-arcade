@@ -17,3 +17,6 @@ mod render;
 pub mod session;
 pub mod storage;
 pub mod world;
+
+#[cfg(feature = "ui")]
+mod yeti;
