@@ -157,9 +157,6 @@ impl Save {
                                 self.run.distance >= crate::chase::TRIGGER_DISTANCE
                             }
                         }
-                        && (self.chase.phase != ChasePhase::Active
-                            || (self.chase.position.y - self.run.position.y).abs()
-                                <= endless::CHUNK_LENGTH * 4.)
                 }
                 _ => !self.chase_enabled && self.chase == Chase::default(),
             }

@@ -277,8 +277,9 @@ Completed checks before the implementation commit:
 | Desktop entry validation | PASS |
 | Bounded replay CLI | PASS: 120-tick chase continuation; intentional mismatch reports first divergence at tick 1,660 |
 | Production fixture generation | PASS: practice/endless jump/recovery, chase warning/active/recovery/caught, Slalom progress/finish/cup finish |
-| Dark and light native controls and exact fixture reopen | PASS |
-| Compact/200%, installed switching and upgrade | In progress at implementation commit; closeout below records final outcome |
+| Dark/light/compact/200% native controls and exact fixture reopen | PASS |
+| Staged eleven-game native switching | PASS: singleton, all games, required Stockfish response, existing saves and clean shutdown |
+| Staged reinstall | PASS: pursuit, Slalom progress and cup results retained byte for byte before/after reinstall and reopen |
 | Human difficulty and Omarchy playtest | Pending; automated reference routes are not human acceptance |
 
 Pursuit and course reference measurements are in TUNING.md. Native automation
@@ -290,3 +291,26 @@ checks an active-pursuit save across package reinstall.
 Transient local artifacts: `/tmp/freeski-complete-fixtures`,
 `/tmp/freeski-complete-native`, and `/tmp/freeski-complete-*.log`. The tracked tests,
 examples and CI commands reproduce the evidence after these files expire.
+
+
+### Long-escape save regression
+
+Review after `80d8d7f` found that a validation-only 512 m pursuit separation limit
+could reject a legitimate escape. Seed 17 with ordinary reference steering
+reproduced the old failure at tick 7,687, separation 512.126 m. The bounded union
+of two terrain windows already supports arbitrary separation within world bounds;
+no extra gap limit belongs in persistence. The fix removes that limit and runs
+12,000 production ticks with per-tick validation, then saves and restores exactly.
+The same regression was run against the old validator to confirm that it fails.
+
+The full native dark/light/compact/200% runs passed on `80d8d7f`. A virtual-display
+startup collision on reusing display 182 failed before launching the app; distinct
+displays 183 and 184 resolved it without changing the game or timing thresholds.
+Installed switching and three staged upgrade cases also passed. The existing
+Pinball SDL triangle warnings remain unchanged, with its native/C++ checks passing.
+
+The standard Arch wrapper reached dependency validation and stopped because
+pacman has no `rust>=1.98` package. A user-local build of the same PKGBUILD uses
+mise Rust, verified remaining dependencies and checksummed sources; its final
+result is recorded below. System packages and pacman installation state are not
+changed by these checks.

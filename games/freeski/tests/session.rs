@@ -198,3 +198,45 @@ fn chase_cache_is_the_bounded_union_of_skier_and_creature_windows() {
     assert_eq!(ids.len(), session.obstacles.len());
     assert!(session.obstacles.len() <= 144);
 }
+
+#[test]
+fn a_long_production_escape_remains_saveable_when_the_creature_falls_behind() {
+    let mut save = Save::default();
+    save.select_chase(true, 17);
+    save.run.start();
+    let mut session = Session::new(save);
+    let mut widest_gap = 0_f64;
+    for _ in 0..12_000 {
+        let heading = endless::reference_heading(17, &session.state.run);
+        session.step(Input {
+            heading,
+            brake: false,
+        });
+        if session.state.chase.phase == ChasePhase::Active {
+            widest_gap = widest_gap
+                .max((session.state.run.position.y - session.state.chase.position.y).abs());
+        }
+        assert!(
+            session.state.valid(&session.obstacles),
+            "unsaveable at tick {}, gap {}",
+            session.state.run.ticks,
+            widest_gap
+        );
+        assert!(session.obstacles.len() <= 144);
+        if session.state.run.ended() {
+            break;
+        }
+    }
+    assert!(
+        widest_gap > 512.,
+        "reference escape gap was only {widest_gap}"
+    );
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("escape.json");
+    omarchy_freeski::storage::write(&path, &session.state, &session.obstacles).unwrap();
+    session.state.run.pause();
+    assert_eq!(
+        omarchy_freeski::storage::load(&path, &session.obstacles).unwrap(),
+        session.state
+    );
+}
