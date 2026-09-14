@@ -179,3 +179,13 @@ opaque themed surface so artwork does not compete with labels. Menu actions stay
 in App; simulation, storage and other games do not depend on the components. Help
 uses two short pages to fit compact windows. Native menu screenshots supplement
 state-transition tests at dark/light themes, compact size and 200% scale.
+
+## 2026-09-14: Compact FreeSki controls using Arcade materials
+
+Tyler found the 13 September menus too tall and visually separate from Arcade.
+The header now combines mode selection and actions, combines stats and pursuit,
+and uses one hint line. The Free Ski header is about 104 logical pixels high,
+down from 269, at the tested native sizes. Course choices appear only at Ready.
+Dialogs inherit the shared popup frame, square control geometry and brass borders,
+with ink/ivory/brass cabinet materials and 32 px actions. This supersedes the
+previous 28 px padding/44 px action design without changing game rules or saves.

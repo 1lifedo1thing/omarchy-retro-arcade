@@ -26,6 +26,7 @@ with tempfile.TemporaryDirectory(prefix='arcade-freeski-') as tmp:
         return app,w
     def read():return json.loads(save.read_text())
     def capture(name):
+        time.sleep(.3)  # Allow the requested overlay to paint before capturing it.
         attr=WindowAttributes();x.XGetWindowAttributes(display,w,C.byref(attr))
         ImageGrab.grab(xdisplay=os.environ['DISPLAY']).crop((attr.x,attr.y,attr.x+attr.width,attr.y+attr.height)).save(out/(name+'.png'))
     app,w=launch()
@@ -34,10 +35,10 @@ with tempfile.TemporaryDirectory(prefix='arcade-freeski-') as tmp:
         key(ord('f'));assert read()['mode']=='FreeSki';capture('free-ready')
         key(ord('l'));assert read()['mode']=='Slalom';capture('slalom-ready')
         key(ord('p'))
-        click(137*scale,205*scale);time.sleep(.5);assert read()['run']['phase']=='Running'
+        click(460*scale,96*scale);time.sleep(.5);assert read()['run']['phase']=='Running'
         key(0xff1b);paused=read();capture('paused')
         attr=WindowAttributes();x.XGetWindowAttributes(display,w,C.byref(attr))
-        click(attr.x+attr.width//2,attr.y+attr.height//2+69*scale)
+        click(attr.x+attr.width//2,attr.y+attr.height//2+57*scale)
         capture('restart');key(0xff1b);assert read()==paused
         key(ord(','),True);capture('settings');key(0xff1b);assert read()==paused
         key(0xffbe);capture('help');key(0xff1b);assert read()==paused

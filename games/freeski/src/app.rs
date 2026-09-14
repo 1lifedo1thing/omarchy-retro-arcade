@@ -265,35 +265,43 @@ impl App {
             )
             .show(ctx, |ui| {
                 arcade_presentation::backdrop(ui);
-                egui::Frame::new()
-                    .fill(self.theme.background)
-                    .corner_radius(12)
-                    .inner_margin(18)
+                egui::Frame::group(ui.style())
+                    .fill(if self.theme.light() { self.theme.background } else { arcade_presentation::INK })
+                    .stroke(ui.visuals().window_stroke)
+                    .inner_margin(10)
                     .show(ui, |ui| {
-                        menu::style_controls(ui, &self.theme);
                         ui.set_min_width(ui.available_width());
-                        ui.spacing_mut().item_spacing = Vec2::new(12., 8.);
-                        ui.spacing_mut().button_padding = Vec2::new(14., 10.);
-                        ui.spacing_mut().interact_size.y = 36.;
-                        ui.style_mut().text_styles.insert(egui::TextStyle::Body, egui::FontId::proportional(14.));
-                        ui.style_mut().text_styles.insert(egui::TextStyle::Button, egui::FontId::proportional(14.));
-                        ui.horizontal(|ui| {
-                            ui.heading(egui::RichText::new("FreeSki").size(34.).monospace());
+                        ui.spacing_mut().item_spacing = Vec2::new(10., 4.);
+                        ui.horizontal_wrapped(|ui| {
+                            ui.heading(egui::RichText::new("FREESKI").size(23.).monospace().color(if self.theme.light() { self.theme.foreground } else { arcade_presentation::IVORY }));
                             ui.separator();
                             if self.session.state.run.phase == Phase::Ready && !self.blocked() {
                                 for (mode, label) in [(Mode::Practice, "Practice"), (Mode::FreeSki, "Free Ski"), (Mode::Slalom, "Slalom")] {
-                                    if ui.add_sized([100., 38.], egui::Button::new(egui::RichText::new(label).color(if self.session.state.mode == mode { self.theme.accent_text() } else { self.theme.foreground })).selected(self.session.state.mode == mode).corner_radius(8)).clicked() && self.session.state.mode != mode {
+                                    if menu::choice(ui, label, self.session.state.mode == mode).clicked() && self.session.state.mode != mode {
                                         mode_choice = Some(mode);
                                     }
                                 }
                             } else {
-                                ui.label(match self.session.state.mode { Mode::Practice => "PRACTICE SLOPE", Mode::FreeSki => "ENDLESS FREE SKI", Mode::Slalom => "SLALOM CUP" });
+                                ui.label(match self.session.state.mode { Mode::Practice => "PRACTICE", Mode::FreeSki => "FREE SKI", Mode::Slalom => "SLALOM CUP" });
                             }
+                            ui.separator();
+                            ui.add_enabled_ui(!self.blocked() && focused, |ui| {
+                                match self.session.state.run.phase {
+                                    Phase::Ready => start = ui.add(menu::button("Start skiing  Enter", true)).clicked(),
+                                    Phase::Running => pause = ui.button("Pause  Esc").clicked(),
+                                    Phase::Paused => {}
+                                    _ => restart = ui.button("New run").clicked(),
+                                }
+                                if self.session.state.run.phase == Phase::Running {
+                                    let b = ui.add(egui::Button::new("Hold to brake").sense(Sense::click_and_drag()));
+                                    brake = b.is_pointer_button_down_on();
+                                }
+                                help = ui.button("Help  F1").clicked();
+                                settings = ui.button("Settings").clicked();
+                            });
                         });
                         ui.horizontal_wrapped(|ui| {
-                            ui.strong(if self.session.state.mode == Mode::Practice {
-                                format!("{:04.0} / 1200 m", self.session.state.run.distance)
-                            } else { format!("{:04.0} m", self.session.state.run.distance) });
+                            ui.strong(if self.session.state.mode == Mode::Practice { format!("{:04.0} / 1200 m", self.session.state.run.distance) } else { format!("{:04.0} m", self.session.state.run.distance) });
                             ui.separator();
                             ui.label(format!("{} crashes left", 3 - self.session.state.run.crashes));
                             ui.separator();
@@ -303,83 +311,50 @@ impl App {
                                 ui.label(format!("{:.2} s + {:.0} s", self.session.state.run.ticks as f64 / 60., self.session.state.slalom.penalty_ticks as f64 / 60.));
                                 if let Some(best) = self.session.state.slalom_best[self.session.state.course_index as usize] { ui.label(format!("Best {:.2} s", best as f64 / 60.)); }
                             } else { ui.label(format!("Best {:.0} m", self.session.state.best())); }
-                            if self.session.state.run.tumble > 0 {
-                                ui.colored_label(Color32::from_rgb(225, 153, 78), "Recovering");
-                            } else if self.session.state.run.protection > 0 {
-                                ui.label("Protected");
-                            } else if self.session.state.run.jump.is_some() {
-                                ui.label("Airborne");
-                            }
-                        });
-                        ui.add_space(6.);
-                        ui.horizontal_wrapped(|ui| {
-                            ui.add_enabled_ui(!self.blocked() && focused, |ui| {
-                                match self.session.state.run.phase {
-                                    Phase::Ready => start = ui.add_sized([190., 40.], egui::Button::new(egui::RichText::new("Start skiing  Enter").color(self.theme.accent_text())).fill(self.theme.accent).corner_radius(8)).clicked(),
-                                    Phase::Running => pause = ui.button("Pause  Esc").clicked(),
-                                    Phase::Paused => {}
-                                    _ => restart = ui.button("New run").clicked(),
-                                }
-                                if self.session.state.run.phase == Phase::Running {
-                                    let b = ui.add(
-                                        egui::Button::new("Hold to brake").sense(Sense::click_and_drag()),
-                                    );
-                                    brake = b.is_pointer_button_down_on();
-                                }
-                                help = ui.button("Help  F1").clicked();
-                                settings = ui.button("Settings").clicked();
-                            });
-                        });
-                        if let Some(error) = &self.error {
-                            ui.colored_label(
-                                if self.theme.light() {
-                                    Color32::DARK_RED
-                                } else {
-                                    Color32::LIGHT_RED
-                                },
-                                error,
-                            );
-                        }
-                        if !self.writable && !self.recovery {
-                            ui.label("Playing without saving. The original save is retained.");
-                        }
-                        if self.session.state.run.phase == Phase::Ready && !self.blocked() {
-                            if self.session.state.mode == Mode::FreeSki {
+                            if self.session.state.run.tumble > 0 { ui.colored_label(arcade_presentation::AMBER, "Recovering"); }
+                            else if self.session.state.run.protection > 0 { ui.label("Protected"); }
+                            else if self.session.state.run.jump.is_some() { ui.label("Airborne"); }
+                            if self.session.state.run.phase == Phase::Ready && !self.blocked() && self.session.state.mode == Mode::FreeSki {
+                                ui.separator();
                                 let mut enabled = self.session.state.chase_enabled;
                                 if ui.checkbox(&mut enabled, "Creature pursuit · begins after 1,000 m").changed() { self.session.state.set_chase_enabled(enabled); self.flush(); }
-                            } else if self.session.state.mode == Mode::Slalom {
-                                ui.horizontal_wrapped(|ui| {
-                                    for index in 0..course::COURSE_COUNT {
-                                        let c = course::course(index).unwrap();
-                                        let unlocked = index < self.session.state.unlocked_courses;
-                                        let label = if unlocked {
-                                            let medal = self.session.state.slalom_best[index as usize].map(|ticks| if ticks <= c.gold_ticks { " · Gold" } else if ticks <= c.silver_ticks { " · Silver" } else { " · Bronze" }).unwrap_or("");
-                                            format!("{}. {}{}", index + 1, c.name, medal)
-                                        } else { format!("{}. Locked", index + 1) };
-                                        if ui.add_enabled(unlocked, egui::Button::new(egui::RichText::new(label).color(if index == self.session.state.course_index { self.theme.accent_text() } else { self.theme.foreground })).selected(index == self.session.state.course_index).corner_radius(8)).clicked() { self.session.state.select_course(index); self.refresh_obstacles(); self.flush(); }
-                                    }
-                                });
                             }
+                        });
+                        if self.session.state.run.phase == Phase::Ready && !self.blocked() && self.session.state.mode == Mode::Slalom {
+                            ui.horizontal_wrapped(|ui| {
+                                for index in 0..course::COURSE_COUNT {
+                                    let c = course::course(index).unwrap();
+                                    let unlocked = index < self.session.state.unlocked_courses;
+                                    let label = if unlocked {
+                                        let medal = self.session.state.slalom_best[index as usize].map(|ticks| if ticks <= c.gold_ticks { " · Gold" } else if ticks <= c.silver_ticks { " · Silver" } else { " · Bronze" }).unwrap_or("");
+                                        format!("{}. {}{}", index + 1, c.name, medal)
+                                    } else { format!("{}. Locked", index + 1) };
+                                    if ui.add_enabled_ui(unlocked, |ui| menu::choice(ui, &label, index == self.session.state.course_index)).inner.clicked() { self.session.state.select_course(index); self.refresh_obstacles(); self.flush(); }
+                                }
+                            });
                         }
-                        ui.add_space(6.);
-                        match self.session.state.mode {
-                            Mode::Practice => { let (title,hint) = world::lesson(self.session.state.run.position.y); ui.label(egui::RichText::new(title).monospace()); ui.label(hint); }
-                            Mode::FreeSki => {
-                                use crate::chase::ChasePhase;
-                                let (title,hint) = match self.session.state.chase.phase {
-                                    ChasePhase::Dormant if self.session.state.chase_enabled => ("TRACKS BEHIND YOU", "The creature wakes after 1,000 m. Save speed for the pursuit."),
-                                    ChasePhase::Dormant => ("ONE MORE RUN", "Find a line through the trees. Ramps are optional. Three crashes end the run."),
-                                    ChasePhase::Warning => ("SOMETHING IS COMING", "A creature is following your tracks. Build speed and plan your turns."),
-                                    ChasePhase::Active => ("THE CHASE IS ON", "Carve around terrain to shake the creature. It turns more slowly than you."),
-                                };
-                                ui.label(egui::RichText::new(title).monospace()); ui.label(hint);
-                            }
-                            Mode::Slalom => {
-                                let c = course::course(self.session.state.course_index).unwrap();
-                                ui.label(egui::RichText::new(format!("{} · GATE {} / {} · {:.0} m", c.name.to_uppercase(), (self.session.state.slalom.next_gate + 1).min(c.gates.len()), c.gates.len(), c.length)).monospace());
-                                ui.label(format!("Pass between the poles. Miss: +5 s. Gold ≤ {:.1} s · Silver ≤ {:.1} s", c.gold_ticks as f64 / 60., c.silver_ticks as f64 / 60.));
-                            }
-                        }
+                        ui.scope(|ui| {
+                            ui.spacing_mut().interact_size.y = 16.;
+                            let hint = match self.session.state.mode {
+                                Mode::Practice => world::lesson(self.session.state.run.position.y).1.to_owned(),
+                                Mode::FreeSki => {
+                                    use crate::chase::ChasePhase;
+                                    match self.session.state.chase.phase {
+                                        ChasePhase::Dormant if self.session.state.chase_enabled => "Pursuit wakes after 1,000 m. Save speed for the chase.",
+                                        ChasePhase::Dormant => "Find a line through the trees. Ramps are optional. Three crashes end the run.",
+                                        ChasePhase::Warning => "SOMETHING IS COMING · Build speed and plan your turns.",
+                                        ChasePhase::Active => "THE CHASE IS ON · Carve around terrain to shake the creature.",
+                                    }.to_owned()
+                                }
+                                Mode::Slalom => {
+                                    let c = course::course(self.session.state.course_index).unwrap();
+                                    format!("{} · Gate {} / {} · Miss +5 s · Gold ≤ {:.1} s · Silver ≤ {:.1} s", c.name, (self.session.state.slalom.next_gate + 1).min(c.gates.len()), c.gates.len(), c.gold_ticks as f64 / 60., c.silver_ticks as f64 / 60.)
+                                }
+                            };
+                            ui.label(egui::RichText::new(hint).size(13.));
+                        });
+                        if let Some(error) = &self.error { ui.colored_label(if self.theme.light() { Color32::DARK_RED } else { Color32::LIGHT_RED }, error); }
+                        if !self.writable && !self.recovery { ui.label("Playing without saving. The original save is retained."); }
                     });
                 ui.add_space(12.);
                 let (area, _) = ui
@@ -573,18 +548,12 @@ impl App {
                 let page_id = egui::Id::new("freeski-help-page");
                 let mut modes = ctx.data_mut(|data| *data.get_temp_mut_or_default::<bool>(page_id));
                 ui.horizontal(|ui| {
-                    let controls_text = egui::RichText::new("Controls").color(if modes {
-                        theme.foreground
-                    } else {
-                        theme.accent_text()
-                    });
-                    ui.selectable_value(&mut modes, false, controls_text);
-                    let modes_text = egui::RichText::new("Run types").color(if modes {
-                        theme.accent_text()
-                    } else {
-                        theme.foreground
-                    });
-                    ui.selectable_value(&mut modes, true, modes_text);
+                    if menu::choice(ui, "Controls", !modes).clicked() {
+                        modes = false;
+                    }
+                    if menu::choice(ui, "Run types", modes).clicked() {
+                        modes = true;
+                    }
                 });
                 ctx.data_mut(|data| data.insert_temp(page_id, modes));
                 ui.add_space(8.);
@@ -620,7 +589,7 @@ GPL-3.0-or-later",
                     ui,
                     &theme,
                     "PREFERENCES",
-                    "Make yourself comfortable",
+                    "Settings",
                     "Your preferences save automatically and apply to every FreeSki mode.",
                 );
                 if menu::setting(
@@ -653,13 +622,7 @@ GPL-3.0-or-later",
                     Mode::FreeSki => "FREE SKI",
                     Mode::Slalom => "SLALOM CUP",
                 };
-                menu::heading(
-                    ui,
-                    &theme,
-                    mode,
-                    "A moment on the mountain",
-                    &self.pause_reason,
-                );
+                menu::heading(ui, &theme, mode, "Run paused", &self.pause_reason);
                 menu::stats(
                     ui,
                     &[

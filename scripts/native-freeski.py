@@ -36,7 +36,7 @@ with tempfile.TemporaryDirectory(prefix='arcade-freeski-') as tmp:
         assert read()['run']['phase']=='Ready';capture('ready')
         # Start with the ordinary visible button; test input handover on the open snow
         # before the faster run reaches trees. The toolbar has a fixed logical origin.
-        click(137*scale,205*scale);time.sleep(2.3)
+        click(460*scale,96*scale);time.sleep(2.3)
         key(ord('d'),hold=.25);capture('skiing')
         key(0xff1b);paused=read();assert paused['run']['phase']=='Paused';assert paused['run']['distance']>10
         capture('paused');time.sleep(.3);assert read()==paused
@@ -75,7 +75,7 @@ with tempfile.TemporaryDirectory(prefix='arcade-freeski-') as tmp:
                 key(ord('q'),True);app.wait(timeout=8)
                 assert read()==loaded
         save.unlink()  # Only this script's disposable state, after closing the app.
-        app,w=launch();click(137*scale,205*scale);time.sleep(2.)
+        app,w=launch();click(460*scale,96*scale);time.sleep(2.)
         key(ord('d'),hold=1.1);time.sleep(.2);capture('quarter-turn')
         key(0xff1b);turned=read()
         assert abs(turned['run']['heading']-3.141592653589793/2)<1e-10
@@ -85,8 +85,8 @@ with tempfile.TemporaryDirectory(prefix='arcade-freeski-') as tmp:
         key(ord('q'),True);app.wait(timeout=8)
         save.unlink()
         app,w=launch();capture('mode-choice')
-        click(346*scale,108*scale);assert read()['mode']=='FreeSki';capture('free-ready')
-        click(137*scale,205*scale);time.sleep(3.);capture('free-skiing');key(0xff1b)
+        click(260*scale,96*scale);assert read()['mode']=='FreeSki';capture('free-ready')
+        click(460*scale,96*scale);time.sleep(3.);capture('free-skiing');key(0xff1b)
         endless_save=read();assert endless_save['mode']=='FreeSki'
         assert endless_save['run']['phase']=='Paused'
         key(ord('h'),True);assert windows()==[w]
@@ -96,8 +96,8 @@ with tempfile.TemporaryDirectory(prefix='arcade-freeski-') as tmp:
         key(ord('q'),True);app.wait(timeout=8)
         save.unlink()
         app,w=launch()
-        click(346*scale,108*scale)
-        click(53*scale,252*scale);assert read()['chase_enabled'];capture('chase-ready')
+        click(260*scale,96*scale)
+        click(355*scale,130*scale);assert read()['chase_enabled'];capture('chase-ready')
         key(ord('m'),True);assert read()['muted']
         key(0xff0d);time.sleep(.5);key(0xff1b)
         chase_ready=read();assert chase_ready['run']['phase']=='Paused'
@@ -105,7 +105,7 @@ with tempfile.TemporaryDirectory(prefix='arcade-freeski-') as tmp:
         app,w=launch();assert read()==chase_ready
         key(ord('q'),True);app.wait(timeout=8)
         save.unlink()
-        app,w=launch();click(458*scale,108*scale)
+        app,w=launch();click(338*scale,96*scale)
         assert read()['mode']=='Slalom';assert read()['unlocked_courses']==1;capture('slalom-ready')
         key(0xff0d);time.sleep(3.);capture('slalom-skiing');key(0xff1b)
         slalom=read();assert slalom['run']['phase']=='Paused';assert slalom['run']['ticks']>100

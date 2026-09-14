@@ -392,3 +392,30 @@ checks use disposable XDG directories and a disconnected audio server; these are
 separate from human Omarchy acceptance. Final temporary captures are in
 `/tmp/freeski-menus/{dark,light,compact,200,lifecycle}`, with logs at
 `/tmp/freeski-menu-*.log`.
+
+### Compact Arcade-themed menus — 2026-09-14
+
+Tyler's screenshot identified excessive header height and styling inconsistent
+with the collection. The Free Ski header is now about 104 logical px rather than
+269 px: mode/actions share a row, stats/pursuit share a row, and hints use one
+line. Slalom adds course choices at Ready. Dialogs use the shared popup frame,
+brass borders, square buttons and smaller typography/padding. Simulation and
+save format are unchanged.
+
+- PASS: workspace fmt, strict all-target Clippy and 289 workspace tests with the
+  required Stockfish engine, run serially; 18 FreeSki library tests also passed.
+- PASS: rebuilt release app; native menu checks at dark/light/compact/200%, with
+  actual screenshots inspected for header, dialogs and results.
+- PASS: full dark native FreeSki lifecycle and all twelve production save fixtures,
+  updated visible-control coordinates, focus/handover, shelf return and restoration.
+- PASS: normal close/reopen of the actual Wayland game preserved the complete
+  parsed player save. The updated app was left open for Tyler's review.
+- NOT RUN: new Arch package/install or unchanged Pinball C++ checks for this
+  presentation-only revision. Earlier package evidence predates these changes.
+
+Two initial concurrent menu runs failed the first mode-selection assertion while
+workspace tests were active. The subsequent isolated runs passed; the capture
+helper now allows 300 ms for overlay painting before saving an image. No game
+input or simulation timing was changed to accommodate the driver. Final captures
+are under `/tmp/freeski-compact/{dark,light,compact,200,lifecycle}` and logs use
+`/tmp/freeski-compact-*.log`. Human acceptance of this revision remains separate.

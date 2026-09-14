@@ -98,7 +98,12 @@ headless, native, package and human acceptance distinctly.
 ## Menu presentation
 
 `menu.rs` owns FreeSki panel sizing, typography, spacing, themed controls and stat
-cards. `app.rs` owns actions and transitions. Menus use 28 px padding, 44 px action
-targets, a bounded 480 px content width and viewport-aware vertical overflow. The
-help guide separates controls from run types; both pages keep their close action
-visible at the supported compact size. Styles are scoped to FreeSki UI containers.
+cards. `app.rs` owns actions and transitions. Menus inherit Arcade's shared popup
+frame and control geometry, with 16 px padding, 32 px action targets, a bounded
+440 px content width and viewport-aware vertical overflow. The help guide
+separates controls from run types; both pages keep their close action visible at
+the supported compact size.
+
+The compact header combines mode/actions and stats/pursuit into two rows, with
+a single hint line. Slalom adds course choices only before a run. Shared brass,
+ink and ivory materials keep the controls consistent with the cabinet.
