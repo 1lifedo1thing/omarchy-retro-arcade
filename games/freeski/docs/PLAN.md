@@ -1,6 +1,7 @@
 # FreeSki delivery plan
 
-Status: milestone 1 implemented and under acceptance; first human feedback implemented; revised feel/difficulty acceptance remains pending.
+Status: revised movement received positive human feedback. Simulation/save hardening
+and endless terrain are implemented; endless human acceptance remains pending.
 Tracking issue: [#14](https://github.com/tcballard/omarchy-retro-arcade/issues/14).
 Working branch: `feat/freeski`.
 
@@ -13,8 +14,8 @@ the issue. Keep numerical defaults provisional in [TUNING.md](TUNING.md).
 | Milestone | Deliverable | Exit evidence | Status |
 | --- | --- | --- | --- |
 | 1. Playable practice slope | Native integration, one authored practice slope, carving, braking, look-ahead, ramps, crashes, keyboard/mouse, pause and basic save/resume | A human can play several minutes, understand hazards and recovery, and suspend/reopen the attempt; focused engine/storage and native checks | Implemented; human acceptance pending |
-| 2. Simulation and persistence hardening | Tick-stamped replay, chronological physical events, versioned state validation, exactly-once results and complete lifecycle handling | Equivalent continuations across render schedules and save/reload; adverse input, save and event-order tests | Not started |
-| 3. Endless Free Ski | Seeded bounded chunks, traversable connections, capped difficulty, distance records, optional creature pursuit | Documented production-engine seed corpus, bounded generation/memory, chase and recovery tests, human evasion evidence | Not started |
+| 2. Simulation and persistence hardening | Tick-stamped replay, chronological physical events, versioned state validation, exactly-once results and complete lifecycle handling | Equivalent continuations across render schedules and save/reload; adverse input, save and event-order tests | Implemented; automated replay/save evidence |
+| 3. Endless Free Ski | Seeded bounded chunks, traversable connections, capped difficulty, distance records, optional creature pursuit | Documented production-engine seed corpus, bounded generation/memory, chase and recovery tests, human evasion evidence | Terrain and records implemented; creature deferred |
 | 4. Five Slalom courses | One complete course first, then four more; ordered gates, penalties, finish, unlocks and medals | Production-engine reference completion for each course, timing/records tests and human-calibrated medals | Not started |
 | 5. Presentation and release acceptance | Original final art/audio, readable effects, polished flows, help/About, provenance and packaging | Actual layout captures, workspace/native/package checks and separately recorded Omarchy/Wayland playtests | Not started |
 
@@ -33,7 +34,7 @@ modules remain proposed for later milestones; no empty modules are added.
 | `src/lib.rs` | Library exports; engine usable without desktop features |
 | `src/engine.rs` | Authoritative state, fixed ticks, movement, jumping and outcomes |
 | `src/collision.rs` | Swept checks and deterministic chronological event resolution |
-| `src/world.rs` | Practice terrain, later bounded seeded chunks and route validation |
+| `src/world.rs` / `src/endless.rs` | Authored practice terrain and bounded seeded generation |
 | `src/course.rs` | Authored Slalom definitions, gates, finish and course versions |
 | `src/input.rs` | Keyboard/mouse handover and normalized tick inputs |
 | `src/app.rs` | Arcade lifecycle, accumulator, menus, focus and pause |

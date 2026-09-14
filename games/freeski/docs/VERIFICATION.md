@@ -1,7 +1,8 @@
 # FreeSki acceptance and evidence
 
-Milestone 1 is implemented. Automated practice-slope checks pass; human control
-feel and difficulty acceptance remains pending. Later milestones are not complete.
+Practice, simulation/save hardening and endless terrain are implemented. Tyler
+reported positive feedback on rules-2 movement. Endless difficulty/variety human
+acceptance, creature pursuit, Slalom and release presentation remain open.
 The full issue #14 remains open.
 
 ## Acceptance tracker
@@ -10,15 +11,15 @@ The full issue #14 remains open.
 | --- | --- | --- |
 | A1 | Movement/braking, continuous collision, jumping and single-event recovery | Practice engine tests pass, including high-speed sweeps, overlapping hazards, descent into a rock and safe recovery at every authored hazard |
 | A2 | Gates, penalties, finish ordering and exactly-once records | Practice fatal-crash precedence and records tests pass; Slalom gates/timing remain later work |
-| A3 | Connected seeds, recovery and bounded generation/memory | Authored practice recovery checked; 240-segment trail cap; endless generator/corpus not implemented |
+| A3 | Connected seeds, recovery and bounded generation/memory | 128 seeds × 5 km production runs, zero reference crashes; four chunks / 72 obstacles and 240-segment trail cap; recovery corridor and overlap tests pass |
 | A4 | Creature warning, spawn, catch and isolation | Not implemented |
 | A5 | Five complete courses and calibrated medals/chase | Practice reference completes; Slalom and human calibration not implemented |
-| A6 | Mouse/keyboard flows, handover, overlays, focus and compact targets | Frontend and native scenarios pass; human feel evaluation pending |
-| A7 | Save/reopen during jumps, recovery, pursuit and Slalom | Practice jump/recovery continuation and native restoration pass; unsupported saves retained; pursuit/Slalom not implemented |
+| A6 | Mouse/keyboard flows, handover, overlays, focus and compact targets | Frontend and native scenarios pass; rules-2 movement received positive human feedback; endless feel evaluation pending |
+| A7 | Save/reopen during jumps, recovery, pursuit and Slalom | Practice and endless jump/recovery continuation and native restoration pass; unsupported saves retained; pursuit/Slalom not implemented |
 | A8 | Render-rate equivalence and resize independence | Frontend replay at 30/60/120 Hz and alternating window sizes produces identical tick state; backlog pause tested |
 | A9 | Actual theme/size/scale captures | Dark, light, compact, 200% X11 and local Wayland captures inspected |
 | A10 | Workspace, native switching, package/upgrade and desktop acceptance | Workspace/build/native/staged reinstall checks pass; actual Arch package build/install acceptance and human Wayland playtest pending |
-| A11 | Shelf/help/About, provenance, rules, controls and decisions | Added and reviewed for the practice milestone; later-mode help/assets remain later work |
+| A11 | Shelf/help/About, provenance, rules, controls and decisions | Practice and endless shelf/help/rules reviewed; creature/Slalom presentation remains later work |
 
 Implementation source commit: `acf6286` (`feat/freeski`). Later documentation
 commits add evidence without changing gameplay.
@@ -127,3 +128,48 @@ The resulting parameters and remaining human acceptance are in TUNING.md.
   remain baseline evidence; package build remains blocked by the missing system
   `rust>=1.98` prerequisite documented above. Packaging and unchanged Pinball
   C++ tests were not repeated for this tuning-only revision.
+
+
+## 13 September 2026 endless terrain and hardening
+
+Implementation: `13fa3bf` on `feat/freeski`. Two GPT-5.6 Sol medium workers ran
+in parallel for terrain and engine/storage, followed by parent integration,
+source review and independent combined checks. Issue #14's updated timestamp still
+matches the requirements snapshot. This completes the requested hardening and
+endless terrain pass; it does not complete creature, Slalom or full release scope.
+
+| Check | Result |
+| --- | --- |
+| Workspace fmt and strict Clippy, all targets | Passed |
+| Workspace tests, with Stockfish 17.1 required | 252 passed |
+| FreeSki desktop-independent suite | 29 passed |
+| Production seed corpus | Seeds 0–127 × 5 km from rest, zero crashes, over 1,000 jumps |
+| Tick-stamped input continuation | Exact states after save/reopen and crossing chunk boundaries |
+| Render schedule and crash reset | 30/60/120 Hz produce identical states across resize, chunk crossings and released-key crash recovery |
+| Rust release and native Pinball build | Passed |
+| Pinball C++ theme/path/authored-table tests | All three passed |
+| Desktop entry validation | Passed |
+| Staged eleven-game native switching | Passed, including singleton, Chess engine response and existing save paths |
+| FreeSki native dark/light/compact/200% | Passed mode choice, start, steering, overlays/focus, quarter-turn, shelf switching, save/reopen and invalid-file retention |
+| Suspended endless fixtures | Native restore beyond 1,600 m, mid-jump and crash recovery; generated through ordinary production inputs |
+| Staged reinstall and reopen | Exact endless mid-jump save retained through reinstall and reopening |
+| Existing user save | Schema-1 practice run/records/preferences preserved exactly with new schema fields; original backup verified |
+| Omarchy desktop | Updated native Wayland FreeSki window opened; endless hands-on acceptance remains pending |
+| Arch package | Blocked by missing system Rust prerequisite; user-local mise Rust builds succeed. Staged installation is separate evidence |
+
+Captures inspected under `/tmp/freeski-captures/endless-{dark,light,compact,200}/`:
+`free-ready.png`, `free-long-run.png`, `free-mid-jump.png`, `free-recovery.png`,
+`free-skiing.png`. Local logs: `/tmp/freeski-endless-workspace.log`,
+`/tmp/freeski-endless-headless.log`, `/tmp/freeski-endless-native-all.log`.
+The staged upgrade evidence is `/tmp/freeski-endless-upgrade/{before,after}.png`.
+These are local acceptance artifacts; CI uploads its corresponding native captures.
+
+Two simultaneously launched `xvfb-run -a` checks initially selected the same virtual
+display and failed window isolation. Reruns on separate display numbers passed;
+CI already runs variants sequentially. Existing Pinball SDL triangle warnings are
+unchanged, with its native/C++ checks passing.
+
+The replay evidence uses explicit tick-stamped production inputs; no player-facing
+replay importer/exporter is shipped. Statistical route checks establish feasibility,
+not difficulty calibration. Test several minutes of the endless mode before tuning
+its density or beginning creature pursuit.

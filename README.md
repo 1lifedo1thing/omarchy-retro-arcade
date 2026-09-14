@@ -12,7 +12,7 @@ Circuit Pinball · Solitaire · Scram · Invaders · Chess · Stack · Snake · 
 
 **Development preview for x86_64 Omarchy.** The nine-game build passes native Linux and Arch installation checks. [Verification and remaining desktop playtesting](docs/VERIFICATION.md).
 
-2048 and the FreeSki practice slope are included when building this source revision. The older preview download below
+2048 and FreeSki are included when building this source revision. The older preview download below
 contains nine games and does **not** include 2048 or FreeSki.
 
 ## Install
@@ -55,7 +55,7 @@ PRs, issues and playtesting are encouraged. [Report a bug, suggest an improvemen
 ## Source layout
 
 - `arcade/`: the Rust app, collection shelf and local Pinball transport.
-- `games/`: eleven implemented games, including the [FreeSki practice slope](games/freeski/README.md), preserving all imported Git history.
+- `games/`: eleven implemented games, including the [FreeSki](games/freeski/README.md), preserving all imported Git history.
 - `packaging/`: one Arch package, icon and desktop entry.
 - `scripts/`: shared build, staging and verification entry points.
 - `shared/presentation/`: shared cabinet materials, control styling and artwork.
@@ -74,5 +74,5 @@ Stack includes offline Marathon and 40-line Sprint, local records and exact resu
 
 2048 is adapted from [Avi Barit (avibarit)](https://github.com/avibarit/2048), with permission reported by Tom Ballard. Original 2048 by [Gabriele Cirulli](https://github.com/gabrielecirulli/2048). [Controls, saves and credits](games/2048/README.md).
 
-FreeSki includes an original 1,200-metre practice slope with carving, braking,
-jumps, crash recovery and suspended runs. [Controls and milestone status](games/freeski/README.md).
+FreeSki includes an authored 1,200-metre practice slope and seeded endless skiing,
+with carving, braking, jumps, crash recovery, separate records and suspended runs. [Controls and milestone status](games/freeski/README.md).

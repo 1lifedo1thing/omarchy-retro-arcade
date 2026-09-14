@@ -63,3 +63,38 @@ rules are unchanged. Production reference: 1,714 ticks / 28.57 s, three jumps,
 zero crashes. Rules-1 save migration preserves the attempt and records with a
 retained original. This revision still needs Tyler's feel/readability acceptance;
 1.69 s is measured visibility, not proof of comfortable human reaction time.
+
+### 2026-09-13: endless terrain and persistence hardening
+
+Tyler reported the revised movement was feeling good and authorized hardening
+and endless Free Ski. Speed, acceleration, turning, brake force, collision sizes,
+jump arc and recovery timing remain the rules-2 values above.
+
+| Parameter | Value | Evidence / purpose |
+| --- | --- | --- |
+| Chunk length | 128 m | Whole chunks cached; no per-frame random placement |
+| Active window | Previous, current and next two chunks | At most four chunks / 72 obstacles; over 256 m ahead at a boundary |
+| Opening | First 92 m clear | Acceleration and time to choose direction |
+| Reserved route | 16 m wide, centres within ±12 m | Smooth connected bends; optional ramp/rock pairs within route |
+| Recovery corridors | x = ±36 m | Hazard clearance checked through 80 chunks for 128 seeds |
+| Density | 8 slots + min(chunk / 3, 8), or 4 in sparse chunks | Caps at chunk 24 / 3,072 m; failed placements reduce density |
+| Sparse stretches / jumps | Hash-selected, nominal 1/6 and 1/3 chunks | Seeded variation; opening has no ramp |
+| Placement retries | At most 12 per slot | Rejected slot is omitted; no unbounded generation loop |
+| Optional jump rock | 16 m after ramp | Corpus uses production jumps; ordinary skiing can steer around |
+| IDs and RNG | Stable chunk/slot IDs; pure u64 hash streams | Regeneration independent of visit order and save timing |
+| Records | Separate practice and Free Ski records | Replacing an unfinished Free Ski run banks its reached distance |
+| Safety limits | Finite y ≤ 2 billion m; ticks < one year | Corrupt-state guards, beyond feasible normal play |
+
+Reference corpus: seeds 0–127, each starting from rest and reaching 5 km with
+ordinary production steering, zero crashes and over 1,000 jumps combined. This
+checks reachability at capped density, not player comfort or long-term variety.
+The public reference steering helper is for evidence only; gameplay never calls it.
+
+A frontend crash regression proved released heading must be resolved per physics
+tick, because a crash resets heading between ticks in a single rendered frame.
+The same post-crash state now results at 30/60/120 Hz. Endless runs across chunk
+boundaries also match across these render schedules and alternating window sizes.
+
+Next human checks: terrain variety after several minutes, readable safe lines at
+full speed, braking before ramps, and whether edge corridors make runs too easy.
+Creature pursuit and Slalom remain separate future tuning sessions.

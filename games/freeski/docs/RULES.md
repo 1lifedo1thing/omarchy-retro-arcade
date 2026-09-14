@@ -1,4 +1,4 @@
-# Practice slope rules v2
+# FreeSki rules v2
 
 The first playable is a finite, authored 1,200-metre practice run. Cross the finish
 flags with at least one crash allowance remaining. A third crash ends the attempt.
@@ -21,6 +21,20 @@ The skier sits 12% down the view, leaving 84.48 m (about 1.69 seconds at maximum
 speed) of downhill look-ahead. The HUD is outside the collision playfield. Resize
 changes projection only. Rendering does not mutate physics or obstacle locations.
 A backlog above 250 ms pauses clearly instead of dropping simulation time.
+
+## Endless Free Ski
+
+Choose Free Ski before starting, or switch from the pause/results screen. Replacing
+an unfinished attempt requires confirmation. The mountain continues beyond 1,200 m;
+three crashes end the run. Each new mountain gets a seed outside the simulation.
+Saving and reopening retains that seed, terrain, momentum, heading and timers.
+Practice completions and Free Ski distance records are separate.
+
+The generator reconstructs bounded chunks from the seed and generator version.
+Only nearby chunks remain in memory; future terrain is prepared beyond the visible
+view before it can appear. Trees, rocks, optional ramp jumps and open stretches
+vary by seed, with a connected clear route and reserved edge recovery corridors.
+Density rises to a fixed cap. No creature pursues the skier in this version.
 
 ## Ramps, obstacles and recovery
 
@@ -62,13 +76,14 @@ This first playable is silent; original audio is part of later presentation work
 
 `$XDG_STATE_HOME/omarchy-retro-arcade/freeski.json` (or the equivalent
 `~/.local/state` path) is independent of all other games. Schema, rules and course
-versions are 1, 2 and 1 respectively. The save contains the complete practice simulation, separate
-record/preference fields and an exactly-once result marker. The course is static
-and versioned; there is no RNG/chunk state in this milestone.
+versions are 2, 2 and 1 respectively; endless generator version is 1. The save contains the complete practice simulation, separate
+record/preference fields and an exactly-once result marker. Practice is static. Free Ski stores its seed and generator version; the current
+chunk window is reconstructed exactly from seed and skier position, with no hidden
+mutable RNG state.
 
-Rules-1 saves migrate with their position, momentum, flight/recovery, records and
+Schema-1 and rules-1 practice saves migrate with their position, momentum, flight/recovery, records and
 preferences intact, then resume paused under the faster rules. Before rewriting,
-the original is retained as `freeski.rules-1-N.json`. Invalid legacy values still
+the original is retained as `freeski.schema-1-N.json` or `freeski.rules-1-N.json`. Invalid legacy values still
 fail validation; backup failure leaves the original untouched.
 
 Native writes reuse the existing private atomic-storage helper. The headless

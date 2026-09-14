@@ -59,7 +59,9 @@ and reliable pause/save/resume. Use the production engine from the first build.
   resulting tuning changes. Headless checks alone do not pass this milestone.
 
 Tyler’s first playtest requested much higher top speed and true 90° turns. Rules 2
-implements that feedback; acceptance of the revised feel remains open.
+implements that feedback. On 13 September Tyler reported that it was “feeling pretty
+good” and authorized hardening and endless terrain. Full keyboard/mouse and
+difficulty acceptance remains broader than this positive movement feedback.
 
 The initial playable uses one authored practice slope. Endless generation,
 creature pursuit and the five-course Slalom progression follow after its movement

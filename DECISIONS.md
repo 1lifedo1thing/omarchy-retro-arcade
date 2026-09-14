@@ -94,3 +94,28 @@
 - Explicit rules-1 migration retains the complete run, records and preferences,
   restores paused, and backs up the original file before the next atomic write.
   Schema/course versions remain 1; invalid/future saves retain existing recovery.
+
+## Endless Free Ski and simulation hardening (13 September 2026)
+
+- Tyler liked the revised movement and authorized hardening plus endless terrain,
+  explicitly using GPT-5.6 Sol at medium effort in parallel. Two bounded workers
+  handled terrain and simulation/storage; the parent integrated native UI, reviewed
+  code, added render-timing regression coverage, and ran acceptance checks.
+- Preserve rules-2 movement and the authored practice slope. Add a Free Ski mode,
+  separate distance record, seeded mountains, mode choice and confirmed replacement
+  of unfinished attempts. Each new mountain gets a fresh seed outside simulation;
+  reopening regenerates the same terrain from saved seed and position.
+- Generator 1 uses deterministic 128 m chunks with a bounded four-chunk window,
+  capped density, bounded placement attempts, connected turning room and reserved
+  edge recovery corridors. Reference inputs use the real engine; no autoplay or
+  test-only collision exemptions enter the game.
+- Schema 2 stores mode, seed, generator version and a separate Free Ski record.
+  Existing schema-1/rules-1 practice data migrates with original-file backups.
+  Save validation checks numeric/version bounds before any terrain work and rejects
+  future generators without changing the file. Replacing an unfinished Free Ski
+  run preserves its distance in the record.
+- Fix released-key heading resolution across multiple ticks in a rendered frame:
+  a crash reset cannot be undone by a stale frame input. Production input schedules
+  resume identically through chunk boundaries and mid-jump saves.
+- Endless human difficulty/variety acceptance is pending. No creature, Slalom,
+  audio, new package identity, online service or other-game save changes are added.
