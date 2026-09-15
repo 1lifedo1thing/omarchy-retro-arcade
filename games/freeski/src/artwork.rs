@@ -342,9 +342,10 @@ pub fn skier(p: &egui::Painter, ground: Pos2, s: f32, sim: &Sim, braking: bool, 
     }
     let origin = ground - Vec2::new(0., flight * 1.3) * s;
     let crashed = sim.tumble > 0;
+    let tucked = sim.fast_mode && !braking && !crashed && flight == 0.;
     let yaw = -(sim.heading as f32);
     let facing = sim.heading.sin() as f32;
-    let crouch = if crashed {
+    let crouch = if crashed || tucked {
         0.
     } else if braking {
         0.32
@@ -354,7 +355,16 @@ pub fn skier(p: &egui::Painter, ground: Pos2, s: f32, sim: &Sim, braking: bool, 
     let roll = if crashed { 1.32 } else { 0. };
     let rotate =
         |v: Vec2, a: f32| Vec2::new(v.x * a.cos() - v.y * a.sin(), v.x * a.sin() + v.y * a.cos());
-    let body = |x: f32, y: f32| rotate(Vec2::new(x, y + crouch), roll);
+    // Fast mode folds the silhouette at the knees: a low, broad jacket,
+    // lowered helmet and hands together. It remains legible with effects off.
+    let body = |x: f32, y: f32| {
+        let pose = if tucked {
+            Vec2::new(x * 1.10, y * 0.60 + 0.10)
+        } else {
+            Vec2::new(x, y + crouch)
+        };
+        rotate(pose, roll)
+    };
     let draw_body = |pts: &[(f32, f32)], color, outline| {
         let pts: Vec<_> = pts
             .iter()
@@ -373,7 +383,8 @@ pub fn skier(p: &egui::Painter, ground: Pos2, s: f32, sim: &Sim, braking: bool, 
         } else {
             yaw + if braking { side * 0.20 } else { 0. }
         };
-        let ski = |x: f32, y: f32| rotate(Vec2::new(x + side * 0.59, y), angle);
+        let stance = if tucked { 0.43 } else { 0.59 };
+        let ski = |x: f32, y: f32| rotate(Vec2::new(x + side * stance, y), angle);
         let pts: Vec<_> = [
             (-0.16, -1.42),
             (-0.16, 1.53),
@@ -396,7 +407,7 @@ pub fn skier(p: &egui::Painter, ground: Pos2, s: f32, sim: &Sim, braking: bool, 
             Stroke::new(0.12 * s, GOLD),
         );
         let boot = ski(0., 0.0);
-        let knee = body(side * 0.46, -0.71);
+        let knee = body(side * if tucked { 0.64 } else { 0.46 }, -0.71);
         p.line_segment(
             [origin + body(side * 0.24, -1.19) * s, origin + knee * s],
             Stroke::new(0.50 * s, INK),
@@ -455,11 +466,18 @@ pub fn skier(p: &egui::Painter, ground: Pos2, s: f32, sim: &Sim, braking: bool, 
     );
     for side in [-1., 1.] {
         let shoulder = body(side * 0.57, -2.14);
-        let elbow = body(side * 0.95, -1.72);
-        let hand = body(
-            side * (if flight > 0. { 1.25 } else { 0.93 }),
-            if braking { -1.35 } else { -1.55 },
+        let elbow = body(
+            side * if tucked { 0.77 } else { 0.95 },
+            if tucked { -1.05 } else { -1.72 },
         );
+        let hand = if tucked {
+            body(side * 0.35, -1.12)
+        } else {
+            body(
+                side * (if flight > 0. { 1.25 } else { 0.93 }),
+                if braking { -1.35 } else { -1.55 },
+            )
+        };
         p.line_segment(
             [origin + shoulder * s, origin + elbow * s],
             Stroke::new(0.45 * s, INK),
@@ -474,7 +492,10 @@ pub fn skier(p: &egui::Painter, ground: Pos2, s: f32, sim: &Sim, braking: bool, 
         );
         let tip = hand
             + rotate(
-                Vec2::new(side * 0.20, -1.70),
+                Vec2::new(
+                    side * if tucked { 0.48 } else { 0.20 },
+                    if tucked { -2.9 } else { -1.70 },
+                ),
                 if crashed { roll } else { yaw },
             );
         p.line_segment(

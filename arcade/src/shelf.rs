@@ -30,7 +30,8 @@ impl Game {
             Self::Bubble => ([0.30, 0.10], [0.73, 0.93]),
             Self::Blast => ([0.07, 0.13], [0.93, 0.96]),
             Self::TwentyFortyEight => ([0., 0.], [1., 1.]),
-            Self::FreeSki => ([0., 0.], [1., 1.]),
+            // Native 1280×900 capture: frame the chase and the approaching terrain.
+            Self::FreeSki => ([316. / 1280., 206. / 900.], [964. / 1280., 656. / 900.]),
         };
         Rect::from_min_max(Pos2::from(a), Pos2::from(b))
     }

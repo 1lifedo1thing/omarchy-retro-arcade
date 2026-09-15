@@ -3,8 +3,9 @@
 ## Current rules 3 — 2026-09-14 difficulty revision
 
 Tyler approved implementing the difficulty audit, including F-key fast mode. The
-following values supersede the historical rules-2 values below. Human acceptance
-of these changes is still pending in [PLAYTESTS.md](PLAYTESTS.md).
+following values supersede the historical rules-2 values below. Tyler's follow-up
+approves general speed/game feel; close-range pursuit required the correction
+below. Post-fix human acceptance remains in [PLAYTESTS.md](PLAYTESTS.md).
 
 | Player parameter | Current value |
 | --- | --- |
@@ -26,9 +27,12 @@ Generator 1 remains reproducible for existing active mountains; restart uses 2.
 | --- | --- |
 | Maximum speed / acceleration | 82 m/s / 16 m/s² |
 | Desired speed before cornering | Skier speed + 18 m/s, bounded to 48–82 m/s |
-| Turn rate / turning drag | 1.6 rad/s / 7 m/s² at maximum turning effort |
+| Turn rate / turning drag | 4 rad/s / 7 m/s² at maximum turning effort |
+| Braking | 72 m/s² |
+| Interception lead | Separation / 82 m/s, capped at 0.5 s; derived from the physical skier segment |
+| Corner speed target | Turn rate × target distance / (2 × max(sin(turn error), 0.05)); zero when facing away |
 | Anticipatory probe | 0.75 seconds of speed, bounded to 24–56 m |
-| Detour lifetime / minimum commitment | At most 120 ticks / 30 ticks before clear direct-route release |
+| Detour lifetime / minimum commitment | At most 120 ticks / 30 ticks; nearby clear interception can release immediately |
 | Contact momentum | 65% retained, with an 18 m/s floor; actual movement still stops at contact |
 | Warning / recovery | Unchanged 1,000 m / 180 ticks; protected 14 m gap |
 
@@ -38,7 +42,8 @@ small numeric boundary tolerance, never travel through the obstacle. Protection
 and terrain contacts are ordered by their fractions, so later terrain cannot
 override an earlier recovery boundary.
 
-The production `difficulty-evidence` corpus uses 32 seeds, up to 12,000 ticks each,
+Before the close-range correction, the production `difficulty-evidence` corpus
+used 32 seeds, up to 12,000 ticks each,
 four input strategies and both speed modes. At ordinary pace, 27/32 perfect-route
 runs were caught; 5 survived the full 200 seconds. All 32 fast-route runs survived
 without crashes. Straight-input runs all ended in a catch or three crashes; both
@@ -46,6 +51,40 @@ fixed-edge strategies crashed out in every seed at either pace. The longest
 unprotected stationary spell was 132 ticks (2.2 s), with no permanent stall seen
 in this sample. This controller knows the generator's route; these are feasibility
 and pressure measurements, not human escape rates or universal guarantees.
+
+### Close-range interception correction, 14 September 2026
+
+Tyler observed overshooting, circling and delayed catches beside a crashed skier.
+A minimized production Session with no obstacles, no protection and a stationary
+braked skier reproduced circling beyond five seconds: yeti offset (8,-8), speed
+60 m/s, heading 0. The old corner policy retained at least 42 m/s while turning
+at 1.6 rad/s, a minimum turning radius around 26 m. A close target was therefore
+unreachable on that circle. Swept catch tests passed; protection and terrain were
+absent, excluding them as the cause of this reproduction.
+
+Distance-based corner speed removes the orbit. Stronger braking and turning plus
+a bounded lead address moving crossing approaches. A fixed nonzero lead was
+rejected because it could settle ahead of a moving skier; the selected lead
+shrinks with separation. Near-target navigation checks the actual approach rather
+than an obstacle/edge beyond it. Catch radius, speed cap, acceleration, terrain
+sweeps, warning and recovery protection are unchanged. No new saved fields or
+record migration: this is a correction within rules 3; restored chases retain
+state and use the corrected policy.
+
+All 60 clear approach cases (three skier speeds, five offsets, four initial yeti
+headings) catch within nine seconds, including initially facing away. The stationary
+Session reproduction catches within 2.5 seconds. Protected recovery remains safe
+and catches resume within 2.5 seconds when the skier then brakes after expiry.
+The seed-17 normal evasive route now buys 36 ticks over straight descent, replacing
+the obsolete one-second expectation. The long-gap save regression uses fast mode
+to retain its >512 m escape instead of relying on an ordinary-speed missed chase.
+
+The rerun 256-run corpus catches all 32 normal reference routes within 7.15–14.03
+seconds after spawn. All 32 fast reference routes survive 200 seconds with no
+crashes. Straight strategies all end in a catch or three crashes; fixed edges all
+crash out. Maximum unprotected stationary time is 47 ticks (0.78 s). These are
+terrain-aware reference inputs, not human difficulty acceptance or universal
+navigation guarantees.
 
 | Slalom course | Normal reference | Fast reference | Gold | Silver |
 | --- | --- | --- | --- | --- |

@@ -6,19 +6,18 @@ Free Ski save/resume, a longer pursuit-off run and settings/display checks.
 [PLAYTESTS.md](PLAYTESTS.md) records the exact scope and unknowns. Preserve the
 approved controls, movement, artwork and sound.
 
-## Three requested fixes
+## Playtest fixes implemented
 
-1. Give the skier a distinct tuck pose during fast mode. A readable pose change
-   is sufficient; animation is optional. Keep this visual, independent of physics.
-2. Diagnose and fix missed yeti interceptions. Tyler observed repeated passing,
-   circling and falling behind, plus stopping beside a crashed skier before an
-   eventual catch. Reproduce with production inputs; distinguish intentional
-   crash protection from steering, collision and catch defects. Add a regression
-   for the reproduced cause, preserve physical navigation and avoid teleporting
-   or awarding catches solely because the creature appears on screen.
-3. Replace the FreeSki Arcade selection image with an interesting actual gameplay
-   screenshot. Preserve the approved art and shelf theme. Do not reset Tyler's
-   real save to prepare a capture.
+- Fast mode visibly tucks the skier; braking/jumps/crashes retain their own poses,
+  and reduced effects keeps the tuck visible.
+- Pursuit now brakes and turns for close interception, leads moving targets and
+  avoids needless detours beyond the skier. Physical catch distance and crash
+  protection are preserved. Reproduction, parameters and corpus are in TUNING.md.
+- The Arcade selection image is a real native gameplay screenshot. Its source
+  and capture method are in assets/README.md; actual user saves were preserved.
+
+These changes require the focused human retest below; recording them does not
+claim Tyler has already accepted the corrected build.
 
 ## Remaining acceptance
 

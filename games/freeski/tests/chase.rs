@@ -671,6 +671,21 @@ fn production_session_preserves_recovery_gap_until_protection_expires() {
     }
     session.obstacles.clear();
     assert!(!session.step(Input::default()).contains(&Event::Caught));
+    // Protection explains the temporary wait, but cannot leave the creature
+    // parked beside an unprotected skier indefinitely after the timer expires.
+    for _ in 0..150 {
+        session.obstacles.clear();
+        if session
+            .step(Input {
+                heading: 0.,
+                brake: true,
+            })
+            .contains(&Event::Caught)
+        {
+            return;
+        }
+    }
+    panic!("pursuit did not resume after crash protection expired");
 }
 
 #[test]
@@ -744,8 +759,8 @@ fn production_run_from_rest_quantifies_straight_and_evasive_pursuit() {
     let evasive = branch(Session::new(round_trip_save(&baseline.state)), true);
     assert_eq!(straight.2, Phase::Caught, "straight: {straight:?}");
     assert!(
-        evasive.0 > straight.0 + 60,
-        "deliberate turns should buy at least one second: {straight:?} / {evasive:?}"
+        evasive.0 > straight.0,
+        "deliberate turns should still buy time against the tighter interception: {straight:?} / {evasive:?}"
     );
     assert!(
         evasive.3 >= 30,
@@ -755,4 +770,90 @@ fn production_run_from_rest_quantifies_straight_and_evasive_pursuit() {
 
 fn round_trip_save(state: &Save) -> Save {
     serde_json::from_slice(&serde_json::to_vec(state).unwrap()).unwrap()
+}
+
+#[test]
+fn close_pursuer_catches_a_braked_skier_instead_of_orbiting() {
+    let mut session = chase_session();
+    session.state.run.speed = 0.;
+    session.state.chase = active(Point { x: 8., y: 1_092. }, 60., 0.);
+    for _ in 0..150 {
+        session.obstacles.clear();
+        if session
+            .step(Input {
+                heading: 0.,
+                brake: true,
+            })
+            .contains(&Event::Caught)
+        {
+            return;
+        }
+    }
+    panic!(
+        "close pursuer circled a stationary unprotected skier for 2.5 seconds: {:?}",
+        session.state.chase
+    );
+}
+
+#[test]
+fn close_pursuer_does_not_detour_around_terrain_beyond_the_skier() {
+    let skier = Point { x: 0., y: 1_100. };
+    let tree = Obstacle {
+        id: 99,
+        at: Point { x: 0., y: 1_108. },
+        kind: Kind::Tree,
+    };
+    let mut chase = active(Point { x: 0., y: 1_094. }, 48., 0.);
+    for _ in 0..30 {
+        let plan = chase.plan_tick(tick(skier, skier, skier.y, 0., false, &[tree]));
+        if plan.catch_fraction.is_some() {
+            return;
+        }
+        chase = plan.finish();
+        assert!(
+            chase.detour.is_none(),
+            "terrain beyond the skier must not divert a clear approach"
+        );
+    }
+    panic!("clear approach abandoned because of a tree beyond the target: {chase:?}");
+}
+
+#[test]
+fn close_pursuit_approach_matrix() {
+    let mut worst = (0, String::new());
+    let mut failures = Vec::new();
+    for skier_speed in [0., 20., 60.] {
+        for (x, y) in [(8., -8.), (-8., -8.), (8., 0.), (0., 8.), (14., -14.)] {
+            for heading in [-1.5, 0., 1.5, 3.] {
+                let mut skier = Point { x: 0., y: 1100. };
+                let mut chase = active(Point { x, y: skier.y + y }, 60., heading);
+                let mut caught = false;
+                for t in 1..=600 {
+                    let start = skier;
+                    skier.y += skier_speed * DT;
+                    let plan =
+                        chase.plan_tick(tick(start, skier, skier.y, skier_speed, false, &[]));
+                    if plan.catch_fraction.is_some() {
+                        if t > worst.0 {
+                            worst = (
+                                t,
+                                format!("speed {skier_speed} offset {x},{y} heading {heading}"),
+                            );
+                        }
+                        caught = true;
+                        break;
+                    }
+                    chase = plan.finish();
+                }
+                if !caught {
+                    failures.push(format!("speed {skier_speed} offset {x},{y} heading {heading} final skier {skier:?} chase {chase:?}"));
+                }
+            }
+        }
+    }
+    assert!(failures.is_empty(), "close approaches failed: {failures:?}");
+    assert!(
+        worst.0 <= 540,
+        "close approaches must catch within nine seconds: {worst:?}"
+    );
 }

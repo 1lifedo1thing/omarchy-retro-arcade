@@ -88,7 +88,7 @@ impl Game {
             Self::Bubble => egui::include_image!("../../games/bubble/docs/game.png"),
             Self::Blast => egui::include_image!("../../games/blast/docs/game.png"),
             Self::TwentyFortyEight => egui::include_image!("../../games/2048/docs/shelf.svg"),
-            Self::FreeSki => egui::include_image!("../../games/freeski/assets/shelf.svg"),
+            Self::FreeSki => egui::include_image!("../../games/freeski/assets/shelf.png"),
             Self::Chess => egui::include_image!("../../games/chess/docs/preview.png"),
             Self::Solitaire => {
                 egui::include_image!("../../games/solitaire/docs/screenshots/table.png")

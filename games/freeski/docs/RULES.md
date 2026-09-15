@@ -20,6 +20,9 @@ Speed builds gradually to 60 m/s on straight snow. F toggles fast tuck during an
 active run, raising the cap to 90 m/s without changing steering authority. The
 toggle is also a visible button. There is no cooldown or stamina bar. Leaving fast
 mode sheds excess speed gradually; braking still works in either mode.
+Fast mode visibly folds the skier into a low tuck with narrow skis, close hands
+and trailing poles. Braking, jumps and tumbles retain their distinct poses;
+reduced effects keeps the tuck visible.
 The fixed 96 × 96 m view shows the same terrain at every supported window size.
 The skier sits 12% down the view, leaving 84.48 m (about 1.41 seconds at normal top
 speed or 0.94 seconds in fast mode) of downhill look-ahead. The HUD is outside the collision playfield. Resize
@@ -51,7 +54,10 @@ spawn retries at bounded intervals. Active pursuit never teleports: it accelerat
 turns and collides with terrain in world coordinates. If the forward routes are
 blocked, it chooses a bounded, persistent detour and physically turns around
 terrain; contact still stops movement rather than passing through obstacles.
-Its higher ordinary straight speed creates pressure. Fast tuck can outrun it on
+For interception it leads the skier's physical motion by up to half a second,
+brakes to fit a tight approach and turns at up to 4 rad/s. A nearby clear approach
+takes priority over a detour around terrain beyond the target. Its higher ordinary
+straight speed creates pressure. Fast tuck can outrun it on
 clear snow, while obstacle hits and poorly timed turns risk losing that advantage.
 The creature is drawn at its physical position, with a labelled distance marker
 when outside the view. The warning remains visible when muted.

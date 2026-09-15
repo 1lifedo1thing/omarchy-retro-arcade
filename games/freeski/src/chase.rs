@@ -20,8 +20,8 @@ pub const CATCH_RADIUS: f64 = RADIUS + crate::engine::RADIUS;
 pub const RECOVERY_SAFE_GAP: f64 = 14.;
 pub const MAX_SPEED_PURSUER: f64 = 82.;
 pub const ACCELERATION: f64 = 16.;
-pub const BRAKING: f64 = 24.;
-pub const TURN_RATE: f64 = 1.6;
+pub const BRAKING: f64 = 72.;
+pub const TURN_RATE: f64 = 4.;
 pub const TURN_DRAG: f64 = 7.;
 
 const OBSTACLE_MARGIN: f64 = 0.35;
@@ -261,9 +261,14 @@ struct Movement {
 
 fn move_actor(chase: &Chase, input: TickInput<'_>) -> Movement {
     let target = input.skier_end;
+    // Lead the physical skier segment by a short, bounded reaction horizon.
+    // Chasing their old location makes a crossing approach turn behind them.
+    let lead = (distance(chase.position, target) / MAX_SPEED_PURSUER).min(0.5) / DT;
     let pursuit_target = Point {
-        x: target.x.clamp(-HALF_WIDTH + RADIUS, HALF_WIDTH - RADIUS),
-        y: target.y,
+        x: (target.x + (input.skier_end.x - input.skier_start.x) * lead)
+            .clamp(-HALF_WIDTH + RADIUS, HALF_WIDTH - RADIUS),
+        y: (target.y + (input.skier_end.y - input.skier_start.y) * lead)
+            .clamp(0., MAX_ENDLESS_DISTANCE),
     };
     let separation = distance(chase.position, target);
     let protected_close = input.protected && separation <= RECOVERY_SAFE_GAP + 8.;
@@ -272,7 +277,13 @@ fn move_actor(chase: &Chase, input: TickInput<'_>) -> Movement {
     let desired = heading_to(chase.position, navigation_target);
     let turn_error = wrap_angle(desired - chase.heading).abs();
     let pursuit_speed = (input.skier_speed + 18.).clamp(48., MAX_SPEED_PURSUER);
-    let corner_speed = MAX_SPEED_PURSUER - 40. * (turn_error / TURN_RATE).clamp(0., 1.);
+    // Bound the turning circle to the remaining approach. A fixed minimum
+    // corner speed made a close, stationary target physically unreachable.
+    let corner_speed = if turn_error > std::f64::consts::FRAC_PI_2 {
+        0.
+    } else {
+        TURN_RATE * distance(chase.position, navigation_target) / (2. * turn_error.sin().max(0.05))
+    };
     let desired_speed = if protected_close {
         0.
     } else {
@@ -354,6 +365,14 @@ fn navigation_target(
     target: Point,
     obstacles: &[Obstacle],
 ) -> (Point, Option<Point>, u16) {
+    // Intercept a nearby skier on a clear segment. Probing a full navigation
+    // horizon beyond them could invent an edge/terrain detour and run past
+    // the catch, even though the path to the skier was unobstructed.
+    if distance(chase.position, target) <= look_ahead(chase.speed)
+        && first_obstacle_contact(chase.position, target, obstacles).is_none()
+    {
+        return (target, None, 0);
+    }
     if let Some(waypoint) = chase.detour.filter(|_| chase.detour_ticks > 0) {
         let old_enough = chase.detour_ticks <= DETOUR_TICKS - DETOUR_MIN_TICKS;
         let direct_clear = probe_point(

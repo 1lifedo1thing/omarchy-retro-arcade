@@ -213,6 +213,9 @@ fn a_long_production_escape_remains_saveable_when_the_creature_falls_behind() {
     let mut save = Save::default();
     save.select_chase(true, 17);
     save.run.start();
+    // Fast skiing is the intended escape route after close-range interception
+    // was fixed; retain the >512 m persistence regression at that pace.
+    save.run.toggle_fast_mode();
     let mut session = Session::new(save);
     let mut widest_gap = 0_f64;
     for _ in 0..12_000 {

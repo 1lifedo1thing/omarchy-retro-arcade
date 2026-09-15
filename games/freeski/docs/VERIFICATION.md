@@ -606,3 +606,63 @@ catch beside a crashed skier were observed. Fast-mode tuck art and a real Arcade
 preview screenshot are also requested. This documentation update implements no
 fixes and adds no automated or package-install evidence. Prior pending-human
 entries describe their historical verification sessions.
+
+
+## Follow-up fixes: close pursuit, tuck and native preview (14 September 2026)
+
+Implemented the three fixes requested in the follow-up human playtest. The new
+pose and screenshot are presentation changes; interception corrects pursuit within
+rules 3 without adding fields or migrating records. Human approval of these fixes
+is still pending in PLAYTESTS.md.
+
+Diagnosis started with `cargo test -p omarchy-freeski --locked
+--no-default-features --test chase close_pursuer -- --nocapture`. The stationary
+production Session reproduction failed on the old code after five seconds of
+circling, with no obstacles or protection. Competing explanations were recovery
+protection, terrain detours and swept-catch failure; the first two were absent
+and existing sweep tests passed. The fixed minimum corner speed/turn radius was
+the primary cause. The direct-segment regression additionally prevents needless
+nearby detours. TUNING.md records the selected policy and rejected fixed lead.
+
+| Check | Result |
+| --- | --- |
+| Workspace tests, locked/all targets, real required Stockfish | PASS: 311 tests; engine supplied via OMARCHY_CHESS_ENGINE |
+| Headless FreeSki | PASS: 80 tests; final strengthened chase-only run passes all 21 chase tests |
+| Workspace fmt and strict Clippy/all targets | PASS, including the new fixture example |
+| Release native app | PASS |
+| Close approaches | PASS: 60 speed/offset/heading cases; stopped-skier reproduction catches within 2.5 s; no catches during protected recovery; braked skier caught within 2.5 s after expiry |
+| Production difficulty corpus | PASS: 256 runs over 32 seeds, four strategies and two paces; all normal reference routes caught, all fast reference routes survive; max unprotected stall 47 ticks |
+| Native close-chase captures | PASS: dark, light, compact and 200%; actual actor motion, saved paused/caught states, shelf return and close/reopen |
+| Native pose captures | PASS: ordinary, fast tuck, reduced-effects tuck and fast-mode braking; visually inspected at actual resolution and magnified for geometry comparison |
+| Native shelf preview | PASS: real gameplay PNG and final crop inspected at 200%; original approved game art retained |
+| Native switching | PASS: singleton and one window across all eleven games, real Stockfish response, existing save identities and clean shutdown |
+| Existing Pinball checks | PASS: theme-palette, theme-path and authored-upstream-table, using existing unchanged build |
+| Desktop entry | PASS: desktop-file-validate |
+| Staged install | PASS: scripts/install.sh into disposable /tmp/freeski-close-stage; not a system package installation |
+| Actual Omarchy reopen | PASS: closed previous app normally, reopened updated Wayland build and verified exact retained run/chase/records/preferences/unlocks; game left open |
+| New Arch package / system install and upgrade | NOT RUN in this fix pass; remains a separate release acceptance check |
+| Human acceptance | PENDING focused retest of pursuit, tuck and preview; previous playtest results preserved |
+
+The very-close capture fixture can reach Caught before a wall-clock pause command;
+that is a valid terminal capture, not proof of paused continuation. Dark/light
+runs also demonstrated an active paused chase. A first 200% run during concurrent
+software rendering hit the deliberate backlog pause before actor motion; the
+isolated rerun after render settling passed. Early workspace execution used an
+unrecognized engine environment name and correctly failed the required Stockfish
+test; the complete rerun with OMARCHY_CHESS_ENGINE passed. Native Pinball emitted
+its existing SDL triangle warnings while the switching assertions passed.
+
+Reproduce the source frame with `cargo run -p omarchy-freeski --locked
+--no-default-features --example preview-evidence -- /tmp/freeski-close-preview.json`.
+The example also writes matched `pose-normal.json` and `pose-fast.json` through
+ordinary ticks/toggles. Run `scripts/native-freeski-close.py BINARY OUTPUT FIXTURE
+[dark|light|compact|200]` under Xvfb for real native capture/lifecycle evidence. It
+uses a disposable XDG directory and never edits actor state or the user's save.
+The checked-in shelf source frame predates a catch and its provenance is in
+assets/README.md. Capturing later frames does not manufacture a screenshot.
+
+Temporary local evidence: `/tmp/freeski-close-{workspace,tests,final-chase,
+final-clippy,build,native-all,install}.log`, `/tmp/freeski-close-corpus.json`,
+`/tmp/freeski-close-native/`, `/tmp/freeski-close-poses/` and
+`/tmp/freeski-close-wayland.log`. These may expire; tests, fixture generator,
+capture script and the shelf PNG are retained in the repository.

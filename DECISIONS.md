@@ -251,3 +251,22 @@ the revised difficulty's record domain; prior scores are readable in Settings an
 course unlocks survive. This avoids comparing old medal targets/terrain against
 new rules or regenerating hazards beneath a suspended skier. Chase-on/off records
 remain separate. No existing user state is reset for validation or screenshots.
+
+
+## 2026-09-14: FreeSki close interception and honest preview
+
+The follow-up playtest approves general movement but identifies yeti overshoots,
+missing fast-mode body language and an illustrated preview that misrepresents
+actual gameplay. Correct pursuit within rules 3: a distance-based corner limit,
+4 rad/s turning, 72 m/s² braking and a separation-bounded interception lead replace
+a minimum-speed orbit around close targets. Nearby clear paths supersede detours
+around geometry beyond the target. Retain physical sweeps, catch radius, 82 m/s
+cap, recovery protection, deterministic state and all saved fields/record domains.
+Fast mode remains the intended straight-line escape.
+
+The original skier geometry now folds into a clear tuck in fast mode, with narrow
+skis, hands close and trailing poles; braking, flight and crash silhouettes take
+precedence. This remains renderer-only and visible with reduced effects. Replace
+the shelf illustration with an actual native screenshot reached through production
+inputs in disposable state. The shelf crops the capture to the chase and upcoming
+terrain. Preserve the approved art, compact menus and actual user saves.
