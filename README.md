@@ -93,7 +93,7 @@ PRs, issues and playtesting are encouraged. [Report a bug, suggest an improvemen
 - `shared/leaderboard/`: optional background HTTP transport.
 - `services/leaderboard/`: separately deployable replay-validation service; no public endpoint is bundled.
 
-Ten Rust games draw directly into the shared window. Pinball retains the upstream C++ physics engine in a private worker whose rendering appears in that same window, including on Wayland. No browser, X11 child-window embedding or separate game launcher is used.
+Twelve Rust games draw directly into the shared window. Pinball retains the upstream C++ physics engine in a private worker whose rendering appears in that same window, including on Wayland. No browser, X11 child-window embedding or separate game launcher is used.
 
 Existing save paths remain authoritative. Pinball preserves high scores and settings, but does not resume unfinished tables. The other games save when returning to Arcade.
 
