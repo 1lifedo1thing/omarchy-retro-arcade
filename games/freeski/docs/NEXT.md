@@ -1,39 +1,37 @@
-# Next: human acceptance of the difficulty revision
+# Next: playtest fixes and release acceptance
 
-Pursuit and the five-course Slalom Cup are implemented. The previous extraction
-and pursuit brief was completed in the whole-game pass. See PLAN.md for scope,
-SYSTEM.md for ownership and VERIFICATION.md for actual checks.
+Tyler's September 14 follow-up approves the revised general speed/game feel,
+Slalom in exercised play (including five-second misses), the Practice finish,
+Free Ski save/resume, a longer pursuit-off run and settings/display checks.
+[PLAYTESTS.md](PLAYTESTS.md) records the exact scope and unknowns. Preserve the
+approved controls, movement, artwork and sound.
 
-Tyler's first recorded [human playtest](PLAYTESTS.md) approves controls, jumping,
-collisions, pause, art and sound. Practice and a separate Free Ski chase were
-exercised. Warning and catch worked, but speed and difficulty needed revision;
-possible yeti sticking was unconfirmed. The approved [difficulty audit](DIFFICULTY-AUDIT.md)
-now informs rules 3: 60 m/s normal speed, 90 m/s fast tuck, stronger pursuit and
-new terrain. Latest technical evidence belongs in VERIFICATION.md; human acceptance
-of the revision remains open.
+## Three requested fixes
 
-The remaining human checks include:
+1. Give the skier a distinct tuck pose during fast mode. A readable pose change
+   is sufficient; animation is optional. Keep this visual, independent of physics.
+2. Diagnose and fix missed yeti interceptions. Tyler observed repeated passing,
+   circling and falling behind, plus stopping beside a crashed skier before an
+   eventual catch. Reproduce with production inputs; distinguish intentional
+   crash protection from steering, collision and catch defects. Add a regression
+   for the reproduced cause, preserve physical navigation and avoid teleporting
+   or awarding catches solely because the creature appears on screen.
+3. Replace the FreeSki Arcade selection image with an interesting actual gameplay
+   screenshot. Preserve the approved art and shelf theme. Do not reset Tyler's
+   real save to prepare a capture.
 
-1. Start a new Free Ski mountain with Creature pursuit enabled (a restored Legacy
-   run retains old terrain). Compare ordinary skiing with F / the Fast button.
-   Ski past 1,000 m and test chase pressure, obstacle detours and difficult but
-   earned escapes. Record any unprotected stall with its seed and position.
-2. Complete Pinecone Path with keyboard steering, then with mouse steering. Check
-   that the next gate, five-second misses, finish, medal and next-course unlock are
-   clear. Continue through Summit Cup to assess the difficulty progression.
-3. Pause during a chase or race, return to Arcade, and reopen. Check audio, input
-   ownership and saved continuation on the actual Omarchy desktop.
-4. Compare ordinary and reduced effects, mute, compact size and desktop scaling.
-   The view exposes 84.48 m downhill, just 0.94 s at fast cap; report hazards
-   revealed too late, especially during jumps and turns.
+## Remaining acceptance
 
-Record date, source revision, seed/course, input method, screen conditions,
-observed problem and a specific tuning hypothesis. Reference runs are automated
-feasibility evidence and must not be relabelled as human playtests. The September
-14 feedback reopens the previously accepted 50 m/s speed baseline. Preserve the
-liked steering response (currently 1.6 rad/s); adjust difficulty using evidence.
+- Confirm whether Tyler's Cup play covered all five courses and their unlocks/
+  medals; the report praises the Cup but does not enumerate course completion.
+- After the fixes, do a focused normal/fast chase retest, including close passes,
+  obstacle approaches, post-crash recovery and saved continuation of pursuit.
+  Check tuck readability and the replacement shelf preview at the same time.
+- Build and verify the final package, installation/upgrade, switching to other
+  games and preservation of existing saves. Prior staging/extracted-package
+  evidence does not claim system package installation of the final revision.
 
-For a reproducible defect, capture the smallest production-input replay and add a
-regression in the owning module. Use Session for whole-run evidence; rendering or
-fixture generation must not move actors, grant medals or exempt collisions.
-Remaining release/environment gaps, if any, belong in VERIFICATION.md.
+No broad repeat of already approved playtesting is needed unless a fix regresses
+it. Record seed, revision and a small production-input replay for pursuit defects.
+Rules/tuning and verification must reflect actual changes and checks; automated
+reference routes remain separate from human difficulty acceptance.

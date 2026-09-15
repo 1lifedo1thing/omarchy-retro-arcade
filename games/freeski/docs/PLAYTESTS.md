@@ -29,22 +29,22 @@ Do not reinterpret the navigation concern as a confirmed recurrence of the rock
 deadlock fixed earlier. That defect and its bounded regression evidence remain
 documented in [TUNING.md](TUNING.md).
 
-## Remaining human acceptance
+## Current human acceptance
+
+Updated from the follow-up session below. Broad approval is recorded as reported;
+it does not imply unreported per-course or persistence edge-case coverage.
 
 | Test | Status / expected observation |
 | --- | --- |
-| Difficulty revision | Open: repeat Free Ski after agreed tuning; challenging pursuit with understandable, earned escapes. |
-| Practice finish | Not explicitly confirmed: reach the authored finish and check its result/restart flow. |
-| Slalom Cup | Untested: all five courses, gate order, misses and penalties, medals, unlocks and difficulty progression. |
-| Longer Free Ski runs | Partial: assess terrain variety, edge escape routes and repeated pursuit encounters across seeds. |
-| Saved continuation | Untested by human: pause, return to Arcade, reopen and resume a chase/race/jump without losing state. |
-| Records and settings | Untested by human: close/reopen, retained records and settings, separate pursuit-on/off records. |
-| Menus and display variants | Partial presentation approval: still check compact window, scaling, light/dark themes and complete mouse-only navigation. |
-| Mute and reduced effects | Untested by human: toggles remain effective through pause, switching and reopening. |
-| Packaged Omarchy release | Pending: install/upgrade the final package, native switching and existing-save retention. |
-
-The [difficulty audit](DIFFICULTY-AUDIT.md) recommends the next iteration. Research
-and proposals do not count as completed playtesting or implemented changes.
+| Difficulty revision | General speed/game feel approved; pursuit blocked by repeated overshooting and delayed catches. Retest after fix. |
+| Practice finish | Passed by report: reached the end and finished successfully. Restart was not separately described. |
+| Slalom Cup | Approved in exercised play; missed gates add five seconds. All-five-course coverage, individual medals and unlocks not itemized. |
+| Longer Free Ski runs | Approved: longer pursuit-off run; user explicitly marked test 5 good. Seeds and edge-route coverage not itemized. |
+| Saved continuation | Passed in exercised Free Ski flow. Exact shelf/close sequence and mid-jump/race cases not itemized. |
+| Records and settings | Broad settings approval; separate records and persistence details not itemized. |
+| Menus and display variants | User marked test 6 good. Exact window sizes, themes, scale and mouse-only coverage not itemized. Arcade preview image needs replacement. |
+| Mute and reduced effects | Covered by broad test-6 approval; individual toggle/reopen sequences not itemized. |
+| Packaged Omarchy release | Pending: build/install/upgrade the final package, native switching and existing-save retention. |
 
 ## 2026-09-14 — difficulty changes approved, retest pending
 
@@ -53,3 +53,32 @@ explicitly requested F-key fast mode. This authorizes the implementation; it is
 not a playtest of the resulting build. Preserve the first session's observations
 above. Next human pass should start a new mountain and compare normal/fast chase
 pressure, then cover Slalom and saved continuation. Record the tested revision.
+
+## 2026-09-14 — Tyler, difficulty revision follow-up
+
+The preceding launch opened the updated release app after implementation commit
+f413344. This report follows that launch; no binary hash was captured during play.
+Seeds, course names/count, input method, window size and scaling were not recorded.
+
+| Area | Human result | Detail |
+| --- | --- | --- |
+| Free Ski speed and general feel | Approved in exercised play | Game feels pretty good now; preserve the improved movement and controls. |
+| Fast-mode presentation | Fix requested | Skier should visibly tuck when fast mode is engaged. A distinct pose is sufficient; animation is optional. |
+| Pursuit / catching | Fix required | Yeti repeatedly passes the skier, circles nearby and falls behind without catching. After a crash it came alongside and stopped; a catch eventually occurred. Reproducible seed/timing not captured; root cause unconfirmed. |
+| Slalom Cup | Approved in exercised play | Cup looks and plays great; deliberate misses add five seconds. No explicit count of completed courses or medal/unlock breakdown. |
+| Practice finish | Passed | Reached the end and finished; no problem reported. |
+| Saved continuation | Passed in exercised flow | Free Ski save/resume works well. Exact transition sequence and saved jump/chase/race state not specified. |
+| Longer pursuit-off Free Ski | Passed by report | Completed a longer run without pursuit; explicitly marked checklist test 5 good. |
+| Settings and presentation | Approved in exercised checks | Explicitly marked checklist test 6 good, including settings. Individual configurations not listed. |
+| Arcade shelf preview | Fix requested | Replace the current FreeSki selection image with an interesting actual gameplay screenshot. User also allowed a faithful recreation; prefer an actual capture. |
+
+The pursuit report is concrete human evidence of missed interception/delayed
+catching, superseding the earlier uncertain sticking concern. Do not infer that
+all visible approaches must instantly catch, or that post-crash protection is
+itself defective: reproduce approach geometry and protection timing first.
+The user's memory of original SkiFree is a comparison, not verified historical
+behavior. No gameplay or artwork fix was implemented while recording this report.
+
+Next acceptance: confirm all five Cup courses were covered if needed, then
+retest tuck readability and close-range pursuit after the fixes. Final packaged
+install/upgrade acceptance remains separate from this development-build playtest.

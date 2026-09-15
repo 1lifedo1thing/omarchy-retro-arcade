@@ -591,3 +591,18 @@ evidence preceded the final pursuit-only refinement; the other display variants
 used the final movement and pursuit code. Intermediate checks exposed obsolete
 rules-2 timing and permanent-edge-lane assertions; their replacements check the
 new behavior, including identical crash outcomes at different rendering rates.
+
+
+## Rules 3: follow-up human acceptance (14 September 2026)
+
+Tyler reports improved Free Ski feel, successful Practice completion, good Slalom
+play with five-second misses, working Free Ski save/resume, a longer pursuit-off
+run and satisfactory settings/display checks. Course-by-course coverage and
+individual persistence/display variants were not itemized. See
+[PLAYTESTS.md](PLAYTESTS.md) for the report and current acceptance table.
+
+Pursuit acceptance remains open: repeated overshooting/circling and a delayed
+catch beside a crashed skier were observed. Fast-mode tuck art and a real Arcade
+preview screenshot are also requested. This documentation update implements no
+fixes and adds no automated or package-install evidence. Prior pending-human
+entries describe their historical verification sessions.
