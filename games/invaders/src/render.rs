@@ -15,7 +15,33 @@ pub fn safe_accent(c: Color32) -> Color32 {
         c
     }
 }
-pub fn board(app: &mut App, ctx: &egui::Context, blocked: bool) {
+#[derive(Default)]
+pub struct PointerInput {
+    pub inside: bool,
+    pub target: Option<f32>,
+    pub fire: bool,
+}
+fn pointer_input(response: &egui::Response, blocked: bool, scale: f32) -> PointerInput {
+    let mut pointer = PointerInput::default();
+    if !blocked && response.hovered() {
+        pointer.inside = true;
+        pointer.fire = response.is_pointer_button_down_on()
+            && response.ctx.input(|i| i.pointer.primary_down());
+        if response.ctx.input(|i| {
+            i.events
+                .iter()
+                .any(|event| matches!(event, egui::Event::PointerMoved(_)))
+        }) || pointer.fire
+        {
+            pointer.target = response
+                .hover_pos()
+                .map(|pos| ((pos.x - response.rect.left()) / scale).clamp(24., W - 24.));
+        }
+    }
+    pointer
+}
+pub fn board(app: &mut App, ctx: &egui::Context, blocked: bool) -> PointerInput {
+    let mut pointer = PointerInput::default();
     arcade_presentation::apply(ctx);
     let accent = safe_accent(app.theme.accent);
     app.art.prepare(ctx, accent);
@@ -66,6 +92,17 @@ pub fn board(app: &mut App, ctx: &egui::Context, blocked: bool) {
         let origin = header(0., 90.);
         let point = |x: f32, y: f32| origin + Vec2::new(x.round(), y.round()) * scale;
         let r = Rect::from_min_size(origin, Vec2::new(W, H) * scale);
+        let response = ui.interact(
+            r,
+            ui.id().with("invaders-playfield"),
+            egui::Sense::click_and_drag(),
+        );
+        let response = response.on_hover_cursor(if blocked || app.s.game.over {
+            egui::CursorIcon::Default
+        } else {
+            egui::CursorIcon::Crosshair
+        });
+        pointer = pointer_input(&response, blocked || app.s.game.over, scale);
         let p = p.with_clip_rect(r);
         app.art.backdrop(&p, r);
         for i in 0..36 {
@@ -230,8 +267,79 @@ pub fn board(app: &mut App, ctx: &egui::Context, blocked: bool) {
             });
         }
     });
+    pointer
 }
 pub fn about_icon(ui: &mut egui::Ui, art: &crate::art::Art) {
     let (r, _) = ui.allocate_exact_size(Vec2::splat(80.), egui::Sense::hover());
     art.draw(ui.painter(), r.center(), 0, 80., Color32::WHITE);
+}
+
+#[cfg(test)]
+mod mouse_tests {
+    use super::*;
+    use egui::{Event, Modifiers, PointerButton, Pos2};
+
+    fn button(pos: Pos2, pressed: bool) -> Event {
+        Event::PointerButton {
+            pos,
+            button: PointerButton::Primary,
+            pressed,
+            modifiers: Modifiers::NONE,
+        }
+    }
+    fn frame(ctx: &egui::Context, events: Vec<Event>, blocked: bool) -> PointerInput {
+        let mut input = PointerInput::default();
+        let _ = ctx.run(
+            egui::RawInput {
+                screen_rect: Some(Rect::from_min_size(Pos2::ZERO, Vec2::new(1000., 900.))),
+                events,
+                ..Default::default()
+            },
+            |ctx| {
+                egui::CentralPanel::default().show(ctx, |ui| {
+                    let r = Rect::from_min_size(Pos2::new(100., 100.), Vec2::new(800., 700.));
+                    let response =
+                        ui.interact(r, ui.id().with("field"), egui::Sense::click_and_drag());
+                    input = pointer_input(&response, blocked, 1.);
+                });
+            },
+        );
+        input
+    }
+    #[test]
+    fn steer_hold_fire_release_and_block_dialog_input() {
+        let ctx = egui::Context::default();
+        frame(&ctx, vec![], false);
+        let pos = Pos2::new(700., 500.);
+        let input = frame(&ctx, vec![Event::PointerMoved(pos)], false);
+        assert_eq!(input.target, Some(600.));
+        assert!(!input.fire);
+        assert!(frame(&ctx, vec![button(pos, true)], false).fire);
+        assert!(frame(&ctx, vec![], false).fire);
+        let blocked = frame(&ctx, vec![], true);
+        assert!(!blocked.fire && !blocked.inside && blocked.target.is_none());
+        assert!(!frame(&ctx, vec![button(pos, false)], false).fire);
+        // A stationary pointer does not reclaim steering after keyboard input.
+        assert!(frame(&ctx, vec![], false).target.is_none());
+        let outside = Pos2::new(950., 500.);
+        let input = frame(&ctx, vec![Event::PointerMoved(outside)], false);
+        assert!(!input.inside && !input.fire && input.target.is_none());
+    }
+    #[test]
+    fn dragging_a_press_from_outside_the_field_does_not_fire() {
+        let ctx = egui::Context::default();
+        frame(&ctx, vec![], false);
+        let toolbar = Pos2::new(50., 50.);
+        frame(
+            &ctx,
+            vec![Event::PointerMoved(toolbar), button(toolbar, true)],
+            false,
+        );
+        let input = frame(
+            &ctx,
+            vec![Event::PointerMoved(Pos2::new(500., 500.))],
+            false,
+        );
+        assert!(!input.fire);
+    }
 }

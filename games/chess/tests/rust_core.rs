@@ -253,18 +253,17 @@ fn bounded_import() {
     assert!(Game::from_pgn(&" ".repeat(1_000_001)).is_err());
 }
 #[cfg(unix)]
-fn script(text: &str) -> (tempfile::TempDir, std::path::PathBuf) {
-    use std::os::unix::fs::PermissionsExt;
-    let dir = tempfile::tempdir().unwrap();
-    let p = dir.path().join("engine");
-    fs::write(&p, text).unwrap();
-    fs::set_permissions(&p, fs::Permissions::from_mode(0o755)).unwrap();
-    (dir, p)
+fn engine_fixture(name: &str) -> std::path::PathBuf {
+    // Do not write executables while parallel tests are spawning processes:
+    // an inherited writable descriptor can make exec fail with ETXTBSY.
+    std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/fixtures")
+        .join(name)
 }
 #[cfg(unix)]
 #[test]
 fn engine_timeout_is_bounded() {
-    let (_d, p) = script("#!/bin/sh\nexec sleep 60\n");
+    let p = engine_fixture("silent-engine.sh");
     let start = Instant::now();
     let result = engine::search(
         &p,
@@ -272,13 +271,18 @@ fn engine_timeout_is_bounded() {
         Difficulty::Gentle,
         &AtomicBool::new(false),
     );
-    assert!(result.unwrap_err().contains("timed out"));
-    assert!(start.elapsed() < Duration::from_secs(5));
+    let error = result.expect_err("an unresponsive engine must time out");
+    assert!(
+        error.contains("timed out"),
+        "unexpected engine error: {error}"
+    );
+    let elapsed = start.elapsed();
+    assert!(elapsed < Duration::from_secs(5), "timeout took {elapsed:?}");
 }
 #[cfg(unix)]
 #[test]
 fn engine_cancel_is_bounded() {
-    let (_d, p) = script("#!/bin/sh\nexec sleep 60\n");
+    let p = engine_fixture("silent-engine.sh");
     let cancel = Arc::new(AtomicBool::new(false));
     let c = cancel.clone();
     let handle =
@@ -286,13 +290,13 @@ fn engine_cancel_is_bounded() {
     std::thread::sleep(Duration::from_millis(80));
     let start = Instant::now();
     cancel.store(true, Ordering::Relaxed);
-    assert!(handle.join().unwrap().is_err());
+    assert_eq!(handle.join().unwrap().unwrap_err(), "Cancelled");
     assert!(start.elapsed() < Duration::from_secs(1));
 }
 #[cfg(unix)]
 #[test]
 fn engine_illegal_move_rejected() {
-    let(_d,p)=script("#!/bin/sh\nwhile read line; do\ncase \"$line\" in\nuci) echo uciok;;\nisready) echo readyok;;\ngo*) echo 'bestmove e2e5';;\nesac\ndone\n");
+    let p = engine_fixture("illegal-move-engine.sh");
     assert!(engine::search(
         &p,
         &Game::default(),

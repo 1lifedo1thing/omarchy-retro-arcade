@@ -24,6 +24,7 @@ pub struct App {
     settings_open: bool,
     rebind: Option<(usize, usize)>,
     error: Option<String>,
+    writable: bool,
     leave: bool,
     accumulator: f64,
     last: Instant,
@@ -40,14 +41,17 @@ impl Default for App {
 }
 impl App {
     pub fn new() -> Self {
-        let dir = storage::state_dir();
+        Self::from_dir(storage::state_dir())
+    }
+    fn from_dir(dir: PathBuf) -> Self {
         let (settings, error) = match Settings::load(&dir) {
             Ok(s) => (s, None),
             Err(e) => (
                 Settings::default(),
-                Some(format!("Could not load Blast records: {e}")),
+                Some(format!("Could not load Blast records: {e}. Saving is disabled to protect the original. Preserve or repair blast.json, then reopen Blast.")),
             ),
         };
+        let writable = error.is_none();
         let game = Match::new(settings.arena, settings.humans, settings.bots);
         Self {
             game,
@@ -58,6 +62,7 @@ impl App {
             settings_open: false,
             rebind: None,
             error,
+            writable,
             leave: false,
             accumulator: 0.,
             last: Instant::now(),
@@ -78,6 +83,9 @@ impl App {
         self.sound.stop();
     }
     fn persist(&mut self) {
+        if !self.writable {
+            return;
+        }
         if let Err(e) = self.settings.save(&self.dir) {
             self.error = Some(format!("Could not save Blast preferences: {e}"));
         }
@@ -807,5 +815,64 @@ impl eframe::App for App {
     fn on_exit(&mut self, _: Option<&eframe::glow::Context>) {
         self.sound.stop();
         self.persist();
+    }
+}
+
+#[cfg(test)]
+mod save_protection_tests {
+    use super::*;
+    use eframe::App as _;
+
+    #[test]
+    fn rejected_files_survive_changes_and_exit_until_reopened() {
+        for original in [
+            b"broken".to_vec(),
+            br#"{"version":99}"#.to_vec(),
+            vec![b' '; 16385],
+        ] {
+            let dir = tempfile::tempdir().unwrap();
+            let path = dir.path().join("blast.json");
+            std::fs::write(&path, &original).unwrap();
+            std::fs::write(dir.path().join("other-game.json"), b"keep").unwrap();
+            let mut app = App::from_dir(dir.path().to_owned());
+            assert!(!app.writable);
+            app.settings.sound = true;
+            app.persist();
+            app.on_exit(None);
+            assert_eq!(std::fs::read(&path).unwrap(), original);
+            std::fs::rename(&path, dir.path().join("preserved.json")).unwrap();
+            app.persist();
+            assert!(
+                !path.exists(),
+                "repair must not silently unlock the existing app"
+            );
+            let mut reopened = App::from_dir(dir.path().to_owned());
+            assert!(reopened.writable);
+            reopened.on_exit(None);
+            assert!(Settings::load(dir.path()).is_ok());
+            assert_eq!(
+                std::fs::read(dir.path().join("preserved.json")).unwrap(),
+                original
+            );
+            assert_eq!(
+                std::fs::read(dir.path().join("other-game.json")).unwrap(),
+                b"keep"
+            );
+        }
+    }
+
+    #[test]
+    fn ordinary_write_failure_can_retry() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut app = App::from_dir(dir.path().to_owned());
+        let path = dir.path().join("blast.json");
+        std::fs::create_dir(&path).unwrap();
+        app.persist();
+        assert!(app.error.is_some());
+        assert!(app.writable);
+        std::fs::remove_dir(&path).unwrap();
+        app.settings.matches = 7;
+        app.on_exit(None);
+        assert_eq!(Settings::load(dir.path()).unwrap().matches, 7);
     }
 }

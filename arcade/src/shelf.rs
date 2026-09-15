@@ -16,6 +16,8 @@ impl Game {
             Self::Blast => "ARENA / SOLO + LOCAL",
             Self::TwentyFortyEight => "PUZZLE / 2048",
             Self::FreeSki => "SPORT / DOWNHILL SKIING",
+            Self::Tanks => "ARTILLERY / SOLO + LOCAL",
+            Self::Shatter => "ARCADE / BRICK BREAKER",
         }
     }
     fn crop(self) -> Rect {
@@ -32,6 +34,8 @@ impl Game {
             Self::TwentyFortyEight => ([0., 0.], [1., 1.]),
             // Native 1280×900 capture: frame the chase and the approaching terrain.
             Self::FreeSki => ([316. / 1280., 206. / 900.], [964. / 1280., 656. / 900.]),
+            Self::Tanks => ([0., 0.], [1., 1.]),
+            Self::Shatter => ([0., 0.], [1., 1.]),
         };
         Rect::from_min_max(Pos2::from(a), Pos2::from(b))
     }
@@ -215,7 +219,9 @@ impl Arcade {
                         rail.min + Vec2::new(0., i as f32 * row_h),
                         Vec2::new(rail.width(), row_h - 6.),
                     );
-                    let response = ui.interact(row, ui.id().with(("cartridge", i)), Sense::click());
+                    let response = ui
+                        .interact(row, ui.id().with(("cartridge", i)), Sense::click())
+                        .on_hover_cursor(egui::CursorIcon::PointingHand);
                     response.widget_info(|| {
                         egui::WidgetInfo::selected(
                             egui::WidgetType::SelectableLabel,
@@ -226,6 +232,7 @@ impl Arcade {
                     });
                     let selected = i == self.selected;
                     let hover = response.hovered() || response.has_focus();
+                    let pressed = response.is_pointer_button_down_on();
                     let fill = if light {
                         Color32::from_white_alpha(if selected { 200 } else { 115 })
                     } else {
@@ -238,7 +245,7 @@ impl Arcade {
                         1.,
                         Stroke::new(
                             1_f32,
-                            if selected {
+                            if selected || pressed {
                                 accent
                             } else if hover {
                                 BRASS
@@ -300,17 +307,37 @@ impl Arcade {
                     Stroke::new(1_f32, BRASS.gamma_multiply(0.4)),
                 );
                 ui.painter().text(
-                    Pos2::new(r.left(), bottom + 35.),
+                    Pos2::new(r.left(), bottom + 29.),
+                    Align2::LEFT_CENTER,
+                    "CLICK A GAME, THEN PLAY  /  DOUBLE-CLICK TO LAUNCH",
+                    FontId::monospace(10.),
+                    muted,
+                );
+                ui.painter().text(
+                    Pos2::new(r.left(), bottom + 44.),
                     Align2::LEFT_CENTER,
                     "↑ ↓  SELECT     ENTER  PLAY     F11  FULL SCREEN",
-                    FontId::monospace(10.),
+                    FontId::monospace(9.),
                     muted,
                 );
                 if ui
                     .put(
                         Rect::from_min_size(
+                            Pos2::new(r.right() - 190., bottom + 23.),
+                            Vec2::new(116., 30.),
+                        ),
+                        egui::Button::new("Full screen").frame(false),
+                    )
+                    .on_hover_text("Toggle fullscreen · F11")
+                    .clicked()
+                {
+                    super::toggle_fullscreen(ctx);
+                }
+                if ui
+                    .put(
+                        Rect::from_min_size(
                             Pos2::new(r.right() - 64., bottom + 23.),
-                            Vec2::new(64., 27.),
+                            Vec2::new(64., 30.),
                         ),
                         egui::Button::new("About").frame(false),
                     )

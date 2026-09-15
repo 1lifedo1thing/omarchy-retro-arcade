@@ -1,6 +1,6 @@
 mod pinball;
 mod shelf;
-use eframe::egui::{self, Key, Vec2};
+use eframe::egui::{self, Key};
 use fs2::FileExt;
 use std::{
     fs::{File, OpenOptions},
@@ -21,9 +21,11 @@ enum Game {
     Blast,
     TwentyFortyEight,
     FreeSki,
+    Shatter,
+    Tanks,
 }
 impl Game {
-    const ALL: [Self; 11] = [
+    const ALL: [Self; 13] = [
         Self::Pinball,
         Self::Solitaire,
         Self::Scram,
@@ -35,6 +37,8 @@ impl Game {
         Self::Blast,
         Self::TwentyFortyEight,
         Self::FreeSki,
+        Self::Shatter,
+        Self::Tanks,
     ];
     fn id(self) -> &'static str {
         match self {
@@ -49,6 +53,8 @@ impl Game {
             Self::Blast => "blast",
             Self::TwentyFortyEight => "2048",
             Self::FreeSki => "freeski",
+            Self::Tanks => "tanks",
+            Self::Shatter => "shatter",
         }
     }
     fn name(self) -> &'static str {
@@ -64,6 +70,8 @@ impl Game {
             Self::Blast => "Blast",
             Self::TwentyFortyEight => "2048",
             Self::FreeSki => "FreeSki",
+            Self::Tanks => "Tanks",
+            Self::Shatter => "Shatter",
         }
     }
     fn line(self) -> &'static str {
@@ -79,6 +87,8 @@ impl Game {
             Self::Blast => "Make room. Leave an exit.",
             Self::TwentyFortyEight => "Slide together. Make something bigger.",
             Self::FreeSki => "Find your edges. Leave fresh tracks.",
+            Self::Tanks => "Read the wind. Change the landscape.",
+            Self::Shatter => "Find your angle. Break through.",
         }
     }
     fn image(self) -> egui::ImageSource<'static> {
@@ -87,6 +97,8 @@ impl Game {
             Self::Snake => egui::include_image!("../../games/snake/docs/shelf.svg"),
             Self::Bubble => egui::include_image!("../../games/bubble/docs/game.png"),
             Self::Blast => egui::include_image!("../../games/blast/docs/game.png"),
+            Self::Tanks => egui::include_image!("../../games/tanks/shelf.svg"),
+            Self::Shatter => egui::include_image!("../../games/shatter/docs/shelf.svg"),
             Self::TwentyFortyEight => egui::include_image!("../../games/2048/docs/shelf.svg"),
             Self::FreeSki => egui::include_image!("../../games/freeski/assets/shelf.png"),
             Self::Chess => egui::include_image!("../../games/chess/docs/preview.png"),
@@ -104,6 +116,7 @@ trait ArcadeGame: eframe::App {
         true
     }
     fn suspend(&mut self) {}
+    fn set_input_enabled(&mut self, _: bool) {}
     fn finished(&mut self) -> bool {
         false
     }
@@ -140,12 +153,37 @@ impl ArcadeGame for omarchy_freeski::app::App {
         self.finished()
     }
 }
+impl ArcadeGame for omarchy_shatter::app::App {
+    fn suspend(&mut self) {
+        self.suspend();
+    }
+    fn set_input_enabled(&mut self, enabled: bool) {
+        self.set_input_enabled(enabled);
+    }
+    fn finished(&mut self) -> bool {
+        omarchy_shatter::app::App::finished(self)
+    }
+}
+impl ArcadeGame for omarchy_tanks::app::App {
+    fn suspend(&mut self) {
+        self.suspend();
+    }
+    fn set_input_enabled(&mut self, enabled: bool) {
+        self.set_input_enabled(enabled);
+    }
+    fn finished(&mut self) -> bool {
+        omarchy_tanks::app::App::finished(self)
+    }
+}
 impl ArcadeGame for omarchy_2048::app::App {}
 impl ArcadeGame for omarchy_chess::ui::ChessApp {}
 impl ArcadeGame for omarchy_solitaire::app::SolitaireApp {}
 impl ArcadeGame for omarchy_scram::app::ScramApp {}
 impl ArcadeGame for omarchy_invaders::App {}
 impl ArcadeGame for pinball::Pinball {
+    fn set_input_enabled(&mut self, enabled: bool) {
+        self.set_input_enabled(enabled);
+    }
     fn ready(&self) -> bool {
         self.ready()
     }
@@ -196,6 +234,8 @@ impl Arcade {
                 Game::Snake => Box::new(omarchy_snake::app::SnakeApp::new()),
                 Game::Bubble => Box::new(omarchy_bubble::app::BubbleApp::new()),
                 Game::Blast => Box::new(omarchy_blast::app::App::new()),
+                Game::Tanks => Box::new(omarchy_tanks::app::App::new()),
+                Game::Shatter => Box::new(omarchy_shatter::app::App::new()),
                 Game::TwentyFortyEight => Box::new(omarchy_2048::app::App::new()?),
                 Game::FreeSki => Box::new(omarchy_freeski::app::App::new()?),
                 Game::Chess => {
@@ -256,8 +296,7 @@ impl Arcade {
 impl eframe::App for Arcade {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         if ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, Key::F11)) {
-            let fullscreen = ctx.input(|i| i.viewport().fullscreen.unwrap_or(false));
-            ctx.send_viewport_cmd(egui::ViewportCommand::Fullscreen(!fullscreen));
+            toggle_fullscreen(ctx);
         }
         if let Some(g) = self.initial.take() {
             self.open(g, ctx);
@@ -281,6 +320,13 @@ impl eframe::App for Arcade {
                 .show(ctx, |ui| {
                     ui.horizontal(|ui| {
                         home |= ui.button("Arcade    Ctrl+H").clicked();
+                        if ui
+                            .button("Full screen")
+                            .on_hover_text("Toggle fullscreen · F11")
+                            .clicked()
+                        {
+                            toggle_fullscreen(ctx);
+                        }
                         ui.separator();
                         ui.label(
                             egui::RichText::new(a.game.name())
@@ -304,18 +350,21 @@ impl eframe::App for Arcade {
                 self.home(ctx);
             }
         }
+        let block_game_input = self.confirm_home;
         if self.confirm_home {
             let mut leave = ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, Key::Enter));
             let mut cancel = ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, Key::Escape));
-            egui::Window::new("Return to Arcade?").collapsible(false).resizable(false)
-                .anchor(egui::Align2::CENTER_CENTER,Vec2::ZERO).default_width(430.).show(ctx,|ui|{
-                ui.label("This ends the current pinball game. Saved high scores and settings are kept.");
-                ui.horizontal(|ui|{
-                    leave|=ui.button("End game and return (Enter)").clicked();
-                    cancel|=ui.button("Keep playing (Esc)").clicked();
+            egui::Modal::new(egui::Id::new("return-to-arcade")).show(ctx, |ui| {
+                ui.set_max_width(430.);
+                ui.heading("Return to Arcade?");
+                ui.label(
+                    "This ends the current pinball game. Saved high scores and settings are kept.",
+                );
+                ui.horizontal(|ui| {
+                    leave |= ui.button("End game and return (Enter)").clicked();
+                    cancel |= ui.button("Keep playing (Esc)").clicked();
                 });
             });
-            ctx.input_mut(|i| i.events.clear());
             if leave {
                 self.home(ctx);
             } else if cancel {
@@ -323,6 +372,8 @@ impl eframe::App for Arcade {
             }
         }
         if let Some(a) = self.active.as_mut() {
+            // Keep the worker rendering, but suppress input through the closing frame too.
+            a.app.set_input_enabled(!block_game_input);
             a.app.update(ctx, frame);
         } else {
             self.shelf(ctx);
@@ -341,6 +392,8 @@ impl eframe::App for Arcade {
         if self.about {
             egui::Window::new("About Omarchy Arcade").open(&mut self.about).show(ctx,|ui|{
             ui.heading("Omarchy Arcade");ui.label(concat!("Version ",env!("CARGO_PKG_VERSION")));ui.label("Native games. A community project for Omarchy.");
+            ui.label("Tanks: original Arcade artillery game. Preview; original synthesized sound.");
+            ui.label("Shatter: original Arcade game, layouts and synthesized audio.");
             ui.hyperlink_to("2048: Avi Barit (avibarit)", "https://github.com/avibarit/2048");
             ui.hyperlink_to("Original 2048: Gabriele Cirulli", "https://github.com/gabrielecirulli/2048");
             ui.label("FreeSki: original downhill skiing, five Slalom courses, creature design and synthesized sound by Omarchy Arcade contributors.");
@@ -377,6 +430,16 @@ impl eframe::App for Arcade {
         self.active = None;
     }
 }
+fn toggle_fullscreen(ctx: &egui::Context) {
+    // A clicked fullscreen button must not retain Space/Enter from gameplay.
+    ctx.memory_mut(|memory| {
+        if let Some(id) = memory.focused() {
+            memory.surrender_focus(id);
+        }
+    });
+    let fullscreen = ctx.input(|i| i.viewport().fullscreen.unwrap_or(false));
+    ctx.send_viewport_cmd(egui::ViewportCommand::Fullscreen(!fullscreen));
+}
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut capture = None;
     let mut initial = None;
@@ -389,7 +452,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 return Ok(());
             }
             "--help" | "-h" => {
-                println!("Omarchy Arcade\n--game chess|solitaire|scram|invaders|pinball|stack|snake|bubble|blast|2048|freeski\n--screenshot PATH\n--compact\n--version\nCtrl+H: return to Arcade. Ctrl+Q: quit.");
+                println!("Omarchy Arcade\n--game chess|solitaire|scram|invaders|pinball|stack|snake|bubble|blast|2048|freeski|shatter|tanks\n--screenshot PATH\n--compact\n--version\nCtrl+H: return to Arcade. Ctrl+Q: quit.");
                 return Ok(());
             }
             "--game" => {

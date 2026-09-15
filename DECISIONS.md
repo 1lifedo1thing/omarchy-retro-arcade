@@ -48,6 +48,7 @@
 ## Stack and optional community leaderboards
 
 - Stack is a Rust library game inside the same eframe window, desktop entry and package. Both modes work offline; its state uses a new `omarchy-stack` directory without changing existing games' save locations.
+- Stack preserves unreadable, invalid and future-version saves in place and disables session writes until the game is reopened after manual recovery. Unsaved play has a persistent notice. It never automatically replaces an earlier recovery file or claims that a failed backup succeeded; valid saves keep the existing schema and atomic-write behavior.
 - Gameplay uses deterministic 60 Hz ticks and documented Stack-specific symmetric rotation kicks. The service links this same engine with UI dependencies disabled. Rules are versioned independently from the app release.
 - Shared HTTP transport is in `shared/leaderboard`; the separately deployable SQLite service is in `services/leaderboard`. No public URL is bundled. Explicit end-of-run sharing, pseudonymous credentials, bounded replay verification and private retry storage are required before results become public.
 - The initial service is deliberately single-process and intended for a small community. Deployment behind the supplied HTTPS proxy, backups and operational checks must be verified before activating public sharing. Hosting is a separate approval gate, estimated at $11/month before tax in HOSTING.md.
@@ -73,6 +74,12 @@
 - The approved Pinball table, Invaders sprites, Chess pieces and Solitaire deck remain authoritative. Their artwork is not replaced. A new asset and its provenance live under `shared/presentation/assets`.
 - Pinball screenshot capture now waits for a rendered frame rather than capturing its loading spinner. Automated X11 rendering and input evidence remain distinct from hands-on Omarchy/Wayland acceptance.
 
+## Mouse-friendly operation (issue #6)
+
+- Keep Omarchy as the target desktop. Shared navigation and applicable game actions must be clickable; keyboard controls remain first-class. This adds no GNOME support commitment or requirement to make every game entirely mouse-playable.
+- Preserve existing mouse gameplay in Chess, Solitaire and Bubble. Invaders adds pointer steering at the engine's existing movement speed and held-primary-button firing, confined to the owned playfield. Keyboard steering takes priority until fresh pointer input.
+- Pinball keeps its original engine and menus. The host explicitly gates worker input while confirming return to Arcade, including the closing frame, and releases outstanding pointer presses on blocking/focus loss. Coordinates alone do not establish ownership of an input event.
+- The per-game audit and desktop acceptance checklist live in `docs/MOUSE-SUPPORT.md`. No saves, preferences schema, artwork or packaging contract changes.
 ## 2048 integration (12 September 2026)
 
 - Accepted direction from Tom Ballard: fold avibarit/2048 into Arcade, with credit to the original author. Tom reports permission from the author. This is the integration proposal and scope record for the change.
@@ -270,3 +277,166 @@ precedence. This remains renderer-only and visible with reduced effects. Replace
 the shelf illustration with an actual native screenshot reached through production
 inputs in disposable state. The shelf crops the capture to the chase and upcoming
 terrain. Preserve the approved art, compact menus and actual user saves.
+
+### Classic pinball keyboard controls
+
+Z and slash alias A/D with shared held-key state. Release the logical action only when its final physical alias releases and clear held state on blur. Forward period and the supported legacy function keys without rewriting saved engine bindings.
+
+## Shatter (issue #7)
+
+- Append an original Rust brick breaker to the existing shelf and ArcadeGame lifecycle. No executable, desktop identity, network service or new package dependency is introduced. Engine and persistence also build without desktop features.
+- `shatter-v1` uses an 800 × 600 arena and 120 Hz deterministic ticks. Exact swept circle/rectangle face and corner contacts include relative paddle movement. Stable brick order resolves shared contacts. Sixteen impacts per tick bound pathological contact loops; ordinary maximum-speed travel is only 4.34 units per tick. A frame delay above 250 ms explicitly pauses, with fresh-input resume.
+- Pointer and keyboard movement both move at at most 650 units/s, avoiding an abrupt paddle jump on source switching. Opposite keys cancel. Pointer movement only owns control after a new in-arena movement. Pauses, overlays and host input blocking clear pending launch and require all gameplay inputs to be released.
+- Original layouts are fixed Rust data with names and teaching notes. A deterministic paddle controller clears all 20 through ordinary production inputs. A separate flood-fill checks permanent steel cannot seal destructible pockets. This is repeatable engine evidence, not a human feel assessment.
+- Campaign state and progression share a new versioned private atomic `omarchy-retro-arcade/shatter.json`; practice is a separate in-memory run and only updates separate per-level bests. Resumption always pauses. Invalid, incompatible and future saves disable writes until an explicit archive-and-reset action succeeds. No other game's data is migrated.
+- Existing Omarchy palette and shared cabinet materials frame native geometry. New cues reuse Bubble's owned/reaped PCM player. All assets and layouts are original and documented. Sound and reduced effects remain per-game preferences, matching the existing app.
+- Native screenshot/input checks and Arch install/upgrade gates are included in CI. Hands-on Omarchy/Wayland acceptance remains required before calling issue #7 complete.
+
+### Connected Circuit boundaries and traversable routes
+
+Use connected two-sided capsule chains, closed obstacle bodies, explicit ground
+and raised layers, and a ground underpass beneath the high ramp arch. Preserve
+full-ball-width playable routes and intentional drains. Only the lower mouth
+enters the raised tube; its upper portal is outgoing-only. Close both low tube
+supports without spanning the underpass. Diagnostics reject illegal interiors,
+rail penetration, trapping and wrong entry provenance; they never teleport or
+rescue production balls. Keep approved art and upstream physics unchanged.
+### Reliable spring charging and contact
+
+Align the ground ball and contact head to the visible coil, animate existing coil pixels from real charge, and retain a 0.75-second one-shot release window through rapid re-presses. The upstream plunger default remains zero for imported resources. Charge text reflects real engine state; the artwork file is unchanged.
+### Passive scoring-target response
+
+Stand-up targets and side modules score through the upstream wall response with zero powered boost. Powered bumpers and slings retain their impulses. Contact tracing and real-engine shots distinguish scoring events from energy injection. Geometry is unchanged here.
+### Circuit bridge rendering
+
+Prefer the SDL offscreen video driver with accelerated rendering and retain software fallback. Create the bridge window at its final dimensions before its renderer. Copy the rectangular table texture directly in ImGui draw order, avoiding software textured-triangle work while retaining overlays and unchanged artwork. This follows the tiled-quad visibility workaround with a direct-copy path.
+### Responsive pinball bridge
+
+Debounce bounded logical surface sizes and resize the SDL render target without restarting the worker. Tall layouts use the full playfield plus a lower HUD, and the host paints its full panel. Pointer coordinates follow the displayed frame; upstream mouse ownership and dialog gating are preserved.
+### Circuit elapsed simulation time
+
+Retain up to100ms elapsed time and advance it in bounded120Hz substeps so render/transport stalls do not discard ordinary simulation time. Preserve classic-resource timing. A slow-consumer bridge test compares elapsed wall and engine time.
+### Circuit nudge and tilt feedback
+
+Render bounded displacement from active upstream nudge flags. Pause/focus loss
+releases held nudges and centres the board. Display DANGER/TILT in the custom HUD;
+retain upstream flipper/scoring penalties and next-ball recovery. Track held
+input separately from the0.4-second physical pulse: a rested meter warns around
+0.875s and tilts around1.75s. Classic-resource behavior remains unchanged.
+
+### Contributor integration
+
+Combine #21–#28 on current main while retaining contributor commits. CircuitGeometry replaces the alternate #19 layout and duplicate launcher constants. Retain #19's boundary/depth regression intent and bumper-cap occlusion using the shared geometry. Use direct plate copies with portrait cropping; one status priority for both layouts (pause, game over, tilt/danger, charge, notice). Exercise normal fixed-time launches without a contact-release test shim. Wire native classic-control, resizing, geometry and nudge regressions into CI. #29 save protection and #30 build-job limits land independently.
+
+### Bounded Pinball worker shutdown
+
+Close the command channel before joining the writer, even if its bounded queue
+cannot accept quit. Retain the two-second child termination fallback. Exercise
+full-queue, blocked-pipe and exited-child cases with the production writer and
+worker destructor under an outer subprocess deadline. This changes transport
+teardown only; upstream physics and frame/input protocols remain intact.
+
+### Shatter polish
+
+Keep the v1 physics and save schema stable during presentation polish. Use explicit
+serve/pause states, persistent pause explanations, named practice choices and
+save retry feedback. Verify menu clicks through real egui events and include all
+eleven entries in the native mouse harness. Separate CI screenshots and automated
+input from hands-on Omarchy feel acceptance.
+
+### Rejected Blast and Snake saves
+
+Block Blast writes after a rejected load, and block Snake writes when either
+recovery archive fails. Conservatively keep Snake's records and session together
+until reopening successfully loads or archives both. Ordinary write errors remain
+retryable. Repairing files does not silently enable writes in an already-open
+fallback game. Preserve existing paths and schemas; test restart, persistence and
+exit through real app methods without a native display.
+
+### Player package contents
+
+Keep the pinned Stockfish engine/network bundled for offline computer Chess.
+Install only the explicit player-files.tsv payload plus Stockfish and its licence.
+Retain player help, component licences and textual asset provenance; screenshots,
+design references, test evidence and architecture documents remain in source.
+Publish debug symbols separately and install only the player package in Arch CI.
+Check the extracted payload against the allowlist and report component sizes.
+This changes packaging only, not artwork, gameplay, save paths or recovery policy.
+
+### Circuit score-name editing
+
+Forward committed egui text and paste separately from gameplay keys, using bounded
+hex-encoded UTF-8 so whitespace cannot inject line-oriented bridge commands.
+Synchronize standalone modifier changes, and retain physical keys for text-editing
+shortcuts without changing the classic flipper aliases. Only deliver text when
+ImGui requests it. Existing score rows edit a temporary name buffer; OK or Enter
+commits names and the existing verification checksum immediately, while Cancel
+discards changes. Preserve scores, ordering, save paths and the 31-byte name format.
+Keep clipboard paste distinct from typing: replace the active field's selection
+through an ImGui text callback so held Ctrl cannot discard committed clipboard
+text. ImGui reconciles the edit with undo; truncate only at UTF-8 boundaries and
+retain the physical modifiers. Scope pending paste to the active field and next
+frame so it cannot leak to another dialog. Use the same path for the font field.
+Cover the real ImGui dialog and native host typing/save/restart in regression tests,
+including Ctrl+V over an existing name and saving before releasing Ctrl.
+
+## Tanks engine foundation (issue #8)
+
+- Start Tanks as a dependency-free, UI-independent Rust workspace library under
+  `games/tanks`. This engine milestone does not add a shelf placeholder or change
+  the native application, existing games, approved assets, saves or package payload.
+- Use a 120 Hz simulation, piecewise linear heightfield and swept point-projectile
+  contacts. Resolve blast damage from one snapshot, then crater/settle both tanks
+  and award the result once. Explicit Ready and RoundOver states let the later
+  frontend implement safe handover and draw acknowledgement.
+- Preview rules, support geometry, damage rounding and numeric tuning are recorded
+  in `games/tanks/README.md`. Values remain provisional until recorded playtesting.
+  Cloned simulation state is not yet a disk persistence contract. AI, native UI,
+  storage, audio and Omarchy acceptance remain subsequent slices of issue #8.
+
+### Tanks playable preview
+
+- Append Tanks as the twelfth shelf entry using the existing ArcadeGame lifecycle,
+  theme loader and cabinet presentation. Native geometry, labelled numerical aim,
+  explicit fire and turn handover support mouse and keyboard in one window.
+- Easy/Normal AI incrementally evaluates ordinary engine shots. Normal also tries
+  limited repositioning; both compare limited weapons and penalise self-damage.
+  Work has a fixed per-call tick/candidate budget. Pausing discards search; resuming
+  reconstructs it from the saved visible match and dedicated AI seed, preserving
+  the eventual choice without accessing future terrain randomness.
+- Versioned tanks.json uses bounded validated reads and shared atomic private
+  writes, with exact projectile/RNG/trace state. Rejected saves disable writes until
+  explicit unique archival succeeds. Match records and preferences are logically
+  separate from active match state. Reopening always pauses.
+- This is a silent playable preview. Effects, original audio, visual refinement
+  and hands-on benchmark comparison remain open; reduced-effects preference is
+  reserved for upcoming animation. Headless checks do not establish Omarchy feel.
+
+## Tanks impact and control polish
+
+- Keep damage resolution in the deterministic engine. `tick_event` returns an
+  immutable pre-impact snapshot and actual blast/fall damage; the frontend saves
+  a separate 108-tick presentation. Pause, shelf, close and reopen retain exact
+  settling progress. No commands or AI advance until presentation completes.
+- Reduced effects uses final positions with static feedback, preserving the same
+  rules and turn delay. Effects use stable visual noise, never the engine RNG.
+- Original bounded synthesized PCM cues use an owned, reaped paplay process.
+  Mute, pause, focus loss and shelf exit stop playback. Missing or failed audio
+  is nonfatal and reported in Settings. No new package dependency is introduced
+  (the Arch package already includes libpulse).
+- Fresh installs choose Solo Easy, Solo Normal or Local. Optional saved fields
+  preserve old preview matches. Held aiming is time-based; explicit Fire and
+  release-to-rearm prevent handover inputs from becoming accidental shots.
+- Add original layered terrain, track details, aiming arcs, a wind flag, recoil,
+  flashes, weapon-specific impacts and damage labels. Native X11 renders are
+  inspected at dark/light, compact and 200%; this does not establish Omarchy
+  Wayland acceptance or competitive balance against the gameplay benchmark.
+
+## FreeSki feature branch and upstream main (15 September 2026)
+
+Merge published main `5d5c085` into the FreeSki branch so the collection keeps
+complete FreeSki plus Shatter, Tanks, mouse support, Circuit contributor work
+and the lean player-package payload. Shelf order is 2048, FreeSki, Shatter,
+Tanks. FreeSki's licence joins `packaging/player-files.tsv`; install.sh stays
+on the explicit TSV path. Combined native/CI lists cover thirteen games. The
+published v0.2.0 download remains the twelve-game player package.

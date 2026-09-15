@@ -3,6 +3,8 @@
 #include "OmarchyTable.h"
 #include "OmarchyTheme.h"
 #include "pb.h"
+#include "CircuitGeometry.h"
+#include "nudge.h"
 #include "TPinballTable.h"
 #include "TFlipper.h"
 #include "TFlipperEdge.h"
@@ -22,11 +24,15 @@
 #endif
 namespace CircuitView {
 namespace {
-SDL_Texture *board=nullptr,*wordmark=nullptr;
+SDL_Texture *board=nullptr,*wordmark=nullptr,*bridge=nullptr;
+constexpr SDL_Rect bridgeBounds={200,0,272,120};
+struct CapSprite { SDL_Texture* texture; SDL_Rect bounds; float groundY; };
+std::vector<CapSprite> bumperCaps;
 SDL_Surface* original=nullptr;
 SDL_Renderer* renderer=nullptr;
 uint32_t lastAccent=0;
 float scale,ox,oy;
+bool portrait=false;
 ImDrawList* draw;
 ImVec2 p(float x,float y){return {ox+x*scale,oy+y*scale};}
 ImU32 rgba(int r,int g,int b,int a=255){return IM_COL32(r,g,b,a);}
@@ -55,6 +61,20 @@ void matrix(float x,float y,float w,float h,const std::string& text,float dot){
 }
 void capsule(float x,float y,float xx,float yy,float r,ImU32 c){float len=std::hypot(xx-x,yy-y),nx=-(yy-y)/len,ny=(xx-x)/len,tip=r*.65f;
  ImVec2 q[]={p(x+nx*r,y+ny*r),p(xx+nx*tip,yy+ny*tip),p(xx-nx*tip,yy-ny*tip),p(x-nx*r,y-ny*r)};draw->AddConvexPolyFilled(q,4,c);disc(x,y,r,c);disc(xx,yy,tip,c);}
+void drawBridge(const ImDrawList*,const ImDrawCmd*){
+ SDL_FRect destination={ox+bridgeBounds.x*scale,oy,bridgeBounds.w*scale,bridgeBounds.h*scale};
+ SDL_RenderCopyF(renderer,bridge,nullptr,&destination);
+}
+void drawCap(const ImDrawList*,const ImDrawCmd* command){
+ auto cap=static_cast<const CapSprite*>(command->UserCallbackData);
+ SDL_FRect destination={ox+cap->bounds.x*scale,oy+cap->bounds.y*scale,cap->bounds.w*scale,cap->bounds.h*scale};
+ SDL_RenderCopyF(renderer,cap->texture,nullptr,&destination);
+}
+void drawBoard(const ImDrawList*, const ImDrawCmd*){
+ SDL_Rect source={0,0,portrait?1024:1536,1024};
+ SDL_FRect destination={ox,oy,source.w*scale,1024*scale};
+ SDL_RenderCopyF(renderer,board,&source,&destination);
+}
 void updateTexture(){
  uint32_t c=OmarchyTheme::Accent();if(c==lastAccent&&board)return;lastAccent=c;
  auto surface=SDL_ConvertSurfaceFormat(original,SDL_PIXELFORMAT_ARGB8888,0);auto pixels=(uint32_t*)surface->pixels;
@@ -66,7 +86,45 @@ void updateTexture(){
   float bright=std::max(r,std::max(g,b));
   if(amount>.02f){int rr=(int)(255*(r*(1-amount)+ar*bright*amount));int gg=(int)(255*(g*(1-amount)+ag*bright*amount));int bb=(int)(255*(b*(1-amount)+ab*bright*amount));q=0xff000000|(rr<<16)|(gg<<8)|bb;}
  }
- SDL_DestroyTexture(board);board=SDL_CreateTextureFromSurface(renderer,surface);SDL_FreeSurface(surface);
+ if(board)SDL_DestroyTexture(board);board=SDL_CreateTextureFromSurface(renderer,surface);
+ // A small alpha-masked rectangular sprite preserves exact source sampling.
+ // Textured triangle patches produce seams in SDL's software rasterizer.
+ std::vector<vector2> left,right;CircuitGeometry::RampSides(left,right);
+ left.insert(left.end(),right.rbegin(),right.rend());
+ auto foreground=SDL_CreateRGBSurfaceWithFormat(0,bridgeBounds.w,bridgeBounds.h,32,SDL_PIXELFORMAT_ARGB8888);
+ if(foreground){
+  auto dest=static_cast<uint32_t*>(foreground->pixels);
+  for(int y=0;y<bridgeBounds.h;++y)for(int x=0;x<bridgeBounds.w;++x){
+   float px=x+bridgeBounds.x+.5f,py=y+.5f;bool inside=false;
+   for(size_t i=0,j=left.size()-1;i<left.size();j=i++){
+    auto a=left[i],b=left[j];
+    if((a.Y>py)!=(b.Y>py) && px<(b.X-a.X)*(py-a.Y)/(b.Y-a.Y)+a.X)inside=!inside;
+   }
+   dest[y*foreground->pitch/4+x]=inside?pixels[y*surface->pitch/4+x+bridgeBounds.x]:0;
+  }
+  if(bridge)SDL_DestroyTexture(bridge);
+  bridge=SDL_CreateTextureFromSurface(renderer,foreground);
+  SDL_SetTextureBlendMode(bridge,SDL_BLENDMODE_BLEND);
+  SDL_FreeSurface(foreground);
+ }
+ // Preserve #19's cap occlusion with seam-free sprites from the shared layout.
+ for(auto& cap:bumperCaps)SDL_DestroyTexture(cap.texture);
+ bumperCaps.clear();
+ for(auto b:CircuitGeometry::Bumpers()){
+  float rx=b.radius+3,ry=b.radius*.9f+9,cy=b.y-16;
+  SDL_Rect bounds={int(std::floor(b.x-rx)),int(std::floor(cy-ry)),int(std::ceil(rx*2))+2,int(std::ceil(ry*2))+2};
+  auto capSurface=SDL_CreateRGBSurfaceWithFormat(0,bounds.w,bounds.h,32,SDL_PIXELFORMAT_ARGB8888);
+  if(!capSurface)continue;
+  auto dest=static_cast<uint32_t*>(capSurface->pixels);
+  for(int y=0;y<bounds.h;++y)for(int x=0;x<bounds.w;++x){
+   float dx=(bounds.x+x+.5f-b.x)/rx,dy=(bounds.y+y+.5f-cy)/ry;
+   dest[y*capSurface->pitch/4+x]=dx*dx+dy*dy<=1?pixels[(bounds.y+y)*surface->pitch/4+bounds.x+x]:0;
+  }
+  auto texture=SDL_CreateTextureFromSurface(renderer,capSurface);
+  SDL_FreeSurface(capSurface);
+  if(texture){SDL_SetTextureBlendMode(texture,SDL_BLENDMODE_BLEND);bumperCaps.push_back({texture,bounds,b.y});}
+ }
+ SDL_FreeSurface(surface);
 }
 }
 bool Init(SDL_Renderer* r){
@@ -86,16 +144,24 @@ bool Init(SDL_Renderer* r){
 void Draw(){
  if(!board||!pb::MainTable)return;updateTexture();draw=ImGui::GetBackgroundDrawList();
  auto size=ImGui::GetIO().DisplaySize;float menu=options::Options.ShowMenu?winmain::MainMenuHeight:0;
- scale=std::min(size.x/1536.f,(size.y-menu)/1024.f);ox=(size.x-1536*scale)/2;oy=menu+(size.y-menu-1024*scale)/2;
- draw->AddRectFilled({0,menu},size,rgba(5,8,8));draw->AddImage((ImTextureID)board,p(0,0),p(1536,1024));
+ portrait=size.x/(size.y-menu)<1.2f;
+ float layoutWidth=portrait?1024.f:1536.f,layoutHeight=portrait?1230.f:1024.f;
+ scale=std::min(size.x/layoutWidth,(size.y-menu)/layoutHeight);
+ ox=(size.x-layoutWidth*scale)/2;oy=menu+(size.y-menu-layoutHeight*scale)/2;
+ if(!winmain::single_step){
+  ox+=6.f*scale*(nudge::nudged_right-nudge::nudged_left);
+  oy-=3.f*scale*(nudge::nudged_right+nudge::nudged_left+nudge::nudged_up);
+ }
+ draw->AddRectFilled({0,menu},size,rgba(5,8,8));
+ // Copy the rectangular plate once, retaining ImGui overlay ordering.
+ draw->AddCallback(drawBoard,nullptr);
  // Exact official wordmark geometry, proportionally placed after material tinting.
  const float wordScale=144.f/4131.f,wordX=562-72,wordY=520-950*wordScale/2;
  draw->AddImage((ImTextureID)wordmark,p(wordX,wordY),p(wordX+144,wordY+950*wordScale));
  auto t=pb::MainTable;
  const float lamps[12][2]={{562,422},{626,438},{664,478},{674,525},{659,565},{618,599},{562,617},{507,599},{464,565},{450,526},{458,479},{498,439}};
  for(unsigned i=0;i<12;i++)lamp(lamps[i][0],lamps[i][1],i<OmarchyTable::Progress());
- const float xs[]={470,617,563,202},ys[]={226,202,287,431};
- for(int i=0;i<4;i++){std::string n="bumper"+std::to_string(i);float f=OmarchyTable::Flash(n.c_str());if(f>0){draw->AddCircle(p(xs[i],ys[i]),(i==3?33:44)*scale,accent((int)(f*230)),32,5*scale);disc(xs[i],ys[i]-15,16,rgba(255,241,179,(int)(f*100)));}}
+ for(int i=0;i<4;i++){const auto& bumper=CircuitGeometry::Bumpers()[i];std::string n="bumper"+std::to_string(i);float f=OmarchyTable::Flash(n.c_str());if(f>0){draw->AddCircle(p(bumper.x,bumper.y),(i==3?33:44)*scale,accent((int)(f*230)),32,5*scale);disc(bumper.x,bumper.y-15,16,rgba(255,241,179,(int)(f*100)));}}
  for(int i=0;i<8;i++){float x=i<4?504+i*31:747-(i-4)*8,y=i<4?117:319+(i-4)*25;lamp(x,y,(OmarchyTable::Targets()&(1u<<i))!=0,7);}
  for(int i=0;i<2;i++){std::string name=i?"sling_right":"sling_left";float f=OmarchyTable::Flash(name.c_str());if(f>0)draw->AddLine(p(i?755:295,635),p(i?690:360,778),accent((int)(f*220)),5*scale);}
  // Flipper endpoints come from the engine's current collision edge, not a UI animation.
@@ -106,21 +172,70 @@ void Draw(){
   capsule(x,y-3,xx,yy-3,15,rgba(173,168,132));capsule(x,y-6,xx,yy-6,12,rgba(229,226,196));
   capsule(x+2,y+10,xx,yy+8,3,accent());disc(x,y-5,10,rgba(58,61,52));disc(x-2,y-7,7,rgba(210,212,193));disc(x-4,y-9,3,rgba(253,251,226));
  }
- for(auto ball:t->BallList)if(ball->ActiveFlag){float x=540+ball->Position.X*25,y=500+ball->Position.Y*25-ball->Position.Z*7,r=ball->Radius*25;
+ // Compress the actual coil in its existing housing. Keep the artwork file
+ // intact. The contact head sits at the coil, not atop the beige lane arrows.
+ // Charge is engine state, so holding, releasing, pause and reset stay in sync.
+ const float pull=t->Plunger->PullbackStartedFlag
+     ? std::max(0.f,std::min(t->Plunger->Boost/t->Plunger->MaxPullback,1.f)) : 0.f;
+ if(pull>0.f){
+  ImVec2 housing[]={p(924,873),p(963,873),p(973,953),p(930,953)};
+  draw->AddConvexPolyFilled(housing,4,rgba(14,15,12));
+  // The shaft stays visible through the opening above the compressed coil.
+  draw->AddLine(p(941,873),p(950,952),rgba(62,65,59),8*scale);
+  draw->AddLine(p(939,873),p(948,952),rgba(176,181,163),2*scale);
+  const float travel=48*pull;
+  draw->AddImage((ImTextureID)board,p(925+5*pull,873+travel),p(969,953),
+      {925.f/1536,873.f/1024},{969.f/1536,953.f/1024});
+ }
+ // A metal head and continuous shaft visibly connect ball contact to the coil.
+ draw->AddRectFilled(p(CircuitGeometry::LauncherLeft,CircuitGeometry::LauncherY),
+     p(CircuitGeometry::LauncherRight,CircuitGeometry::LauncherY+5),rgba(171,178,162),2*scale);
+ draw->AddLine(p(CircuitGeometry::LauncherLeft+1,CircuitGeometry::LauncherY),
+     p(CircuitGeometry::LauncherRight-1,CircuitGeometry::LauncherY),rgba(243,245,220),scale);
+ auto drawBall=[&](TBall* ball){if(getenv("OMARCHY_TEST_HIDE_BALL"))return;float x=540+ball->Position.X*25,y=500+ball->Position.Y*25,r=ball->Radius*25;
   disc(x+5,y+10,r+2,rgba(0,0,0,155));disc(x,y,r+1,rgba(204,211,205));disc(x,y,r,rgba(29,36,38));
   disc(x-2,y-3,r*.82f,rgba(126,145,146));disc(x+2,y+3,r*.68f,rgba(33,46,47));disc(x-3,y-4,r*.55f,rgba(213,227,220));disc(x-4,y-5,r*.3f,rgba(255,255,241));
+ };
+ bool underBridge=false;
+ for(auto ball:t->BallList)if(ball->ActiveFlag && !(ball->CollisionMask&2)){
+  drawBall(ball);
+  float ballY=500+ball->Position.Y*25;
+  for(auto& cap:bumperCaps)if(ballY<cap.groundY)draw->AddCallback(drawCap,&cap);
+  underBridge|=500+ball->Position.Y*25<132;
  }
- float pull=t->Plunger->PullbackStartedFlag?std::min(1.f,t->Plunger->Boost/100):0;
- draw->AddRectFilled(p(930,935+pull*35),p(977,951+pull*35),rgba(180,185,172),3*scale);
+ if(underBridge && bridge)draw->AddCallback(drawBridge,nullptr);
+ for(auto ball:t->BallList)if(ball->ActiveFlag && (ball->CollisionMask&2))drawBall(ball);
+ // Both layouts use the same priority: pause, game over, tilt/danger, charge, notice.
+ std::string charge;
+ if(t->Plunger->PullbackStartedFlag)charge=t->Plunger->Boost>=t->Plunger->MaxPullback?"RELEASE TO LAUNCH":"CHARGE "+std::to_string(int(100*t->Plunger->Boost/t->Plunger->MaxPullback))+"/100";
+ const bool urgent=OmarchyTable::GameOver()||t->TiltLockFlag||nudge::nudge_count>.5f;
+ const char* status=winmain::single_step?"PAUSED  P RESUME":urgent||charge.empty()?OmarchyTable::Status():charge.c_str();
+ if(portrait){
+  // Keep the approved playfield at its native proportions; replace the tall
+  // decorative cabinet with a compact score strip below it.
+  draw->AddRectFilled(p(8,1036),p(1016,1220),rgba(15,21,20),12*scale);
+  draw->AddLine(p(24,1036),p(1000,1036),accent(150),2*scale);
+  char score[32];snprintf(score,sizeof(score),"%07d",std::max(0,t->CurScore));
+  matrix(20,1050,470,56,score,6);
+  std::string ball=OmarchyTable::GameOver()?"GAME OVER":"BALL "+std::to_string(4-std::max(1,t->BallCount));
+  matrix(510,1050,490,56,ball,4.5f);
+  matrix(20,1110,980,42,status,3.25f);
+  unsigned count=0;for(unsigned v=OmarchyTable::Targets();v;v>>=1)count+=v&1;
+  std::string stats="CIRCUIT "+std::to_string(OmarchyTable::Progress())+"/12    TARGETS "+std::to_string(count)+"/8    ORBITS "+std::to_string(OmarchyTable::Orbits())+"    RAMPS "+std::to_string(OmarchyTable::Ramps());
+  label(60,1160,stats.c_str(),20);
+  label(60,1193,"A/D OR Z/SLASH   SPACE LAUNCH    X/./UP NUDGE",17);
+  return;
+ }
  char score[32];snprintf(score,sizeof(score),"%07d",std::max(0,t->CurScore));matrix(1067,554,414,67,score,7);
  std::string ball=OmarchyTable::GameOver()?"GAME OVER":"BALL "+std::to_string(4-std::max(1,t->BallCount));matrix(1067,638,414,56,ball,4.5f);
- const char* status=winmain::single_step?"PAUSED  P RESUME":OmarchyTable::Status();matrix(1067,714,414,66,status,3.25f);
+matrix(1067,714,414,66,status,3.25f);
  label(1090,820,"CIRCUIT",19);label(1300,820,"TARGET BANK",19);
  label(1090,852,(std::to_string(OmarchyTable::Progress())+" / 12").c_str(),23);unsigned count=0;for(unsigned v=OmarchyTable::Targets();v;v>>=1)count+=v&1;
  label(1300,852,(std::to_string(count)+" / 8").c_str(),23);
  label(1090,899,("ORBITS  "+std::to_string(OmarchyTable::Orbits())).c_str(),18);label(1300,899,("RAMPS  "+std::to_string(OmarchyTable::Ramps())).c_str(),18);
- label(1080,950,"A / D FLIPPERS    SPACE LAUNCH",17);
+ label(1080,936,"A/D OR Z/SLASH   SPACE LAUNCH",17);
+ label(1080,958,"X / . / UP   NUDGE",15);
  label(1110,48,"OMARCHY ARCADE  /  PINBALL",18);
 }
-void Shutdown(){SDL_DestroyTexture(board);SDL_DestroyTexture(wordmark);SDL_FreeSurface(original);board=wordmark=nullptr;original=nullptr;lastAccent=0;}
+void Shutdown(){for(auto& cap:bumperCaps)SDL_DestroyTexture(cap.texture);bumperCaps.clear();SDL_DestroyTexture(bridge);bridge=nullptr;SDL_DestroyTexture(board);SDL_DestroyTexture(wordmark);SDL_FreeSurface(original);board=wordmark=nullptr;original=nullptr;lastAccent=0;}
 }

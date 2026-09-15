@@ -3,6 +3,17 @@ on: [push, pull_request]
 permissions:
   contents: read
 jobs:
+  tanks-engine:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --all --check
+      - run: cargo test -p omarchy-tanks --locked
+      - run: cargo clippy -p omarchy-tanks --all-targets --locked -- -D warnings
   native:
     runs-on: ubuntu-latest
     steps:
@@ -25,7 +36,8 @@ jobs:
           node games/2048/upstream/test-game-logic.js
           node games/2048/verify-upstream.cjs
       - run: scripts/build.sh
-      - run: ctest --test-dir build/pinball --output-on-failure -R 'theme-palette|theme-path|authored-upstream-table'
+      - run: cmake --build build/pinball --target circuit-timing-tests high-score-tests -j2
+      - run: ctest --test-dir build/pinball --output-on-failure -R 'theme-palette|theme-path|authored-|arcade-|circuit-timing|high-score-dialog'
       - run: desktop-file-validate packaging/omarchy-retro-arcade.desktop
       - name: Render every game and collection layout
         run: |
@@ -38,29 +50,50 @@ jobs:
         with:
           name: polish-review
           path: /tmp/arcade-polish/
-      - name: One window, eleven games, existing saves
+      - name: One window, thirteen games, existing saves
         run: xvfb-run -a -s '-screen 0 1440x1100x24' env LIBGL_ALWAYS_SOFTWARE=1 SDL_AUDIODRIVER=dummy python3 scripts/native-check.py target/release/omarchy-retro-arcade
       - name: FreeSki controls, suspended runs and layouts
         run: |
           for variant in dark light compact 200; do
             xvfb-run -a -s '-screen 0 2400x1900x24' env LIBGL_ALWAYS_SOFTWARE=1 FREESKI_FIXTURES=/tmp/freeski-fixtures python3 scripts/native-freeski.py target/release/omarchy-retro-arcade /tmp/arcade-renders/freeski/$variant "$variant"
           done
+      - name: Tanks controls, exact resume and save protection
+        run: xvfb-run -a -s '-screen 0 1440x1100x24' env LIBGL_ALWAYS_SOFTWARE=1 python3 scripts/native-tanks.py target/release/omarchy-retro-arcade
+      - name: Shatter controls, exact resume and save protection
+        run: xvfb-run -a -s '-screen 0 1440x1100x24' env LIBGL_ALWAYS_SOFTWARE=1 python3 scripts/native-shatter.py target/release/omarchy-retro-arcade /tmp/arcade-renders/shatter
+      - name: Mouse navigation, pointer gameplay and layouts
+        run: |
+          xvfb-run -a -s '-screen 0 1440x1100x24' env LIBGL_ALWAYS_SOFTWARE=1 SDL_AUDIODRIVER=dummy python3 -B scripts/native-mouse.py target/release/omarchy-retro-arcade /tmp/arcade-renders/mouse/dark
+          xvfb-run -a -s '-screen 0 1440x1100x24' env LIBGL_ALWAYS_SOFTWARE=1 SDL_AUDIODRIVER=dummy ARCADE_TEST_COMPACT=1 python3 -B scripts/native-mouse.py target/release/omarchy-retro-arcade /tmp/arcade-renders/mouse/compact
+          xvfb-run -a -s '-screen 0 1440x1100x24' env LIBGL_ALWAYS_SOFTWARE=1 SDL_AUDIODRIVER=dummy ARCADE_TEST_LIGHT=1 python3 -B scripts/native-mouse.py target/release/omarchy-retro-arcade /tmp/arcade-renders/mouse/light
+          xvfb-run -a -s '-screen 0 2400x1900x24' env LIBGL_ALWAYS_SOFTWARE=1 SDL_AUDIODRIVER=dummy ARCADE_TEST_COMPACT=1 WINIT_X11_SCALE_FACTOR=2 python3 -B scripts/native-mouse.py target/release/omarchy-retro-arcade /tmp/arcade-renders/mouse/200
+
       - name: 2048 controls, saves and credits
         run: xvfb-run -a -s '-screen 0 1440x1100x24' env LIBGL_ALWAYS_SOFTWARE=1 python3 scripts/native-2048.py target/release/omarchy-retro-arcade /tmp/arcade-renders/2048
       - name: Stack keyboard, pause, focus and saves
         run: xvfb-run -a -s '-screen 0 2400x1900x24' env LIBGL_ALWAYS_SOFTWARE=1 python3 scripts/native-stack.py target/release/omarchy-retro-arcade /tmp/arcade-renders
+      - name: Stack rejected-save protection
+        run: xvfb-run -a -s '-screen 0 1440x1100x24' env LIBGL_ALWAYS_SOFTWARE=1 python3 scripts/native-stack-save-protection.py target/release/omarchy-retro-arcade /tmp/arcade-renders/stack-save-protection
       - name: Snake native controls, saves and layouts
         run: xvfb-run -a -s '-screen 0 2400x1800x24' env LIBGL_ALWAYS_SOFTWARE=1 python3 scripts/native-snake.py target/release/omarchy-retro-arcade /tmp/arcade-renders/snake
       - name: Blast solo, local match and lifecycle
         run: xvfb-run -a -s '-screen 0 1440x1100x24' env LIBGL_ALWAYS_SOFTWARE=1 python3 scripts/native-blast.py target/release/omarchy-retro-arcade /tmp/arcade-renders/blast
+      - name: Pinball controls, resize and native nudge lifecycle
+        run: |
+          xvfb-run -a -s '-screen 0 1440x1100x24' env LIBGL_ALWAYS_SOFTWARE=1 SDL_AUDIODRIVER=dummy python3 scripts/native-pinball-names.py target/release/omarchy-retro-arcade
+          xvfb-run -a -s '-screen 0 2400x1900x24' env LIBGL_ALWAYS_SOFTWARE=1 SDL_AUDIODRIVER=dummy python3 scripts/native-pinball-controls.py target/release/omarchy-retro-arcade /tmp/arcade-renders/pinball
+          xvfb-run -a -s '-screen 0 2400x1900x24' env LIBGL_ALWAYS_SOFTWARE=1 SDL_AUDIODRIVER=dummy python3 scripts/native-pinball-resize.py target/release/omarchy-retro-arcade /tmp/arcade-renders/resize
+          xvfb-run -a -s '-screen 0 2400x1900x24' env LIBGL_ALWAYS_SOFTWARE=1 SDL_AUDIODRIVER=dummy python3 scripts/native-nudge.py target/release/omarchy-retro-arcade /tmp/arcade-renders/nudge
       - name: Capture the actual app
         run: |
           mkdir -p /tmp/arcade-renders
-          for game in chess solitaire scram invaders pinball stack snake bubble blast 2048 freeski; do
+          for game in chess solitaire scram invaders pinball stack snake bubble blast 2048 freeski shatter tanks; do
+
             xvfb-run -a -s '-screen 0 1440x1100x24' env LIBGL_ALWAYS_SOFTWARE=1 SDL_AUDIODRIVER=dummy XDG_STATE_HOME=/tmp/arcade-$game/state XDG_DATA_HOME=/tmp/arcade-$game/data XDG_CONFIG_HOME=/tmp/arcade-$game/config target/release/omarchy-retro-arcade --game "$game" --screenshot "/tmp/arcade-renders/$game.png"
           done
           xvfb-run -a env LIBGL_ALWAYS_SOFTWARE=1 target/release/omarchy-retro-arcade --compact --screenshot /tmp/arcade-renders/shelf-compact.png
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: native-windows
           path: /tmp/arcade-renders/
@@ -83,8 +116,16 @@ jobs:
         run: su builder -c "cd '$GITHUB_WORKSPACE' && cargo run -p omarchy-freeski --locked --no-default-features --example completion-evidence -- /tmp/freeski-fixtures"
       - name: Install and verify
         run: |
-          pacman -U --noconfirm dist/arch/*.pkg.tar.zst
-          omarchy-retro-arcade --version
+          pacman -U --noconfirm dist/arch/omarchy-retro-arcade-[0-9]*.pkg.tar.zst
+          package_root="$(mktemp -d)"
+          bsdtar -xf dist/arch/omarchy-retro-arcade-[0-9]*.pkg.tar.zst -C "$package_root"
+          python3 packaging/check-player-package.py "$package_root"
+          rm -rf -- "$package_root"
+          if pacman -Q omarchy-retro-arcade-debug; then exit 1; fi
+          printf 'uci\nisready\nquit\n' | timeout 15s /usr/libexec/omarchy-retro-arcade/stockfish | tee /tmp/stockfish-uci.txt
+          grep -q '^uciok' /tmp/stockfish-uci.txt
+          grep -q '^readyok' /tmp/stockfish-uci.txt
+          test "$(omarchy-retro-arcade --version)" = "Omarchy Arcade $(sed -n 's/^pkgver=//p' packaging/PKGBUILD)"
           test "$(pacman -Ql omarchy-retro-arcade | grep -c '/usr/share/applications/.*\.desktop$')" = 1
           su builder -c "cd '$GITHUB_WORKSPACE' && xvfb-run -a -s '-screen 0 1440x1100x24' env LIBGL_ALWAYS_SOFTWARE=1 SDL_AUDIODRIVER=dummy python3 scripts/native-check.py /usr/bin/omarchy-retro-arcade"
           su builder -c "cd '$GITHUB_WORKSPACE' && xvfb-run -a -s '-screen 0 1440x1100x24' env LIBGL_ALWAYS_SOFTWARE=1 python3 scripts/native-blast.py /usr/bin/omarchy-retro-arcade"
@@ -96,16 +137,34 @@ jobs:
           chown -R builder:builder /tmp/arcade-upgrade
           su builder -c 'xvfb-run -a env LIBGL_ALWAYS_SOFTWARE=1 XDG_STATE_HOME=/tmp/arcade-upgrade omarchy-retro-arcade --game freeski --screenshot /tmp/freeski-before.png'
           cp /tmp/arcade-upgrade/omarchy-retro-arcade/freeski.json /tmp/freeski-original.json
-          pacman -U --noconfirm dist/arch/*.pkg.tar.zst
+          pacman -U --noconfirm dist/arch/omarchy-retro-arcade-[0-9]*.pkg.tar.zst
+
           cmp /tmp/arcade-original.json /tmp/arcade-upgrade/omarchy-solitaire/session.json
           cmp /tmp/freeski-original.json /tmp/arcade-upgrade/omarchy-retro-arcade/freeski.json
           su builder -c 'xvfb-run -a env LIBGL_ALWAYS_SOFTWARE=1 XDG_STATE_HOME=/tmp/arcade-upgrade omarchy-retro-arcade --game freeski --screenshot /tmp/freeski-after.png'
           cmp /tmp/freeski-original.json /tmp/arcade-upgrade/omarchy-retro-arcade/freeski.json
           su builder -c 'xvfb-run -a env LIBGL_ALWAYS_SOFTWARE=1 XDG_STATE_HOME=/tmp/arcade-upgrade omarchy-retro-arcade --game solitaire --screenshot /tmp/arcade-after.png'
+      - name: Prepare versioned release assets and checksums
+        id: release
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          packaging/prepare-release.sh
+          echo "version=$(sed -n 's/^pkgver=//p' packaging/PKGBUILD)" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-v${{ steps.release.outputs.version }}-x86_64
+          path: dist/release/v${{ steps.release.outputs.version }}/
+          if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
           name: arch-package
-          path: dist/arch/*.pkg.tar.zst
+          path: dist/arch/omarchy-retro-arcade-[0-9]*.pkg.tar.zst
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arch-debug-symbols
+          path: dist/arch/omarchy-retro-arcade-debug-*.pkg.tar.zst
+          if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
           name: corresponding-source-and-engine

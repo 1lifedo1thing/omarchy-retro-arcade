@@ -77,6 +77,7 @@ pub struct StackApp {
     audio: Audio,
     finished: bool,
     error: Option<String>,
+    save_blocked: Option<String>,
     restart: bool,
     flash: f32,
 }
@@ -88,7 +89,10 @@ impl StackApp {
                 PathBuf::from(std::env::var_os("HOME").unwrap_or_default()).join(".local/state")
             })
             .join("omarchy-stack");
-        let mut error = None;
+        Self::from_dir(dir)
+    }
+    fn from_dir(dir: PathBuf) -> Self {
+        let mut save_blocked = None;
         let saved = match std::fs::read(dir.join("session.json")) {
             Ok(b) => match serde_json::from_slice::<Saved>(&b) {
                 Ok(s)
@@ -99,15 +103,22 @@ impl StackApp {
                     s
                 }
                 _ => {
-                    error=Some("The saved run could not be read. It has been kept as session.rejected.json.".into());
-                    let _ =
-                        std::fs::copy(dir.join("session.json"), dir.join("session.rejected.json"));
+                    save_blocked =
+                        Some("The saved run is invalid or uses an unsupported version.".into());
                     Saved::default()
                 }
             },
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Saved::default(),
+            Err(e)
+                if e.kind() == std::io::ErrorKind::NotFound
+                    && matches!(
+                        std::fs::symlink_metadata(dir.join("session.json")),
+                        Err(e) if e.kind() == std::io::ErrorKind::NotFound
+                    ) =>
+            {
+                Saved::default()
+            }
             Err(e) => {
-                error = Some(format!("Could not read saves: {e}"));
+                save_blocked = Some(format!("Could not read the saved run: {e}"));
                 Saved::default()
             }
         };
@@ -126,7 +137,8 @@ impl StackApp {
             theme_at: Instant::now() - Duration::from_secs(3),
             audio: Audio::default(),
             finished: false,
-            error,
+            error: None,
+            save_blocked,
             restart: false,
             flash: 0.,
         }
@@ -199,6 +211,12 @@ impl StackApp {
     }
     fn persist(&mut self) {
         self.snapshot();
+        self.last_save = Instant::now();
+        // Keep this session read-only after a load failure, even if the player
+        // starts a new run or the original file becomes writable later.
+        if self.save_blocked.is_some() {
+            return;
+        }
         let result = (|| -> Result<(), Box<dyn std::error::Error>> {
             std::fs::create_dir_all(&self.dir)?;
             let mut f = tempfile::NamedTempFile::new_in(&self.dir)?;
@@ -213,7 +231,6 @@ impl StackApp {
                 "Save failed: {e}. Keep Arcade open and free some space."
             ));
         }
-        self.last_save = Instant::now();
     }
     fn key(&self, i: usize) -> Key {
         Key::from_name(&self.saved.preferences.keys[i]).unwrap_or(
@@ -538,8 +555,25 @@ impl eframe::App for StackApp {
             )
             .show(ctx, |ui| {
                 arcade_presentation::backdrop(ui);
+                if let Some(reason) = &self.save_blocked {
+                    ui.group(|ui| {
+                        ui.strong("Progress is not being saved");
+                        ui.label("Your existing save is untouched. You can play, but progress and settings will not be saved.");
+                        ui.collapsing("Save recovery details", |ui| {
+                            ui.label(reason);
+                            ui.label(format!("Save: {}", self.dir.join("session.json").display()));
+                            ui.label("Close Stack, recover or move the existing save, then reopen Stack to enable saving.");
+                        });
+                    });
+                }
                 if self.sim.is_none() {
-                    self.menu(ui);
+                    if self.save_blocked.is_some() {
+                        // Recovery information must not push menu actions out
+                        // of reach in a compact window.
+                        egui::ScrollArea::vertical().show(ui, |ui| self.menu(ui));
+                    } else {
+                        self.menu(ui);
+                    }
                 } else {
                     let s = self.sim.as_ref().unwrap();
                     ui.horizontal(|ui| {
@@ -829,5 +863,157 @@ mod input_tests {
         latch.frame(0, 0);
         assert_eq!(latch.tick(), HARD);
         assert_eq!(latch.tick(), 0);
+    }
+}
+
+#[cfg(test)]
+mod save_tests {
+    use super::*;
+    use eframe::App;
+    use std::fs;
+
+    fn exercise_save_paths(app: &mut StackApp) {
+        // New play, periodic/settings saves, pause/shelf exit and normal close.
+        app.sim = Some(Sim::new(123, Mode::Marathon, 10, 2));
+        app.saved.preferences.audio = true;
+        app.persist();
+        app.suspend();
+        app.on_exit(None);
+    }
+
+    #[test]
+    fn failed_recovery_destination_cannot_destroy_the_original() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("session.json");
+        let original = br#"{"version":999,"future_run":"keep me"}"#;
+        fs::write(&path, original).unwrap();
+        let recovery = dir.path().join("session.rejected.json");
+        fs::create_dir(&recovery).unwrap();
+
+        let mut app = StackApp::from_dir(dir.path().into());
+        exercise_save_paths(&mut app);
+
+        assert_eq!(fs::read(&path).unwrap(), original);
+        assert!(recovery.is_dir());
+        assert_eq!(fs::read_dir(recovery).unwrap().count(), 0);
+    }
+
+    #[test]
+    fn rejected_saves_and_previous_recovery_files_survive_reopening() {
+        for original in [b"broken JSON".as_slice(), br#"{"version":2}"#, b"{}"] {
+            let dir = tempfile::tempdir().unwrap();
+            let path = dir.path().join("session.json");
+            let recovery = dir.path().join("session.rejected.json");
+            fs::write(&path, original).unwrap();
+            fs::write(&recovery, b"earlier recovery data").unwrap();
+
+            for _ in 0..2 {
+                let mut app = StackApp::from_dir(dir.path().into());
+                exercise_save_paths(&mut app);
+                assert_eq!(fs::read(&path).unwrap(), original);
+                assert_eq!(fs::read(&recovery).unwrap(), b"earlier recovery data");
+            }
+        }
+    }
+
+    #[test]
+    fn invalid_simulation_is_preserved() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("session.json");
+        let mut sim = Sim::new(123, Mode::Marathon, 10, 2);
+        sim.active.kind = 0;
+        let original = serde_json::to_vec(&Saved {
+            version: 1,
+            marathon: Some(sim),
+            ..Default::default()
+        })
+        .unwrap();
+        fs::write(&path, &original).unwrap();
+
+        let mut app = StackApp::from_dir(dir.path().into());
+        exercise_save_paths(&mut app);
+
+        assert_eq!(fs::read(&path).unwrap(), original);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn read_errors_and_dangling_links_do_not_enable_saving() {
+        use std::os::unix::fs::symlink;
+        for target in ["session.json", "missing-save.json"] {
+            let dir = tempfile::tempdir().unwrap();
+            let path = dir.path().join("session.json");
+            symlink(target, &path).unwrap();
+            assert!(fs::read(&path).is_err());
+
+            let mut app = StackApp::from_dir(dir.path().into());
+            exercise_save_paths(&mut app);
+
+            assert_eq!(fs::read_link(&path).unwrap(), PathBuf::from(target));
+        }
+    }
+
+    #[test]
+    fn valid_saves_keep_both_modes_records_and_preferences() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("session.json");
+        let marathon = Sim::new(123, Mode::Marathon, 10, 2);
+        let sprint = Sim::new(456, Mode::Sprint, 10, 2);
+        let saved = Saved {
+            version: 1,
+            marathon: Some(marathon.clone()),
+            sprint: Some(sprint.clone()),
+            best_score: 4200,
+            best_ticks: Some(9000),
+            preferences: Preferences {
+                audio: true,
+                ..Default::default()
+            },
+        };
+        fs::write(&path, serde_json::to_vec(&saved).unwrap()).unwrap();
+
+        let mut app = StackApp::from_dir(dir.path().into());
+        app.suspend();
+        app.on_exit(None);
+        let mut reopened = StackApp::from_dir(dir.path().into());
+        assert_eq!(reopened.saved.marathon.as_ref(), Some(&marathon));
+        assert_eq!(reopened.saved.sprint.as_ref(), Some(&sprint));
+        assert_eq!(reopened.saved.best_score, 4200);
+        assert_eq!(reopened.saved.best_ticks, Some(9000));
+        assert!(reopened.saved.preferences.audio);
+        reopened.saved.best_score = 4300;
+        reopened.persist();
+        let on_disk: Saved = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+        assert_eq!(on_disk.best_score, 4300);
+    }
+
+    #[test]
+    fn new_players_can_save_and_reopen() {
+        let dir = tempfile::tempdir().unwrap();
+        let state = dir.path().join("new-player");
+        let mut app = StackApp::from_dir(state.clone());
+        exercise_save_paths(&mut app);
+        let reopened = StackApp::from_dir(state);
+        assert_eq!(reopened.saved.marathon, app.sim);
+        assert!(reopened.saved.preferences.audio);
+    }
+
+    #[test]
+    fn moving_a_rejected_save_requires_reopening_before_saving() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("session.json");
+        let recovery = dir.path().join("recovered.json");
+        fs::write(&path, b"future save").unwrap();
+        let mut app = StackApp::from_dir(dir.path().into());
+        fs::rename(&path, &recovery).unwrap();
+
+        exercise_save_paths(&mut app);
+        assert!(!path.exists());
+        assert_eq!(fs::read(&recovery).unwrap(), b"future save");
+
+        let mut reopened = StackApp::from_dir(dir.path().into());
+        exercise_save_paths(&mut reopened);
+        assert!(path.is_file());
+        assert_eq!(fs::read(&recovery).unwrap(), b"future save");
     }
 }

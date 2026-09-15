@@ -1,10 +1,10 @@
 [workspace]
-members = ["arcade", "games/chess", "games/solitaire", "games/scram", "games/invaders", "games/stack", "games/snake", "games/bubble", "games/blast", "games/2048", "games/freeski", "shared/presentation", "shared/leaderboard", "services/leaderboard"]
+members = ["games/tanks", "games/shatter", "arcade", "games/chess", "games/solitaire", "games/scram", "games/invaders", "games/stack", "games/snake", "games/bubble", "games/blast", "games/2048", "games/freeski", "shared/presentation", "shared/leaderboard", "services/leaderboard"]
 exclude = ["games/2048/upstream/src-tauri"]
 resolver = "2"
 
 [workspace.package]
-version = "0.1.0"
+version = "0.2.0"
 
 [profile.release]
 strip = true

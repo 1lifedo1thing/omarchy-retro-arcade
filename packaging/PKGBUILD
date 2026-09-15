@@ -1,9 +1,9 @@
 # Build from a clean checkout with packaging/build-arch.sh.
 pkgname=omarchy-retro-arcade
-pkgver=0.1.0
+pkgver=0.2.0
 pkgrel=1
 pkgdesc='Native games in one Omarchy Arcade application'
-arch=('x86_64')
+arch=('x86_64' 'aarch64')
 url='https://github.com/tcballard/omarchy-retro-arcade'
 license=('GPL-3.0-or-later')
 # ring's bundled C objects cannot use GCC LTO with Rust's LLVM linker.
@@ -37,7 +37,7 @@ build() {
 check() {
   cd "$srcdir/omarchy-retro-arcade"
   OMARCHY_CHESS_ENGINE="$srcdir/Stockfish-${_engine_commit}/src/stockfish" REQUIRE_STOCKFISH=1 cargo test --frozen --workspace --all-targets
-  ctest --test-dir build/pinball --output-on-failure -R "theme-palette|theme-path|authored-upstream-table"
+  ctest --test-dir build/pinball --output-on-failure -R "theme-palette|theme-path|authored-"
 }
 package() {
   cd "$srcdir/omarchy-retro-arcade"
