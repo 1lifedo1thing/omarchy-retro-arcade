@@ -689,3 +689,52 @@ Passed: both input unit tests, including holding Space across rearming and
 pressing/releasing S/Down; workspace formatting; FreeSki all-targets Clippy with
 warnings denied; Arcade release build; diff whitespace check. No new native
 desktop playtest or packaging run for this input mapping change.
+
+
+## 2026-09-15: Integrated package and review readiness
+
+Runtime revision `a3d0bd77a4a0dd22a9dbb451e82a3c4c7f87e0bc` integrates main
+`5d5c085` with thirteen games. Subsequent changes update documentation and the
+native test harness only; the installed player runtime is unchanged.
+
+- Workspace formatting, strict all-target Clippy and 384 workspace tests passed
+  with real Stockfish. FreeSki headless tests passed separately.
+- All 19 Pinball CTest checks passed. Upstream 2048 tests and 3,524-move parity
+  passed. The 256-run FreeSki corpus retained its established result: 32/32
+  normal reference routes caught, 32/32 fast routes surviving 200 seconds,
+  maximum unprotected stall 47 ticks. These are automated strategies, not human
+  escape rates.
+- Native X11 thirteen-game switching, actual Stockfish response and save checks
+  passed for both the source binary and installed `/usr/bin` app. The first
+  local Chess check timed out during concurrent compilation;
+  the isolated full retry passed. Mouse checks passed in dark, light, compact
+  and 200% layouts; native Tanks and Shatter checks passed.
+- FreeSki dark/light passed in CI. Original compact passed locally after CI
+  failed its pursuit-checkbox click. Harness commit `373ab6e` clicks the label
+  interior and waits up to two seconds for persisted state, retaining the same
+  assertion. Updated compact and 200% runs passed with suspended-run fixtures.
+  No reproducible gameplay bug was found; current GitHub results remain the
+  authority for the final CI run.
+- Built the exact Arch source archive for `a3d0bd7`, validated the lean player
+  payload (136.61 MiB), and installed it with pacman as a real 0.1.0-1 to
+  0.2.0-1 upgrade. All 16 existing save/config files retained their exact bytes.
+  Actual Omarchy Wayland reopening of the installed app preserved both an old
+  Solitaire session and the real FreeSki save byte-for-byte.
+- Local package build used the existing mise/rustup compiler with makepkg's
+  dependency check bypassed because pacman's Rust package was absent. Other
+  dependencies and source checksums were checked. The initial build was stopped
+  during package CTest after Rust tests passed; remaining engine checks passed
+  locally, then makepkg repackaged existing outputs. This is not evidence of an
+  uninterrupted clean build. GitHub's Arch job supplies that separate boundary.
+
+Source archive SHA-256:
+`46f06a0b291f8917ef8e5b46669d6d0e3182e70bd4d7bc3a49e676353d33767a`.
+Installed player package SHA-256:
+`ca483adaf555212250fc974b0f3a28d1bec81f4990cf53b4d20e5e47238b6c1d`.
+
+Local evidence is under `/tmp/freeski-pr42/evidence/`; package outputs are under
+`~/.cache/arcade-pkg-a3d0bd7/`. These are temporary, not repository artifacts.
+[PR #42](https://github.com/tcballard/omarchy-retro-arcade/pull/42) links the
+current checks. Historical pending entries above are superseded only for the
+checks explicitly recorded here. Tyler's final acceptance remains scoped to
+PLAYTESTS.md; no additional per-course medals or human pursuit rates are claimed.

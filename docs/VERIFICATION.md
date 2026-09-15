@@ -1,5 +1,14 @@
 # Arcade verification
 
+## FreeSki integration — 15 September 2026
+
+Merged main `5d5c085` while preserving all thirteen games and the lean package.
+Combined workspace checks, native switching and the actual system package
+upgrade passed. Existing saves survived installation and native Wayland reopen.
+[Current FreeSki evidence](../games/freeski/docs/VERIFICATION.md#2026-09-15-integrated-package-and-review-readiness)
+separates current checks, CI status and Tyler's recorded human acceptance.
+The dated reports below describe their original revisions.
+
 ## FreeSki complete local modes — 13 September 2026
 
 FreeSki is the eleventh game in the source build. The completion pass implements

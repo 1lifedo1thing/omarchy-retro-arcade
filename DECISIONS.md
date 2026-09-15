@@ -436,7 +436,8 @@ including Ctrl+V over an existing name and saving before releasing Ctrl.
 
 Merge published main `5d5c085` into the FreeSki branch so the collection keeps
 complete FreeSki plus Shatter, Tanks, mouse support, Circuit contributor work
-and the lean player-package payload. Shelf order is 2048, FreeSki, Shatter,
-Tanks. FreeSki's licence joins `packaging/player-files.tsv`; install.sh stays
+and the lean player-package payload. The shelf ends with 2048, Shatter, Tanks, then FreeSki, preserving main's
+existing order. FreeSki's licence and artwork provenance join
+`packaging/player-files.tsv`; install.sh stays
 on the explicit TSV path. Combined native/CI lists cover thirteen games. The
 published v0.2.0 download remains the twelve-game player package.
