@@ -36,13 +36,13 @@ it does not imply unreported per-course or persistence edge-case coverage.
 
 | Test | Status / expected observation |
 | --- | --- |
-| Difficulty revision | General speed/game feel approved; interception fix implemented after reported overshooting/delayed catches. Human retest pending. |
+| Difficulty revision | General speed/game feel approved; interception fix implemented after reported overshooting/delayed catches. Accepted by final sign-off below; no additional detailed run recorded. |
 | Practice finish | Passed by report: reached the end and finished successfully. Restart was not separately described. |
 | Slalom Cup | Approved in exercised play; missed gates add five seconds. All-five-course coverage, individual medals and unlocks not itemized. |
 | Longer Free Ski runs | Approved: longer pursuit-off run; user explicitly marked test 5 good. Seeds and edge-route coverage not itemized. |
 | Saved continuation | Passed in exercised Free Ski flow. Exact shelf/close sequence and mid-jump/race cases not itemized. |
 | Records and settings | Broad settings approval; separate records and persistence details not itemized. |
-| Menus and display variants | User marked test 6 good. Exact window sizes, themes, scale and mouse-only coverage not itemized. Actual-gameplay Arcade preview implemented; human review pending. |
+| Menus and display variants | User marked test 6 good. Exact window sizes, themes, scale and mouse-only coverage not itemized. Actual-gameplay Arcade preview implemented; accepted by final sign-off below. |
 | Mute and reduced effects | Covered by broad test-6 approval; individual toggle/reopen sequences not itemized. |
 | Packaged Omarchy release | Pending: build/install/upgrade the final package, native switching and existing-save retention. |
 
@@ -92,3 +92,13 @@ VERIFICATION.md and do not replace Tyler's observations. Next human pass should
 compare normal/fast approaches, post-crash catching and chase continuation, then
 review tuck and shelf readability. All-five-course coverage and final packaged
 release acceptance remain as scoped in NEXT.md.
+
+
+## 2026-09-14 — Tyler, final sign-off
+
+After delivery and reopening of commit 5458784, Tyler replied: “perfect. we're
+done here.” This records acceptance of the finished gameplay and presentation,
+including the three follow-up fixes. No additional seed, timed chase, individual
+medal result or per-course test details accompanied the sign-off; do not invent
+those observations. Final package installation/upgrade and integration with the
+latest main branch remain engineering/release checks, separate from this approval.

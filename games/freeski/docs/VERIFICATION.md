@@ -666,3 +666,14 @@ final-clippy,build,native-all,install}.log`, `/tmp/freeski-close-corpus.json`,
 `/tmp/freeski-close-native/`, `/tmp/freeski-close-poses/` and
 `/tmp/freeski-close-wayland.log`. These may expire; tests, fixture generator,
 capture script and the shelf PNG are retained in the repository.
+
+
+## PR preparation and final sign-off
+
+Tyler accepted the final game after delivery of 5458784; PLAYTESTS.md records the
+sign-off without inventing further runs. Earlier pending-human entries remain
+historical. Fetching current main during PR preparation revealed intervening
+upstream changes and integration conflicts. The existing 311-test/native/staging
+evidence does not claim validation of that future integrated revision. Resolve
+those conflicts, rerun combined checks and complete final system-package
+installation/upgrade verification before merge/issue closure.

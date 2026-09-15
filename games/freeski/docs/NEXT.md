@@ -1,4 +1,4 @@
-# Next: playtest fixes and release acceptance
+# Next: PR integration and release verification
 
 Tyler's September 14 follow-up approves the revised general speed/game feel,
 Slalom in exercised play (including five-second misses), the Practice finish,
@@ -16,21 +16,23 @@ approved controls, movement, artwork and sound.
 - The Arcade selection image is a real native gameplay screenshot. Its source
   and capture method are in assets/README.md; actual user saves were preserved.
 
-These changes require the focused human retest below; recording them does not
-claim Tyler has already accepted the corrected build.
+Tyler accepted the completed game after delivery of these fixes; the final
+sign-off is recorded in PLAYTESTS.md. The approval does not add unreported
+per-course medal or seed-specific chase measurements.
 
-## Remaining acceptance
+## Remaining engineering and release work
 
-- Confirm whether Tyler's Cup play covered all five courses and their unlocks/
-  medals; the report praises the Cup but does not enumerate course completion.
-- After the fixes, do a focused normal/fast chase retest, including close passes,
-  obstacle approaches, post-crash recovery and saved continuation of pursuit.
-  Check tuck readability and the replacement shelf preview at the same time.
+- Integrate the feature branch with current main. The PR preparation fetch found
+  that main had advanced, with conflicts in shared Arcade registration, shelf,
+  manifests, CI, installation/native scripts and documentation. Preserve both
+  FreeSki and the intervening upstream games/lifecycle changes; rerun combined
+  checks against the integrated revision.
 - Build and verify the final package, installation/upgrade, switching to other
   games and preservation of existing saves. Prior staging/extracted-package
   evidence does not claim system package installation of the final revision.
+- Complete PR review and CI before merge and issue closure. The historical
+  verification results apply to their recorded revisions.
 
-No broad repeat of already approved playtesting is needed unless a fix regresses
-it. Record seed, revision and a small production-input replay for pursuit defects.
-Rules/tuning and verification must reflect actual changes and checks; automated
-reference routes remain separate from human difficulty acceptance.
+No broad repeat of approved playtesting is required unless integration changes
+or a discovered regression justify it. Keep automated evidence and human reports
+separate; never turn general sign-off into invented detailed test observations.
