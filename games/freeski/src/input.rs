@@ -39,7 +39,6 @@ impl Controls {
             Key::ArrowRight,
             Key::S,
             Key::ArrowDown,
-            Key::Space,
         ];
         if !self.armed {
             self.retain_heading = true;
@@ -105,7 +104,6 @@ impl Controls {
         let brake = brake_button
             || i.key_down(Key::S)
             || i.key_down(Key::ArrowDown)
-            || i.key_down(Key::Space)
             || (i.pointer.secondary_down()
                 && i.pointer.latest_pos().is_some_and(|p| field.contains(p)));
         self.braking = brake;
@@ -117,6 +115,46 @@ impl Controls {
 mod tests {
     use super::*;
     use egui::{Modifiers, RawInput, Vec2};
+    #[test]
+    fn brake_keys_exclude_space_and_space_does_not_block_rearming() {
+        let ctx = egui::Context::default();
+        let mut controls = Controls::default();
+        let field = Rect::from_min_size(Pos2::ZERO, Vec2::splat(500.));
+        let sample = |controls: &mut Controls, events| {
+            let mut brake = false;
+            let _ = ctx.run(
+                RawInput {
+                    events,
+                    focused: true,
+                    ..Default::default()
+                },
+                |ctx| {
+                    brake =
+                        ctx.input(|i| controls.sample(i, field, field.center(), false, 0.).0.brake);
+                },
+            );
+            brake
+        };
+        let key = |key, pressed| Event::Key {
+            key,
+            physical_key: None,
+            pressed,
+            repeat: false,
+            modifiers: Modifiers::NONE,
+        };
+        assert!(!sample(&mut controls, vec![key(Key::Space, true)]));
+        assert!(controls.armed);
+        assert!(!sample(&mut controls, vec![]));
+        for brake_key in [Key::S, Key::ArrowDown] {
+            assert!(sample(&mut controls, vec![key(brake_key, true)]));
+            assert!(!sample(&mut controls, vec![key(brake_key, false)]));
+        }
+        controls.clear();
+        assert!(!sample(&mut controls, vec![]));
+        assert!(controls.armed);
+        assert!(sample(&mut controls, vec![key(Key::S, true)]));
+    }
+
     #[test]
     fn input_owner_changes_only_on_intent_and_release_is_required_after_clear() {
         let ctx = egui::Context::default();

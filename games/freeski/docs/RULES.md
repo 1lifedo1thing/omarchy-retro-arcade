@@ -107,13 +107,15 @@ the finish takes precedence over finishing; ended runs never restart themselves.
 | Start | Enter or a fresh steering key | Start skiing |
 | Steer | A/D or Left/Right | Move within the slope, left/right of the skier |
 | Fast tuck | F during a running attempt | Fast / FAST ON button |
-| Brake | Hold S, Down or Space | Hold right button on slope or Hold to brake |
+| Brake | Hold S or Down | Hold right button on slope or Hold to brake |
 | Pause/resume | Esc; Enter resumes | Pause / Resume skiing |
 | Restart | Tab to the action and activate; Enter confirms replacement | Restart practice slope or New mountain, then Replace run |
 | Help | F1 | Help |
 | Settings | Ctrl+, | Settings |
 | Mute | Ctrl+M | Mute sound in Settings |
 | Return to Arcade | Ctrl+H | Shared Arcade button or Back to Arcade |
+
+Space activates focused UI buttons and is not a gameplay brake.
 
 The most recent fresh keyboard steering press or intentional in-field pointer
 movement selects the input source. A stationary or out-of-field pointer cannot

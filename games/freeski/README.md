@@ -16,7 +16,7 @@ Build with `scripts/build.sh`, choose FreeSki at the end of the Arcade shelf, or
 ```
 
 Enter starts. Hold A/D or Left/Right to turn up to 90°; release to keep your heading. Moving the mouse
-left/right of the skier selects pointer steering. Hold S, Down, Space, the right
+left/right of the skier selects pointer steering. Hold S, Down, the right
 mouse button on the slope, or the visible brake button to slow down. Ramps launch
 automatically. Press F during a run (or click Fast) to toggle a faster tuck; it
 raises the speed cap from 60 to 90 m/s. Esc pauses/resumes; Ctrl+H returns to Arcade. Settings: Ctrl+,. Ctrl+M mutes sound.

@@ -617,7 +617,7 @@ impl App {
                 } else {
                     menu::control(ui, "Steer", "A / D or ← / →", "Hold to turn up to 90°. Release to keep your heading. Move the pointer left or right of the skier to aim with the mouse.");
                     menu::control(ui, "Fast tuck", "F", "Toggle fast mode in any active run. It raises your top speed from 216 to 324 km/h; turn early and avoid obstacles.");
-                    menu::control(ui, "Brake", "S / ↓ / Space", "Or hold the right mouse button on the slope. Striped ramps launch you; low rocks can be jumped, trees cannot.");
+                    menu::control(ui, "Brake", "S / ↓", "Or hold the right mouse button on the slope. Striped ramps launch you; low rocks can be jumped, trees cannot.");
                     menu::control(ui, "Pause", "Esc", "Enter resumes. Ctrl+H returns to Arcade. Your run saves and reopens paused.");
                 }
                 ui.label(

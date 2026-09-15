@@ -677,3 +677,15 @@ upstream changes and integration conflicts. The existing 311-test/native/staging
 evidence does not claim validation of that future integrated revision. Resolve
 those conflicts, rerun combined checks and complete final system-package
 installation/upgrade verification before merge/issue closure.
+
+## 2026-09-15: Remove Space braking
+
+At Tyler's request following PR #42 feedback, Space no longer brakes or blocks
+input rearming. S/Down, right mouse and the brake button remain available;
+standard focused-button activation is unchanged. Updated current help and rules;
+the original issue snapshot remains historical.
+
+Passed: both input unit tests, including holding Space across rearming and
+pressing/releasing S/Down; workspace formatting; FreeSki all-targets Clippy with
+warnings denied; Arcade release build; diff whitespace check. No new native
+desktop playtest or packaging run for this input mapping change.
