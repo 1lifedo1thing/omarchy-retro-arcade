@@ -87,7 +87,7 @@ jobs:
       - name: Capture the actual app
         run: |
           mkdir -p /tmp/arcade-renders
-          for game in chess solitaire scram invaders pinball stack snake bubble blast 2048 freeski shatter tanks; do
+          for game in chess solitaire scram invaders pinball stack snake bubble blast 2048 shatter tanks freeski; do
 
             xvfb-run -a -s '-screen 0 1440x1100x24' env LIBGL_ALWAYS_SOFTWARE=1 SDL_AUDIODRIVER=dummy XDG_STATE_HOME=/tmp/arcade-$game/state XDG_DATA_HOME=/tmp/arcade-$game/data XDG_CONFIG_HOME=/tmp/arcade-$game/config target/release/omarchy-retro-arcade --game "$game" --screenshot "/tmp/arcade-renders/$game.png"
           done

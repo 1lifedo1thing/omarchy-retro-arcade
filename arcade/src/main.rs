@@ -36,9 +36,9 @@ impl Game {
         Self::Bubble,
         Self::Blast,
         Self::TwentyFortyEight,
-        Self::FreeSki,
         Self::Shatter,
         Self::Tanks,
+        Self::FreeSki,
     ];
     fn id(self) -> &'static str {
         match self {
@@ -452,7 +452,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 return Ok(());
             }
             "--help" | "-h" => {
-                println!("Omarchy Arcade\n--game chess|solitaire|scram|invaders|pinball|stack|snake|bubble|blast|2048|freeski|shatter|tanks\n--screenshot PATH\n--compact\n--version\nCtrl+H: return to Arcade. Ctrl+Q: quit.");
+                println!("Omarchy Arcade\n--game chess|solitaire|scram|invaders|pinball|stack|snake|bubble|blast|2048|shatter|tanks|freeski\n--screenshot PATH\n--compact\n--version\nCtrl+H: return to Arcade. Ctrl+Q: quit.");
                 return Ok(());
             }
             "--game" => {

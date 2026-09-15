@@ -12,7 +12,7 @@ A collection of classic games for Omarchy. Play pinball, cards, puzzles and arca
 
 ![Omarchy Arcade's opening collection, with a full Pinball preview and all nine games in the selector](docs/polish/shelf.png)
 
-Circuit Pinball · Solitaire · Scram · Invaders · Chess · Stack · Snake · Bubble · Blast · 2048 · FreeSki · Shatter · Tanks
+Circuit Pinball · Solitaire · Scram · Invaders · Chess · Stack · Snake · Bubble · Blast · 2048 · Shatter · Tanks · FreeSki
 
 **v0.2.0 for x86_64 Omarchy.** The published player package includes twelve games
 (2048, Shatter and Tanks). This source revision also includes FreeSki.
