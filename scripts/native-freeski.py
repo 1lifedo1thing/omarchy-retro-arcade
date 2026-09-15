@@ -111,7 +111,13 @@ with tempfile.TemporaryDirectory(prefix='arcade-freeski-') as tmp:
         save.unlink()
         app,w=launch()
         click(260*scale,96*scale)
-        click(355*scale,130*scale);assert read()['chase_enabled'];capture('chase-ready')
+        # Click the label interior and wait for the UI's persisted result; the
+        # small checkbox and a fixed 200 ms delay proved flaky on compact CI.
+        click(450*scale,130*scale)
+        for _ in range(40):
+            if read()['chase_enabled']:break
+            time.sleep(.05)
+        assert read()['chase_enabled'];capture('chase-ready')
         key(ord('m'),True);assert read()['muted']
         key(0xff0d);time.sleep(.5);key(0xff1b)
         chase_ready=read();assert chase_ready['run']['phase']=='Paused'
