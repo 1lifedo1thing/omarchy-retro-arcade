@@ -50,3 +50,10 @@ Upstream font contract inspected: omacom/omarchy quattro `bin/omarchy-font-curre
 CI run [35138151111](https://github.com/tcballard/omarchy-retro-arcade/actions/runs/35138151111) at `7a0caef` passed the Arch package build, installation, package-content verification, bundled Stockfish protocol check, thirteen-game switching, and reinstall/save-preservation checks. Native workspace tests with required Stockfish, Clippy, build, renders and Minesweeper lifecycle/palette/font checks also passed. The native job then failed because the mouse harness still divided the shelf into twelve entries.
 
 The harness now includes Minesweeper and uses thirteen rows; launch/title assertions remain intact. No application runtime code changed. Recaptured and decoded all three review PNGs after finding the committed light image was empty; the dark/light pair shares a board. Repeated the native Minesweeper lifecycle check successfully under local Xvfb. Final CI status is recorded in the PR description. Live Omarchy/Hyprland acceptance remains a release follow-up.
+
+## v0.3.0 release preparation
+
+The hash manifest now includes the v0.3.0 workspace/package metadata. Game runtime
+sources remain unchanged from main `48942ac`. Earlier test results remain scoped
+to their named revisions; the release BUILD.txt and linked CI identify the final
+versioned build. FreeSki is excluded and remains planned for v0.4.0.
