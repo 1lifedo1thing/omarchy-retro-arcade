@@ -12,13 +12,15 @@ A collection of classic games for Omarchy. Play pinball, cards, puzzles and arca
 
 ![Omarchy Arcade's opening collection, with a full Pinball preview and all nine games in the selector](docs/polish/shelf.png)
 
-Circuit Pinball · Solitaire · Scram · Invaders · Chess · Stack · Snake · Bubble · Blast · 2048 · Shatter · Tanks · FreeSki
+Circuit Pinball · Solitaire · Scram · Invaders · Chess · Stack · Snake · Bubble · Blast · 2048 · Shatter · Tanks · Minesweeper · FreeSki
 
 **v0.2.0 for x86_64 Omarchy.** The published player package includes twelve games
-(2048, Shatter and Tanks). This source revision also includes FreeSki.
+(2048, Shatter and Tanks). This source revision also includes Minesweeper and FreeSki.
 [Download v0.2.0](https://github.com/tcballard/omarchy-retro-arcade/releases/tag/v0.2.0)
 for the published player package, matching source, checksums and current testing limitations.
 [Verification and remaining desktop playtesting](docs/VERIFICATION.md).
+
+Minesweeper is available in source builds: three difficulties, safe first reveal, mouse/keyboard play and resumable boards. It is not included in v0.2.0. [Controls and development status](games/minesweeper/README.md).
 
 ## Install
 
@@ -33,7 +35,7 @@ sudo pacman -U ./omarchy-retro-arcade-0.2.0-1-x86_64.pkg.tar.zst
 
 Open **Omarchy Arcade** from your app launcher. Click a game and **Play**, or double-click its title. You can also select with the arrow keys and press `Enter`. Click **Arcade** (or press `Ctrl+H`) to return; **Full screen** and `F11` toggle fullscreen, and `Ctrl+Q` quits. See the [mouse controls and per-game input guide](docs/MOUSE-SUPPORT.md).
 
-The package includes all twelve games and a bundled Stockfish engine for Chess. It replaces conflicting standalone game packages while retaining their existing save files and settings. The app works offline and needs no account.
+The v0.2.0 package includes twelve games and a bundled Stockfish engine for Chess. It replaces conflicting standalone game packages while retaining their existing save files and settings. The app works offline and needs no account.
 
 The release supports **x86_64** and includes the checked player package, matching
 application/Stockfish source, build identity and SHA-256 checksums. Automated
@@ -55,7 +57,9 @@ scripts/build.sh
 
 The build uses every core. Set `ARCADE_BUILD_JOBS` to limit it.
 
-### Install a source build
+#Minesweeper is available in source builds: three difficulties, safe first reveal, mouse/keyboard play and resumable boards. It is not included in v0.2.0. [Controls and development status](games/minesweeper/README.md).
+
+## Install a source build
 
 `scripts/install.sh` joins a `DESTDIR` and a `PREFIX`, so a system install reads:
 
@@ -86,7 +90,7 @@ PRs, issues and playtesting are encouraged. [Report a bug, suggest an improvemen
 ## Source layout
 
 - `arcade/`: the Rust app, collection shelf and local Pinball transport.
-- `games/`: thirteen ordinary game directories, including [FreeSki](games/freeski/README.md), preserving all imported Git history.
+- `games/`: fourteen ordinary game directories, including [FreeSki](games/freeski/README.md), preserving all imported Git history.
 - `packaging/`: one Arch package, icon and desktop entry.
 - `scripts/`: shared build, staging and verification entry points.
 - `shared/presentation/`: shared cabinet materials, control styling and artwork.

@@ -441,3 +441,20 @@ existing order. FreeSki's licence and artwork provenance join
 `packaging/player-files.tsv`; install.sh stays
 on the explicit TSV path. Combined native/CI lists cover thirteen games. The
 published v0.2.0 download remains the twelve-game player package.
+
+## Minesweeper (issue #43)
+
+Original Rust game in the shared Arcade window; no new runtime or standalone launcher. Mines are placed on first reveal, excluding its neighbours. Random boards may require guessing. Per-difficulty played counts increase on first reveal (abandoned started boards count), wins update on the winning action, and exact board/timer/records persist atomically together. Invalid/future saves remain untouched and disable writes for that session. The game is silent and adds no independent audio preference. Shelf SVG is original illustrative artwork, not a gameplay capture.
+
+### Minesweeper desktop appearance
+
+Use the current desktop background/foreground/accent as semantic sources for all game surfaces and controls, overriding collection brass styling only while Minesweeper is active. Preserve the last valid palette across file replacement. Resolve the selected desktop monospace font via fontconfig asynchronously, with a 500 ms process timeout and validated, size-bounded font bytes. The Arcade style preparation hook lets the same palette reach navigation before it is drawn. No global shortcut remapping is introduced.
+
+## FreeSki integration after Minesweeper (16 September 2026)
+
+Merge main `48942ac` into FreeSki PR #42, retaining both games and both native
+verification suites. Preserve main's thirteen-game shelf order and append
+FreeSki after Minesweeper. Update switching, mouse selection, renders, CLI help
+and source documentation for fourteen games. Preserve each game's runtime,
+save identity, approved artwork and player-package manifest entries. Historical
+verification remains scoped to its original revision; combined CI must pass.

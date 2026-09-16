@@ -2657,6 +2657,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "omarchy-minesweeper"
+version = "0.2.0"
+dependencies = [
+ "arcade-presentation",
+ "eframe",
+ "omarchy-chess",
+ "rand 0.8.8",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "ttf-parser",
+]
+
+[[package]]
 name = "omarchy-retro-arcade"
 version = "0.2.0"
 dependencies = [
@@ -2671,6 +2685,7 @@ dependencies = [
  "omarchy-chess",
  "omarchy-freeski",
  "omarchy-invaders",
+ "omarchy-minesweeper",
  "omarchy-scram",
  "omarchy-shatter",
  "omarchy-snake",

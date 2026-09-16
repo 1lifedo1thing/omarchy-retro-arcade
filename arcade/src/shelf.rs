@@ -17,6 +17,7 @@ impl Game {
             Self::TwentyFortyEight => "PUZZLE / 2048",
             Self::FreeSki => "SPORT / DOWNHILL SKIING",
             Self::Tanks => "ARTILLERY / SOLO + LOCAL",
+            Self::Minesweeper => "PUZZLE / THREE DIFFICULTIES",
             Self::Shatter => "ARCADE / BRICK BREAKER",
         }
     }
@@ -35,6 +36,7 @@ impl Game {
             // Native 1280×900 capture: frame the chase and the approaching terrain.
             Self::FreeSki => ([316. / 1280., 206. / 900.], [964. / 1280., 656. / 900.]),
             Self::Tanks => ([0., 0.], [1., 1.]),
+            Self::Minesweeper => ([0., 0.], [1., 1.]),
             Self::Shatter => ([0., 0.], [1., 1.]),
         };
         Rect::from_min_max(Pos2::from(a), Pos2::from(b))
