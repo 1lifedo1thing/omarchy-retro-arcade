@@ -38,7 +38,16 @@ with tempfile.TemporaryDirectory(prefix='arcade-freeski-') as tmp:
         # before the faster run reaches trees. The toolbar has a fixed logical origin.
         click(460*scale,96*scale);time.sleep(2.3)
         key(ord('d'),hold=.25);capture('skiing')
-        key(ord('f'),hold=.8);assert read()['run']['fast_mode'];capture('fast-mode')
+        for _ in range(40):
+            if read()['run']['phase']=='Running':break
+            time.sleep(.05)
+        assert read()['run']['phase']=='Running'
+        # A held F can auto-repeat as extra presses and toggle fast mode back off.
+        key(ord('f'))
+        for _ in range(40):
+            if read()['run']['fast_mode']:break
+            time.sleep(.05)
+        assert read()['run']['fast_mode'];capture('fast-mode')
         key(0xff1b);paused=read();assert paused['run']['phase']=='Paused';assert paused['run']['distance']>10
         assert paused['run']['fast_mode']
         capture('paused');time.sleep(.3);assert read()==paused
