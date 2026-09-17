@@ -2,7 +2,7 @@
 
 <img src="https://raw.githubusercontent.com/tcballard/omarchy-badges/75975e5b5bf75e7ede3764bcd2950046f7abfe2c/badges/v1/omarchy-app.svg" height="20" alt="Omarchy community app">
 
-Native Rust Minesweeper inside Omarchy Arcade. Development addition for issue #43; not part of the published v0.2.0 package. Live Omarchy/Wayland acceptance is pending.
+Native Rust Minesweeper inside Omarchy Arcade. Included from v0.3.0 (issue #43). Live Omarchy/Wayland acceptance is pending.
 
 Reveal all safe cells. Beginner: 9×9/10 mines; Intermediate: 16×16/40; Expert: 30×16/99. The first reveal and its neighbours are safe. Empty areas expand automatically; flags block expansion. Random boards can require guessing.
 

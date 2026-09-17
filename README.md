@@ -4,7 +4,7 @@
 
 <a href="https://github.com/tcballard/omarchy-badges"><img src="https://raw.githubusercontent.com/tcballard/omarchy-badges/75975e5b5bf75e7ede3764bcd2950046f7abfe2c/badges/v1/omarchy-app.svg" height="20" alt="Omarchy App community badge"></a>
 
-**Thirteen games. One native app. One more go.**
+**Fourteen games. One native app. One more go.**
 
 A collection of classic games for Omarchy. Play pinball, cards, puzzles and arcade games in one native window, with offline play, local saves and an interface that follows your desktop theme.
 
@@ -14,32 +14,31 @@ A collection of classic games for Omarchy. Play pinball, cards, puzzles and arca
 
 Circuit Pinball · Solitaire · Scram · Invaders · Chess · Stack · Snake · Bubble · Blast · 2048 · Shatter · Tanks · Minesweeper · FreeSki
 
-**v0.2.0 for x86_64 Omarchy.** The published player package includes twelve games
-(2048, Shatter and Tanks). This source revision also includes Minesweeper and FreeSki.
-[Download v0.2.0](https://github.com/tcballard/omarchy-retro-arcade/releases/tag/v0.2.0)
-for the published player package, matching source, checksums and current testing limitations.
-[Verification and remaining desktop playtesting](docs/VERIFICATION.md).
+**v0.3.0 for x86_64 Omarchy.** Thirteen games, now including Minesweeper.
+[Download v0.3.0](https://github.com/tcballard/omarchy-retro-arcade/releases/tag/v0.3.0)
+for the player package, matching source, checksums and current testing limitations.
+This source revision also includes FreeSki.
 
-Minesweeper is available in source builds: three difficulties, safe first reveal, mouse/keyboard play and resumable boards. It is not included in v0.2.0. [Controls and development status](games/minesweeper/README.md).
+Minesweeper adds three difficulties, safe first reveal, mouse/keyboard play and resumable boards. [Controls and development status](games/minesweeper/README.md).
 
 ## Install
 
-1. Open the [v0.2.0 release](https://github.com/tcballard/omarchy-retro-arcade/releases/tag/v0.2.0).
-2. Download `omarchy-retro-arcade-0.2.0-1-x86_64.pkg.tar.zst` and `SHA256SUMS` into the same directory.
+1. Open the [v0.3.0 release](https://github.com/tcballard/omarchy-retro-arcade/releases/tag/v0.3.0).
+2. Download `omarchy-retro-arcade-0.3.0-1-x86_64.pkg.tar.zst` and `SHA256SUMS` into the same directory.
 3. Verify and install:
 
 ```sh
 sha256sum --ignore-missing --check SHA256SUMS
-sudo pacman -U ./omarchy-retro-arcade-0.2.0-1-x86_64.pkg.tar.zst
+sudo pacman -U ./omarchy-retro-arcade-0.3.0-1-x86_64.pkg.tar.zst
 ```
 
 Open **Omarchy Arcade** from your app launcher. Click a game and **Play**, or double-click its title. You can also select with the arrow keys and press `Enter`. Click **Arcade** (or press `Ctrl+H`) to return; **Full screen** and `F11` toggle fullscreen, and `Ctrl+Q` quits. See the [mouse controls and per-game input guide](docs/MOUSE-SUPPORT.md).
 
-The v0.2.0 package includes twelve games and a bundled Stockfish engine for Chess. It replaces conflicting standalone game packages while retaining their existing save files and settings. The app works offline and needs no account.
+The v0.3.0 package includes thirteen games and a bundled Stockfish engine for Chess. It replaces conflicting standalone game packages while retaining their existing save files and settings. The app works offline and needs no account.
 
 The release supports **x86_64** and includes the checked player package, matching
-application/Stockfish source, build identity and SHA-256 checksums. Automated
-native and Arch checks passed on its exact source commit. Live Omarchy/Wayland
+application/Stockfish source, build identity and SHA-256 checksums. Release assets are prepared only after automated native and Arch checks pass
+on the versioned source commit. Live Omarchy/Wayland
 audio and gameplay acceptance and aarch64 remain unverified; see the release notes.
 This is a community app, not an official Omarchy package.
 
@@ -57,7 +56,6 @@ scripts/build.sh
 
 The build uses every core. Set `ARCADE_BUILD_JOBS` to limit it.
 
-#Minesweeper is available in source builds: three difficulties, safe first reveal, mouse/keyboard play and resumable boards. It is not included in v0.2.0. [Controls and development status](games/minesweeper/README.md).
 
 ## Install a source build
 
@@ -97,7 +95,7 @@ PRs, issues and playtesting are encouraged. [Report a bug, suggest an improvemen
 - `shared/leaderboard/`: optional background HTTP transport.
 - `services/leaderboard/`: separately deployable replay-validation service; no public endpoint is bundled.
 
-Twelve Rust games draw directly into the shared window. Pinball retains the upstream C++ physics engine in a private worker whose rendering appears in that same window, including on Wayland. No browser, X11 child-window embedding or separate game launcher is used.
+Thirteen Rust games draw directly into the shared window. Pinball retains the upstream C++ physics engine in a private worker whose rendering appears in that same window, including on Wayland. No browser, X11 child-window embedding or separate game launcher is used.
 
 Existing save paths remain authoritative. Pinball preserves high scores and settings, but does not resume unfinished tables. The other games save when returning to Arcade.
 

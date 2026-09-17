@@ -51,6 +51,14 @@ CI run [35138151111](https://github.com/tcballard/omarchy-retro-arcade/actions/r
 
 The harness now includes Minesweeper and uses thirteen rows; launch/title assertions remain intact. No application runtime code changed. Recaptured and decoded all three review PNGs after finding the committed light image was empty; the dark/light pair shares a board. Repeated the native Minesweeper lifecycle check successfully under local Xvfb. Final CI status is recorded in the PR description. Live Omarchy/Hyprland acceptance remains a release follow-up.
 
+## v0.3.0 release preparation
+
+The hash manifest now includes the v0.3.0 workspace/package metadata. Game runtime
+sources remain unchanged from main `48942ac`. Earlier test results remain scoped
+to their named revisions; the release BUILD.txt and linked CI identify the final
+versioned build. FreeSki is excluded from that release and remains planned for
+v0.4.0.
+
 ## FreeSki integration — 2026-09-16
 
 The hash manifest now identifies the shared fourteen-game integration in PR #42.
