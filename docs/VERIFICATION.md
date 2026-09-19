@@ -57,3 +57,38 @@ This session cannot open a local display socket, so its native GUI evidence come
 - Real Omarchy/Wayland desktop acceptance: sound, fractional scaling, low-end CPU/GPU performance, Pinball input latency and game difficulty.
 
 This is a development preview. Headless Linux verification is not a real Omarchy desktop playtest.
+
+## Host architecture refactor — 19 September 2026
+
+Source under test: `7c0474d134d5b7a24e8240b64646ff636a72e447`, based on
+`0aa746357192e488d2c2d077f279a347c1fff6e3`. Environment: Linux x86_64,
+Rust/Cargo 1.98.1 (rustc 48a229cea). Reference reviewed: OmaCut
+`0948c4615d45ac62727b8c69112178e09781b7a4`. See ARCHITECTURE.md.
+
+Reproduced now:
+
+- `cargo fmt --all --check`: exit 0.
+- `cargo clippy --workspace --locked --all-targets -- -D warnings`: exit 0.
+- `cargo test -p omarchy-retro-arcade --locked`: exit 0, nine passed;
+  the ignored Pinball fixture was invoked successfully by its parent test.
+  Includes both new save/game-drop/lock-release ordering tests.
+- `cargo test --workspace --locked --all-targets`: exit 0. Stockfish was not
+  installed and REQUIRE_STOCKFISH was not set, so this does not establish
+  real-engine Chess acceptance. No native desktop session was used.
+- `cargo metadata --locked --offline --no-deps --format-version 1`: exit 0.
+- `git diff --check`: exit 0. README/architecture local Markdown links resolve.
+- Whitespace/visibility-normalized comparison against the baseline confirms
+  catalogue data and all game constructor/lock acquisition logic were preserved.
+
+Environment limitations and checks not run:
+
+- Native window switching, actual Omarchy/Wayland, package build/install and
+  Stockfish-required acceptance were not run here. No installed Omarchy revision
+  was tested. Existing CI has these broader gates; none is claimed from source review.
+- Installing desktop development dependencies with apt failed due to the
+  environment's setgroups/seteuid restrictions. Rust host compilation nevertheless
+  succeeded with the available libraries. No permissions workaround was used.
+- An initial offline Clippy attempt failed because ascii 1.1.0 was not cached;
+  the subsequent ordinary workspace Clippy command above passed.
+- Publication was blocked by automatic approval review pending explicit permission
+  to push the branch to the public repository. Remote CI evidence is unavailable.

@@ -87,6 +87,8 @@ PRs, issues and playtesting are encouraged. [Report a bug, suggest an improvemen
 
 ## Source layout
 
+See [architecture and lifecycle contracts](docs/ARCHITECTURE.md) for host boundaries and planned improvements.
+
 - `arcade/`: the Rust app, collection shelf and local Pinball transport.
 - `games/`: fourteen ordinary game directories, including [FreeSki](games/freeski/README.md), preserving all imported Git history.
 - `packaging/`: one Arch package, icon and desktop entry.
