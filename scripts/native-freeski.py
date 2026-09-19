@@ -100,10 +100,32 @@ with tempfile.TemporaryDirectory(prefix='arcade-freeski-') as tmp:
                 key(ord('q'),True);app.wait(timeout=8)
                 assert read()==loaded
         save.unlink()  # Only this script's disposable state, after closing the app.
-        app,w=launch();click(460*scale,96*scale);time.sleep(2.)
-        key(ord('d'),hold=1.1);time.sleep(.2);capture('quarter-turn')
-        key(0xff1b);turned=read()
-        assert abs(turned['run']['heading']-3.141592653589793/2)<1e-10
+        app,w=launch();click(460*scale,96*scale)
+        # Assert a simulation outcome, not that 1.1 seconds of CI wall time
+        # delivered enough rendered input frames. Starting on fresh snow also
+        # keeps unrelated terrain collisions out of this steering check.
+        deadline=time.monotonic()+5
+        while read()['run']['phase']=='Ready' and time.monotonic()<deadline:
+            time.sleep(.05)
+        assert read()['run']['phase']=='Running', ('quarter-turn start', variant, read()['run'])
+        code=x.XKeysymToKeycode(display,ord('d'))
+        xt.XTestFakeKeyEvent(display,code,1,0);x.XFlush(display)
+        try:
+            # Active runs persist every 300 ticks. Wait for that public evidence;
+            # do not synthesize additional resumes or relax the exact heading.
+            deadline=time.monotonic()+12
+            while True:
+                observed=read()['run']
+                assert observed['phase']=='Running', ('quarter-turn interrupted', variant, observed)
+                if abs(observed['heading']-3.141592653589793/2)<1e-10:
+                    break
+                assert time.monotonic()<deadline, ('quarter-turn timeout', variant, observed)
+                time.sleep(.05)
+        finally:
+            xt.XTestFakeKeyEvent(display,code,0,0);x.XFlush(display)
+        key(0xff1b);turned=read();capture('quarter-turn')
+        assert turned['run']['phase']=='Paused', ('quarter-turn pause', variant, turned['run'])
+        assert abs(turned['run']['heading']-3.141592653589793/2)<1e-10, ('quarter-turn heading', variant, turned['run'])
         key(0xff0d);time.sleep(.3);key(0xff1b);released=read()
         assert released['run']['heading']==turned['run']['heading']
         assert abs(released['run']['position']['y']-turned['run']['position']['y'])<1e-10
