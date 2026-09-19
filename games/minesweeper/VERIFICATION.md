@@ -56,4 +56,12 @@ The harness now includes Minesweeper and uses thirteen rows; launch/title assert
 The hash manifest now includes the v0.3.0 workspace/package metadata. Game runtime
 sources remain unchanged from main `48942ac`. Earlier test results remain scoped
 to their named revisions; the release BUILD.txt and linked CI identify the final
-versioned build. FreeSki is excluded and remains planned for v0.4.0.
+versioned build. FreeSki is excluded from that release and remains planned for
+v0.4.0.
+
+## FreeSki integration — 2026-09-16
+
+The hash manifest now identifies the shared fourteen-game integration in PR #42.
+Minesweeper runtime sources are unchanged from `48942ac`; shared registration,
+workflow and native harness inputs changed. Earlier results above remain evidence
+for their named revisions. Combined verification is recorded in PR #42.
