@@ -128,3 +128,28 @@ Remaining acceptance:
   the earlier #46 results do not establish this branch's runtime acceptance.
 - Actual Omarchy/Wayland playtesting and a local Stockfish-required run were not
   performed here. No installed Omarchy revision was tested.
+
+## Focus and drag lifecycle — 19 September 2026
+
+Source under test: `2cd4447b6d213c3b3aae11aae5cbfebd45443b8f`, based on merged PR #47
+(`d0a7839394f0e93aca20ca56f8255966e560dd27`). Linux x86_64, Rust 1.98.1.
+
+- Workspace fmt and diff whitespace checks: passed.
+- `cargo clippy --workspace --locked --all-targets -- -D warnings`: passed.
+- `cargo test -p omarchy-retro-arcade -p omarchy-chess -p omarchy-solitaire --locked`: passed. Includes four host focus/input regressions and real Chess/Solitaire drag-cancellation regressions. Existing ignored subprocess fixture remains ignored in the ordinary test run.
+- `python3 -m py_compile scripts/native-stack.py`: passed (syntax only).
+- Native Stack focus/held-key script was extended; native execution, Stockfish-required checks and Arch packaging remain CI gates for this branch.
+- No actual Omarchy/Wayland session or installed Omarchy revision was tested locally.
+- Detached audio-cue ownership and Pinball teardown scheduling remain follow-up work; see LIFECYCLE.md.
+
+## FreeSki resume race — 19 September 2026
+
+Source: `1c27d769c0e3105ca3e8386c5aa5c2d27f383851`. The first-frame steering regression fails before the fix and passes after it. All 22 FreeSki library tests pass, including held-key suppression across focus loss and overlays. FreeSki all-target Clippy with warnings denied passed; workspace fmt and native script syntax checks passed. Linux headless egui tests, Rust 1.98.1, debug info and incremental builds disabled.
+
+An initial default-profile build exhausted local storage during linking; cleaned Cargo development outputs and reran the library tests successfully. Native X11 execution and full workspace/package checks await this revision's CI. No live Omarchy/Wayland acceptance is claimed. The native assertion now reports variant and saved run state; the previous CI logs alone cannot prove this was the only cause of the intermittent failure.
+
+## FreeSki native quarter-turn timing
+
+Run 35445431862 failed at native-freeski.py's exact quarter-turn assertion; the same head passed PR run 35445434538. This is later than the previously fixed handover race. The failed assertion did not include saved state, so its precise runtime cause is not established.
+
+The native quarter-turn check now begins on fresh snow and waits up to 12 seconds for the public periodic save to show the exact heading, instead of assuming a 1.1-second key hold supplies sufficient simulation time. Unexpected pauses fail immediately; the key is released in finally. Exact heading and released-heading/position assertions remain. Capture happens after pause to avoid screenshot latency affecting the running simulation. Python syntax and diff checks passed locally; native execution remains CI evidence for this revision.

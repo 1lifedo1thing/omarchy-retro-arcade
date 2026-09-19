@@ -104,9 +104,9 @@ impl App {
         self.pause_reason = reason.into();
         self.flush();
     }
-    fn begin(&mut self) {
+    fn begin(&mut self, ctx: &egui::Context) {
         self.session.state.run.start();
-        self.controls.clear();
+        ctx.input(|i| self.controls.prepare_resume(i));
         self.accumulator = 0.;
         self.last = Instant::now();
         self.flush();
@@ -245,7 +245,7 @@ impl App {
                     if self.session.state.run.phase == Phase::Running {
                         self.pause("Take a breath. Your run is saved.");
                     } else if self.session.state.run.phase == Phase::Paused && focused {
-                        self.begin();
+                        self.begin(ctx);
                     }
                 }
             }
@@ -433,7 +433,7 @@ impl App {
         if start
             || (enter && self.session.state.run.phase == Phase::Ready && !self.blocked() && focused)
         {
-            self.begin();
+            self.begin(ctx);
         }
         // Sampling is allowed at Ready for intentional keyboard starts. Overlays and
         // focus changes clear both input ownership and held keys until fresh release.
@@ -731,7 +731,7 @@ GPL-3.0-or-later",
                     })
                     .inner;
                 if resume || (enter && focused) {
-                    self.begin();
+                    self.begin(ctx);
                 }
                 if self.error.is_some()
                     && self.writable
@@ -1153,6 +1153,30 @@ mod tests {
         assert_eq!(h.app.session.state.run, saved);
     }
     #[test]
+    fn fresh_steering_on_first_frame_after_resume_is_not_lost() {
+        let mut h = Harness::new();
+        h.key(Key::Enter);
+        h.key(Key::Escape);
+        assert_eq!(h.app.session.state.run.phase, Phase::Paused);
+        h.frame(vec![Harness::key_event(Key::Enter, true)], DT);
+        assert_eq!(h.app.session.state.run.phase, Phase::Running);
+        h.frame(
+            vec![
+                Harness::key_event(Key::Enter, false),
+                Harness::key_event(Key::D, true),
+            ],
+            DT,
+        );
+        for _ in 0..20 {
+            h.frame(vec![], DT);
+        }
+        assert!(
+            h.app.session.state.run.heading > 0.,
+            "fresh D after resume must steer without an extra neutral frame"
+        );
+    }
+
+    #[test]
     fn keyboard_turns_to_traverse_and_release_keeps_heading() {
         let mut h = Harness::new();
         h.key(Key::Enter);
@@ -1284,7 +1308,7 @@ mod tests {
             let mut h = Harness::new();
             h.app.session.state.select_mode(Mode::FreeSki, 42);
             h.app.refresh_obstacles();
-            h.app.begin();
+            h.app.begin(&h.ctx);
             h.app.accumulator = 0.;
             // Identical neutral input now encounters generator-2 edge hazards.
             // Rendering cadence must not change crossings, crashes or the result.

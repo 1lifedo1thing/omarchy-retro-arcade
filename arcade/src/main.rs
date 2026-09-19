@@ -1,5 +1,6 @@
 mod catalog;
 mod desktop;
+mod input;
 mod pinball;
 mod session;
 mod shelf;
@@ -13,6 +14,7 @@ use std::{
 };
 
 struct Arcade {
+    input: input::FocusInput,
     active: Option<Active>,
     selected: usize,
     error: Option<String>,
@@ -51,6 +53,9 @@ impl Arcade {
     }
 }
 impl eframe::App for Arcade {
+    fn raw_input_hook(&mut self, ctx: &egui::Context, raw: &mut egui::RawInput) {
+        self.input.filter(ctx, raw);
+    }
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         if ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, Key::F11)) {
             toggle_fullscreen(ctx);
@@ -242,6 +247,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Box::new(move |cc| {
             egui_extras::install_image_loaders(&cc.egui_ctx);
             Ok(Box::new(Arcade {
+                input: input::FocusInput::default(),
                 active: None,
                 selected: 0,
                 error: None,

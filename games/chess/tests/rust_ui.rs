@@ -323,3 +323,52 @@ fn settings_blocks_accessible_board_actions_and_escape_closes() {
     frame(&mut app, &ctx, vec![action()]);
     assert_eq!(app.selected, Some(Square::E2));
 }
+
+#[test]
+fn blur_cancels_a_drag_without_moving_on_late_release() {
+    let dir = tempfile::tempdir().unwrap();
+    let mut app = ChessApp::new(dir.path().into());
+    app.game.mode = Mode::Local;
+    let ctx = egui::Context::default();
+    egui_extras::install_image_loaders(&ctx);
+    frame(&mut app, &ctx, vec![]);
+    frame(&mut app, &ctx, vec![]);
+    let board = app.board_rect.unwrap();
+    let from = square_rect(board, Square::E2, false).center();
+    let to = square_rect(board, Square::E4, false).center();
+    frame(
+        &mut app,
+        &ctx,
+        vec![
+            Event::PointerMoved(from),
+            Event::PointerButton {
+                pos: from,
+                button: PointerButton::Primary,
+                pressed: true,
+                modifiers: Default::default(),
+            },
+        ],
+    );
+    frame(&mut app, &ctx, vec![Event::PointerMoved(to)]);
+    let _ = ctx.run(
+        egui::RawInput {
+            focused: false,
+            screen_rect: Some(Rect::from_min_size(Pos2::ZERO, Vec2::new(1060., 780.))),
+            ..Default::default()
+        },
+        |ctx| app.draw(ctx),
+    );
+
+    frame(
+        &mut app,
+        &ctx,
+        vec![Event::PointerButton {
+            pos: to,
+            button: PointerButton::Primary,
+            pressed: false,
+            modifiers: Default::default(),
+        }],
+    );
+    assert!(app.game.moves.is_empty());
+    assert_eq!(app.selected, None);
+}

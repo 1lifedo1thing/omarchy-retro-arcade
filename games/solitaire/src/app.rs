@@ -367,6 +367,9 @@ impl SolitaireApp {
             .replace(self.now)
             .map_or(0., |last| (self.now - last).max(0.));
         let active = ctx.input(|i| i.focused);
+        if !active && self.drag.take().is_some() {
+            self.selection = None;
+        }
         if active
             && self.dialog.is_none()
             && self.import.is_none()
@@ -720,7 +723,7 @@ impl SolitaireApp {
                 response.widget_info(||egui::WidgetInfo::selected(egui::WidgetType::SelectableLabel,ui.is_enabled(),selected,&label));
                 if response.double_clicked()||response.secondary_clicked(){action=Some(Action::Foundation(c.pile,c.row));keyboard.request_focus();}
                 else if response.clicked(){action=Some(Action::Choose(c.pile,c.row));self.focus=(c.pile,c.row);keyboard.request_focus();}
-                if response.drag_started() && self.session.game.movable(c.pile,c.row) && !self.completing {
+                if ui.input(|i|i.focused) && response.drag_started() && self.session.game.movable(c.pile,c.row) && !self.completing {
                     if let Some(pointer)=response.interact_pointer_pos(){drag_started=Some(Drag{source:c.pile,row:c.row,anchor:pointer-response.drag_delta(),offset:vec2(0.,0.)});self.selection=Some((c.pile,c.row));}
                 }
                 if response.hovered() && self.session.game.movable(c.pile,c.row){ui.ctx().set_cursor_icon(egui::CursorIcon::Grab);}
