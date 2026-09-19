@@ -87,3 +87,7 @@ Normalize glyph bearings and derive suit placement from visible rank width, with
 are 32 × 28 units, within the tableau exposure. The pip field spans y=190–510,
 with symmetric side columns at x=155/345 and larger low-rank pips; nine and ten
 use a denser four-row layout. The lower index is still an exact 180-degree copy.
+
+## Focus-loss drag cancellation
+
+Cancel the in-progress card drag and its selection on focus loss. A late release must not apply a move or add undo history. Preserve the existing inactive timer policy.

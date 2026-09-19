@@ -80,3 +80,7 @@ Tom requested delivery of the polish milestone and supplied the shared four-poin
 
 - A01: Tom explicitly selected After Hours as the default. Existing settings without a piece style also receive After Hours; an explicit Chisel selection persists across updates.
 - A02: Keep Chisel selectable in Settings. Both sets retain their complete viewBox and original geometry, and only the isolated accent follows the theme. Style and accent changes refresh cached artwork for both board and drag rendering.
+
+## Focus-loss drag cancellation
+
+Cancel the in-progress board drag and its selection on focus loss. A later release must not move a piece; engine analysis and ordinary turn-based selection policies stay unchanged.

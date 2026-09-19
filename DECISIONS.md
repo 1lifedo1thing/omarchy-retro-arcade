@@ -481,3 +481,12 @@ Keep current game feature gates and their headless storage implementations intac
 Retain Theme::square for compatibility with Chess's palette API. Add shared helper
 regressions and CI checks for the six headless dependency graphs. No game engine,
 input, audio, runtime asset, or package-layout change is part of this extraction.
+
+## Focus-boundary input ownership (19 September 2026)
+
+Filter inactive-window input in the host's eframe raw_input_hook, before egui
+calculates clicks. Preserve focus/capture notifications and metadata. Suppress
+held controls across blur until release and a fresh press, preventing same-frame
+pause shortcuts from undoing focus-loss pause. Preserve each game's pause/save
+policy and Pinball's existing host-modal gate. Document all fourteen game contracts
+in docs/LIFECYCLE.md. Detached legacy audio ownership remains a separate follow-up.

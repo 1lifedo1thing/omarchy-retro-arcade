@@ -23,6 +23,7 @@ integration from that example. It does not prescribe its language or toolkit.
 | --- | --- | --- |
 | `catalog.rs` | Stable IDs, names, ordering, taglines and shelf image references | Game construction and save handling |
 | `session.rs` | Per-game adapters, construction, save locks and teardown | Navigation and simulation rules |
+| `input.rs` | Focus-boundary event filtering and held-control rearming | Game pause policy and save handling |
 | `desktop.rs` | App singleton lock, window identity, icon and native options | Game-specific state schemas |
 | `main.rs` | CLI, host UI, navigation, active-session selection and capture | Per-game constructors and desktop setup |
 | `shelf.rs` | Collection layout, previews and selection interaction | Session resource ownership |
@@ -66,9 +67,9 @@ adapters and native regression evidence.
    joins its I/O threads. Profile actual transitions; isolate slow CPU/I/O operations
    with cancellation while retaining save locks through completion. Moving all game
    objects onto worker threads would not be a safe mechanical change.
-3. **Audit focus and input behaviour across adapters.** Existing implementations and
-   native tests differ by game. Define observable pause/release/resume scenarios first;
-   implement shared policy only where doing so preserves controls and saves.
+3. **Focus boundary audited and guarded.** See [lifecycle contracts](LIFECYCLE.md).
+   The host filters inactive input before egui processing and requires held controls
+   to release before rearming. Game-specific pause and save policies remain intact.
 4. **Consolidate repeated audio process management before global preferences.** Several
    games own `paplay` processes independently. A shared owned-player helper could reduce
    cleanup duplication. A global mute preference requires an explicit precedence and

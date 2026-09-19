@@ -28,9 +28,15 @@ with tempfile.TemporaryDirectory(prefix='stack-native-') as tmp:
   save=Path(tmp)/'state/omarchy-stack/session.json';before=json.loads(save.read_text())['marathon'];assert before['locks']>=2 and before['held'] is not None
   time.sleep(2.2);after=json.loads(save.read_text())['marathon'];assert before==after,'Pause changed simulation'
   key(ord('p'));key(0xff53,hold=.2)
+  # Hold movement through blur/refocus: the host must require a release before rearming.
+  held=x.XKeysymToKeycode(display,0xff51)
+  xt.XTestFakeKeyEvent(display,held,1,0);x.XFlush(display);time.sleep(.1)
   x.XSetInputFocus(display,x.XDefaultRootWindow(display),1,0);x.XFlush(display);time.sleep(.5)
   before=json.loads(save.read_text())['marathon'];time.sleep(2.2);assert json.loads(save.read_text())['marathon']==before,'Focus loss changed simulation'
   x.XSetInputFocus(display,w,1,0);x.XFlush(display);time.sleep(.3)
+  assert json.loads(save.read_text())['marathon']==before,'Refocus resumed simulation'
+  xt.XTestFakeKeyEvent(display,held,0,0);x.XFlush(display);time.sleep(.2)
+  assert json.loads(save.read_text())['marathon']==before,'Held-key release changed paused simulation'
   key(ord('h'),True);assert windows()==[w]
   saved=json.loads(save.read_text())['marathon'];assert saved==before
   # Reopen from shelf, choose resume by mouse, verify exact saved state on leaving.

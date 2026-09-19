@@ -224,3 +224,66 @@ fn quit_shortcut_requests_close_without_reentering_input_lock() {
         .iter()
         .any(|c| matches!(c, egui::ViewportCommand::Close))));
 }
+
+#[test]
+fn blur_cancels_card_drag_before_late_release() {
+    let mut h = Harness::new(1120., 800.);
+    // Find a deterministic initial top-card move, then drive the same pointer path a user takes.
+    let (s, i, t) = loop {
+        if let Some(m) = h
+            .app
+            .session
+            .game
+            .legal_moves()
+            .into_iter()
+            .find(|&(s, i, t)| s >= 6 && t >= 6 && i + 1 == h.app.session.game.state.piles[s].len())
+        {
+            break m;
+        }
+        h.app.session.game = Game::new(h.app.session.game.state.seed + 1, 1);
+    };
+    h.frame(vec![]);
+    // 16px margins, 124px cards, 36.67px gutters, tableau starts at y=313.
+    let w = 124.;
+    let gap = (1088. - 7. * w) / 6.;
+    let from = pos2(
+        16. + (s - 6) as f32 * (w + gap) + w / 2.,
+        313. + i as f32 * w * 0.12 + 30.,
+    );
+    let to = pos2(
+        16. + (t - 6) as f32 * (w + gap) + w / 2.,
+        313. + h.app.session.game.state.piles[t].len().saturating_sub(1) as f32 * w * 0.12 + 35.,
+    );
+    h.frame(vec![
+        Event::PointerMoved(from),
+        Event::PointerButton {
+            pos: from,
+            button: PointerButton::Primary,
+            pressed: true,
+            modifiers: Modifiers::NONE,
+        },
+    ]);
+    h.frame(vec![Event::PointerMoved(from + vec2(12., 0.))]);
+    h.frame(vec![Event::PointerMoved(to)]);
+    let _ = h.ctx.run(
+        RawInput {
+            focused: false,
+            screen_rect: Some(Rect::from_min_size(pos2(0., 0.), h.size)),
+            ..Default::default()
+        },
+        |ctx| h.app.ui(ctx),
+    );
+
+    h.frame(vec![Event::PointerButton {
+        pos: to,
+        button: PointerButton::Primary,
+        pressed: false,
+        modifiers: Modifiers::NONE,
+    }]);
+    assert_eq!(
+        h.app.session.game.state.moves, 0,
+        "drag from {from:?} to {to:?}, move {s},{i},{t}: {}",
+        h.app.message
+    );
+    assert!(h.app.session.game.history.is_empty());
+}

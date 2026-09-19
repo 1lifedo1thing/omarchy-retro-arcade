@@ -371,6 +371,9 @@ impl ChessApp {
         }
     }
     pub fn draw(&mut self, ctx: &egui::Context) {
+        if !ctx.input(|i| i.focused) && self.drag_source.take().is_some() {
+            self.selected = None;
+        }
         for answer in self.engine.poll() {
             self.accept_answer(answer);
         }
@@ -848,7 +851,7 @@ impl ChessApp {
                 self.theme.foreground,
             );
         }
-        if response.drag_started() {
+        if response.drag_started() && ui.input(|i| i.focused) {
             if let Some(pos) = ui.input(|i| i.pointer.press_origin()) {
                 self.drag_source = square_at(rect, pos, self.flipped).filter(|sq| {
                     self.game.human_turn()

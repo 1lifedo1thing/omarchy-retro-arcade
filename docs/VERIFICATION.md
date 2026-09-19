@@ -128,3 +128,16 @@ Remaining acceptance:
   the earlier #46 results do not establish this branch's runtime acceptance.
 - Actual Omarchy/Wayland playtesting and a local Stockfish-required run were not
   performed here. No installed Omarchy revision was tested.
+
+## Focus and drag lifecycle — 19 September 2026
+
+Source under test: `2cd4447b6d213c3b3aae11aae5cbfebd45443b8f`, based on merged PR #47
+(`d0a7839394f0e93aca20ca56f8255966e560dd27`). Linux x86_64, Rust 1.98.1.
+
+- Workspace fmt and diff whitespace checks: passed.
+- `cargo clippy --workspace --locked --all-targets -- -D warnings`: passed.
+- `cargo test -p omarchy-retro-arcade -p omarchy-chess -p omarchy-solitaire --locked`: passed. Includes four host focus/input regressions and real Chess/Solitaire drag-cancellation regressions. Existing ignored subprocess fixture remains ignored in the ordinary test run.
+- `python3 -m py_compile scripts/native-stack.py`: passed (syntax only).
+- Native Stack focus/held-key script was extended; native execution, Stockfish-required checks and Arch packaging remain CI gates for this branch.
+- No actual Omarchy/Wayland session or installed Omarchy revision was tested locally.
+- Detached audio-cue ownership and Pinball teardown scheduling remain follow-up work; see LIFECYCLE.md.
