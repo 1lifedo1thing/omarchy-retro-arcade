@@ -124,7 +124,7 @@ pub fn write(path: &Path, save: &Save) -> Result<(), String> {
     let bytes = serde_json::to_vec(save).map_err(|e| e.to_string())?;
     #[cfg(feature = "desktop")]
     {
-        omarchy_chess::storage::atomic_write(path, &bytes)
+        arcade_platform::storage::atomic_write(path, &bytes)
     }
     #[cfg(not(feature = "desktop"))]
     {

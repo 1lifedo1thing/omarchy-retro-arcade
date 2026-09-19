@@ -5,8 +5,8 @@ use crate::{
     storage::{self, Records},
     timing::{Clock, Gate},
 };
+use arcade_platform::theme::Theme;
 use eframe::egui::{self, Color32, Key, Pos2, Rect, RichText, Stroke, Vec2};
-use omarchy_chess::theme::Theme;
 use std::{
     path::PathBuf,
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},

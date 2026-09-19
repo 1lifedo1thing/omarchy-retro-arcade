@@ -205,6 +205,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "arcade-platform"
+version = "0.3.0"
+dependencies = [
+ "ecolor",
+ "tempfile",
+ "toml",
+]
+
+[[package]]
 name = "arcade-presentation"
 version = "0.3.0"
 dependencies = [
@@ -2579,9 +2588,9 @@ dependencies = [
 name = "omarchy-2048"
 version = "0.3.0"
 dependencies = [
+ "arcade-platform",
  "arcade-presentation",
  "eframe",
- "omarchy-chess",
  "rand 0.8.8",
  "serde",
  "serde_json",
@@ -2592,9 +2601,9 @@ dependencies = [
 name = "omarchy-blast"
 version = "0.3.0"
 dependencies = [
+ "arcade-platform",
  "arcade-presentation",
  "eframe",
- "omarchy-chess",
  "serde",
  "serde_json",
  "tempfile",
@@ -2604,9 +2613,9 @@ dependencies = [
 name = "omarchy-bubble"
 version = "0.3.0"
 dependencies = [
+ "arcade-platform",
  "arcade-presentation",
  "eframe",
- "omarchy-chess",
  "serde",
  "serde_json",
  "tempfile",
@@ -2616,6 +2625,7 @@ dependencies = [
 name = "omarchy-chess"
 version = "0.3.0"
 dependencies = [
+ "arcade-platform",
  "arcade-presentation",
  "eframe",
  "egui_extras",
@@ -2627,16 +2637,15 @@ dependencies = [
  "serde_json",
  "shakmaty",
  "tempfile",
- "toml",
 ]
 
 [[package]]
 name = "omarchy-freeski"
 version = "0.3.0"
 dependencies = [
+ "arcade-platform",
  "arcade-presentation",
  "eframe",
- "omarchy-chess",
  "serde",
  "serde_json",
  "tempfile",
@@ -2660,9 +2669,9 @@ dependencies = [
 name = "omarchy-minesweeper"
 version = "0.3.0"
 dependencies = [
+ "arcade-platform",
  "arcade-presentation",
  "eframe",
- "omarchy-chess",
  "rand 0.8.8",
  "serde",
  "serde_json",
@@ -2674,6 +2683,7 @@ dependencies = [
 name = "omarchy-retro-arcade"
 version = "0.3.0"
 dependencies = [
+ "arcade-platform",
  "arcade-presentation",
  "eframe",
  "egui_extras",
@@ -2714,9 +2724,9 @@ dependencies = [
 name = "omarchy-shatter"
 version = "0.3.0"
 dependencies = [
+ "arcade-platform",
  "arcade-presentation",
  "eframe",
- "omarchy-chess",
  "serde",
  "serde_json",
  "tempfile",
@@ -2726,9 +2736,9 @@ dependencies = [
 name = "omarchy-snake"
 version = "0.3.0"
 dependencies = [
+ "arcade-platform",
  "arcade-presentation",
  "eframe",
- "omarchy-chess",
  "serde",
  "serde_json",
  "tempfile",
@@ -2757,10 +2767,10 @@ name = "omarchy-stack"
 version = "0.3.0"
 dependencies = [
  "arcade-leaderboard",
+ "arcade-platform",
  "arcade-presentation",
  "chrono",
  "eframe",
- "omarchy-chess",
  "serde",
  "serde_json",
  "tempfile",
@@ -2770,9 +2780,9 @@ dependencies = [
 name = "omarchy-tanks"
 version = "0.3.0"
 dependencies = [
+ "arcade-platform",
  "arcade-presentation",
  "eframe",
- "omarchy-chess",
  "serde",
  "serde_json",
  "tempfile",

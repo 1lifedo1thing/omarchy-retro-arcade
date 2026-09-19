@@ -65,14 +65,14 @@ impl Settings {
             return Ok(Self::default());
         }
         let value: Self =
-            serde_json::from_slice(&omarchy_chess::storage::read_bounded(&path, 16384)?)
+            serde_json::from_slice(&arcade_platform::storage::read_bounded(&path, 16384)?)
                 .map_err(|e| e.to_string())?;
         value.validate()?;
         Ok(value)
     }
     pub fn save(&self, dir: &Path) -> Result<(), String> {
         self.validate()?;
-        omarchy_chess::storage::atomic_write(
+        arcade_platform::storage::atomic_write(
             &dir.join("blast.json"),
             &serde_json::to_vec_pretty(self).map_err(|e| e.to_string())?,
         )

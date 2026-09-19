@@ -32,7 +32,7 @@ pub struct App {
     visual_clock: f64,
     audio: Audio,
     audio_notice: Option<String>,
-    theme: omarchy_chess::theme::Theme,
+    theme: arcade_platform::theme::Theme,
     themed: Instant,
 }
 impl Default for App {
@@ -68,7 +68,7 @@ impl App {
             visual_clock: 0.0,
             audio: Audio::default(),
             audio_notice: None,
-            theme: omarchy_chess::theme::Theme::load(),
+            theme: arcade_platform::theme::Theme::load(),
             themed: Instant::now(),
         }
     }
@@ -558,7 +558,7 @@ impl App {
             self.audio_notice = Some(e);
         }
         if self.themed.elapsed() > Duration::from_secs(2) {
-            self.theme = omarchy_chess::theme::Theme::load();
+            self.theme = arcade_platform::theme::Theme::load();
             self.themed = Instant::now();
         }
         let mut v = if self.theme.light() {

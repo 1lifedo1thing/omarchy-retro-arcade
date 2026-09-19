@@ -1,13 +1,13 @@
+// Compatibility exports for existing Chess callers. Game saves stay below.
 use crate::game::{fen, Difficulty, Game, Mode, MAX_PGN};
+pub use arcade_platform::storage::{atomic_write, read_bounded, stamp};
 use fs2::FileExt;
 use serde::{Deserialize, Serialize};
 use shakmaty::{fen::Fen, uci::UciMove, CastlingMode};
 use std::{
     env,
     fs::{self, File, OpenOptions},
-    io::{Read, Write},
     path::{Path, PathBuf},
-    time::{SystemTime, UNIX_EPOCH},
 };
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -97,33 +97,6 @@ pub fn state_dir() -> PathBuf {
         })
         .join("omarchy-chess")
 }
-pub fn read_bounded(path: &Path, limit: usize) -> Result<Vec<u8>, String> {
-    let f = File::open(path).map_err(|e| e.to_string())?;
-    let mut data = Vec::new();
-    f.take(limit as u64 + 1)
-        .read_to_end(&mut data)
-        .map_err(|e| e.to_string())?;
-    if data.len() > limit {
-        return Err(format!("File is too large (maximum {limit} bytes)."));
-    }
-    Ok(data)
-}
-pub fn atomic_write(path: &Path, data: &[u8]) -> Result<(), String> {
-    let parent = path
-        .parent()
-        .filter(|p| !p.as_os_str().is_empty())
-        .unwrap_or(Path::new("."));
-    fs::create_dir_all(parent).map_err(|e| e.to_string())?;
-    let mut temp = tempfile::NamedTempFile::new_in(parent).map_err(|e| e.to_string())?;
-    temp.write_all(data)
-        .and_then(|_| temp.as_file().sync_all())
-        .map_err(|e| e.to_string())?;
-    temp.persist(path).map_err(|e| e.to_string())?;
-    File::open(parent)
-        .and_then(|f| f.sync_all())
-        .map_err(|e| e.to_string())?;
-    Ok(())
-}
 pub fn save(dir: &Path, game: &Game, flipped: bool, guides: bool) -> Result<(), String> {
     let data = serde_json::to_vec_pretty(&Session::capture(game, flipped, guides))
         .map_err(|e| e.to_string())?;
@@ -155,13 +128,6 @@ pub fn load(dir: &Path) -> Result<(Game, bool, bool), String> {
             .map_err(|e| e.to_string())?
             .game()
     }
-}
-pub fn stamp() -> String {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_nanos()
-        .to_string()
 }
 pub fn archive(dir: &Path, game: &Game, recovery: bool) -> Result<(), String> {
     if recovery && dir.join("session.json").exists() {

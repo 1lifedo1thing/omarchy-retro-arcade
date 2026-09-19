@@ -3,8 +3,8 @@ use crate::{
     engine::{Difficulty, Game, Status},
     storage::{self, Save},
 };
+use arcade_platform::theme::Theme;
 use eframe::egui::{self, Align2, FontId, Key, Rect, Sense, Stroke, StrokeKind, Vec2};
-use omarchy_chess::theme::Theme;
 use std::{
     path::PathBuf,
     time::{Duration, Instant},

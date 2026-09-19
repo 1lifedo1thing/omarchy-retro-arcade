@@ -1,5 +1,5 @@
 use crate::engine::*;
-use omarchy_chess::storage::{atomic_write, read_bounded, stamp};
+use arcade_platform::storage::{atomic_write, read_bounded, stamp};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 #[derive(Clone, Debug, Serialize, Deserialize)]

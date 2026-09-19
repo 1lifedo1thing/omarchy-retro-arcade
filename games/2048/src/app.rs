@@ -2,8 +2,8 @@ use crate::{
     engine::{self, Direction, Game, Turn},
     storage::{self, Save},
 };
+use arcade_platform::theme::Theme;
 use eframe::egui::{self, Align2, Color32, FontId, Key, Pos2, Rect, Sense, Vec2};
-use omarchy_chess::theme::Theme;
 use std::{
     path::PathBuf,
     time::{Duration, Instant},

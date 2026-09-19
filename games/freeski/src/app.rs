@@ -8,8 +8,8 @@ use crate::{
     storage::{self, Save},
     world,
 };
+use arcade_platform::theme::Theme;
 use eframe::egui::{self, Color32, Key, Rect, Sense, Vec2};
-use omarchy_chess::theme::Theme;
 use std::{
     collections::VecDeque,
     path::PathBuf,

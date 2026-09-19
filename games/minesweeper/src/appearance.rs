@@ -1,6 +1,6 @@
 //! Desktop-derived palette and fontconfig monospace selection.
+use arcade_platform::theme::Theme;
 use eframe::egui::{self, Color32, FontId, Stroke, Vec2};
-use omarchy_chess::theme::Theme;
 use std::{
     path::PathBuf,
     process::{Command, Stdio},
