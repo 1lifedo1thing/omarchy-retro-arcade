@@ -53,8 +53,16 @@ Chess, Scram and Invaders use detached short-cue playback threads that can survi
 the game object until their existing two-second timeout. They do not expose a
 host-owned stop/join operation. Consolidating that playback ownership is the next
 separate refactor; this input change does not claim to fix audio cleanup everywhere.
-Pinball teardown may still spend its grace period on the UI thread. Measuring and
-changing shutdown scheduling requires keeping save locks and worker ownership intact.
+Pinball now requests shutdown once and polls child exit/thread completion between
+frames. Returning home, Ctrl+Q, native window close and screenshot completion
+retain the active session until cleanup completes; no replacement game opens in
+that interval. A quit request takes priority over a pending return home. The
+existing two-second grace remains, followed by killing/reaping only the owned
+child. Reader/writer threads are joined only after they finish. Active still calls
+on_exit once and releases the game before its lock. A blocking destructor remains
+as a forced-teardown fallback; normal close/navigation finish polling first.
+
+Live Omarchy testing of focus, switching, closing and audio remains outstanding.
 
 ## Checks
 

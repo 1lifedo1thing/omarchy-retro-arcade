@@ -494,3 +494,14 @@ in docs/LIFECYCLE.md. Detached legacy audio ownership remains a separate follow-
 ## FreeSki resume input observation
 
 Observe neutral steering on the resume frame, including resumes applied by the pause overlay after input sampling. Waiting for a later neutral frame can discard an entire fresh key hold under rendering delays. Preserve release-before-rearm for controls already held when resuming; no simulation tuning or save schema changes.
+
+## Poll Pinball shutdown between frames (19 September 2026)
+
+Retain the active game during normal shutdown rather than detaching cleanup or
+moving GUI objects to another thread. Pinball sends quit/disconnects once, retains
+its two-second grace, polls child exit, kills on expiry and joins only finished
+pipe threads. The host shows closing progress, suppresses game updates/relaunch,
+and intercepts native close and Ctrl+Q until cleanup completes. Screenshot exit
+uses the same path. A later quit request upgrades return-home intent. Preserve
+on_exit/game/lock destruction order and keep synchronous Drop as a forced-teardown
+fallback. No engine/physics/save-format change; native acceptance remains separate.

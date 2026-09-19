@@ -13,7 +13,15 @@ use std::{
     time::{Duration, Instant},
 };
 
+#[derive(Clone, Copy, PartialEq)]
+enum Closing {
+    Home,
+    Quit,
+}
+
 struct Arcade {
+    closing: Option<Closing>,
+
     input: input::FocusInput,
     active: Option<Active>,
     selected: usize,
@@ -45,7 +53,46 @@ impl Arcade {
         }
     }
     fn home(&mut self, ctx: &egui::Context) {
-        self.active = None;
+        self.begin_close(Closing::Home);
+        self.poll_close(ctx);
+    }
+    fn begin_close(&mut self, target: Closing) {
+        if self.closing.is_none() {
+            if let Some(active) = self.active.as_mut() {
+                active.app.begin_shutdown();
+            }
+        }
+        if self.closing != Some(Closing::Quit) {
+            self.closing = Some(target);
+        }
+    }
+    fn poll_close(&mut self, ctx: &egui::Context) -> bool {
+        let Some(target) = self.closing else {
+            return false;
+        };
+        if self
+            .active
+            .as_mut()
+            .is_none_or(|active| active.app.poll_shutdown())
+        {
+            self.active = None;
+            self.closing = None;
+            self.reset_shelf(ctx);
+            ctx.request_repaint();
+            if target == Closing::Quit {
+                ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+            }
+        } else {
+            egui::CentralPanel::default().show(ctx, |ui| {
+                ui.centered_and_justified(|ui| {
+                    ui.label("Closing Pinball…");
+                });
+            });
+            ctx.request_repaint_after(Duration::from_millis(10));
+        }
+        true
+    }
+    fn reset_shelf(&mut self, ctx: &egui::Context) {
         self.confirm_home = false;
         ctx.memory_mut(|m| *m = egui::Memory::default());
         ctx.set_style(egui::Style::default());
@@ -66,10 +113,19 @@ impl eframe::App for Arcade {
         let mut home = ctx.input_mut(|i| {
             i.consume_shortcut(&egui::KeyboardShortcut::new(egui::Modifiers::CTRL, Key::H))
         });
+        if ctx.input(|i| i.viewport().close_requested())
+            && (self.active.is_some() || self.closing.is_some())
+        {
+            ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
+            self.begin_close(Closing::Quit);
+        }
         if ctx.input_mut(|i| {
             i.consume_shortcut(&egui::KeyboardShortcut::new(egui::Modifiers::CTRL, Key::Q))
         }) {
-            ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+            self.begin_close(Closing::Quit);
+        }
+        if self.poll_close(ctx) {
+            return;
         }
         arcade_presentation::apply(ctx);
         if let Some(a) = self.active.as_mut() {
@@ -134,6 +190,7 @@ impl eframe::App for Arcade {
             });
             if leave {
                 self.home(ctx);
+                return;
             } else if cancel {
                 self.confirm_home = false;
             }
@@ -168,6 +225,7 @@ impl eframe::App for Arcade {
         });
         }
         self.frames += 1;
+        let mut captured = false;
         if let Some(path) = &self.capture {
             if self.frames > 60 && self.active.as_ref().is_none_or(|a| a.app.ready()) {
                 for event in ctx.input(|i| i.events.clone()) {
@@ -181,7 +239,7 @@ impl eframe::App for Arcade {
                             image.height() as u32,
                             image::ColorType::Rgba8,
                         ) {
-                            Ok(()) => ctx.send_viewport_cmd(egui::ViewportCommand::Close),
+                            Ok(()) => captured = true,
                             Err(e) => {
                                 eprintln!("Screenshot: {e}");
                             }
@@ -191,6 +249,10 @@ impl eframe::App for Arcade {
                 ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(Default::default()));
             }
             ctx.request_repaint_after(Duration::from_millis(25));
+        }
+        if captured {
+            self.begin_close(Closing::Quit);
+            ctx.request_repaint();
         }
     }
     fn on_exit(&mut self, _: Option<&eframe::glow::Context>) {
@@ -247,6 +309,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Box::new(move |cc| {
             egui_extras::install_image_loaders(&cc.egui_ctx);
             Ok(Box::new(Arcade {
+                closing: None,
                 input: input::FocusInput::default(),
                 active: None,
                 selected: 0,

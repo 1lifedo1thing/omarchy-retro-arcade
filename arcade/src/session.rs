@@ -7,6 +7,11 @@ use eframe::egui;
 /// input, including its closing frame. `ready` is for capture, not construction.
 /// `finished` requests return to the shelf. Active owns the single on_exit call.
 pub(crate) trait ArcadeGame: eframe::App {
+    fn begin_shutdown(&mut self) {}
+    fn poll_shutdown(&mut self) -> bool {
+        true
+    }
+
     fn prepare_style(&mut self, _: &egui::Context) {}
     fn ready(&self) -> bool {
         true
@@ -88,6 +93,13 @@ impl ArcadeGame for omarchy_solitaire::app::SolitaireApp {}
 impl ArcadeGame for omarchy_scram::app::ScramApp {}
 impl ArcadeGame for omarchy_invaders::App {}
 impl ArcadeGame for pinball::Pinball {
+    fn begin_shutdown(&mut self) {
+        self.begin_shutdown();
+    }
+    fn poll_shutdown(&mut self) -> bool {
+        self.poll_shutdown()
+    }
+
     fn set_input_enabled(&mut self, enabled: bool) {
         self.set_input_enabled(enabled);
     }
@@ -225,5 +237,85 @@ mod tests {
         assert!(new.borrow().is_empty());
         drop(active);
         assert_eq!(&*new.borrow(), &["save", "game dropped", "lock released"]);
+    }
+    #[test]
+    fn pending_shutdown_retains_game_and_lock_until_completion() {
+        use crate::{Arcade, Closing};
+        use std::cell::Cell;
+        struct Pending {
+            events: Events,
+            done: Rc<Cell<bool>>,
+        }
+        impl eframe::App for Pending {
+            fn update(&mut self, _: &egui::Context, _: &mut eframe::Frame) {}
+            fn on_exit(&mut self, _: Option<&eframe::glow::Context>) {
+                self.events.borrow_mut().push("save");
+            }
+        }
+        impl ArcadeGame for Pending {
+            fn begin_shutdown(&mut self) {
+                self.events.borrow_mut().push("begin");
+            }
+            fn poll_shutdown(&mut self) -> bool {
+                self.done.get()
+            }
+        }
+        impl Drop for Pending {
+            fn drop(&mut self) {
+                self.events.borrow_mut().push("game dropped");
+            }
+        }
+        let events = Events::default();
+        let done = Rc::new(Cell::new(false));
+        let mut arcade = Arcade {
+            closing: None,
+            input: Default::default(),
+            active: Some(Active {
+                game: Game::Pinball,
+                app: Box::new(Pending {
+                    events: events.clone(),
+                    done: done.clone(),
+                }),
+                _lock: Some(Box::new(LockProbe(events.clone()))),
+            }),
+            selected: 0,
+            error: None,
+            about: false,
+            confirm_home: true,
+            theme: arcade_platform::theme::Theme::load(),
+            themed: std::time::Instant::now(),
+            capture: None,
+            frames: 0,
+            initial: None,
+            _lock: tempfile::tempfile().unwrap(),
+        };
+        let ctx = egui::Context::default();
+        arcade.begin_close(Closing::Home);
+        let output = ctx.run(Default::default(), |ctx| {
+            assert!(arcade.poll_close(ctx));
+        });
+        assert!(!output.viewport_output[&egui::ViewportId::ROOT]
+            .commands
+            .iter()
+            .any(|c| matches!(c, egui::ViewportCommand::Close)));
+        assert!(arcade.active.is_some());
+        assert_eq!(&*events.borrow(), &["begin"]);
+        arcade.begin_close(Closing::Quit);
+        arcade.begin_close(Closing::Home);
+        assert!(arcade.closing == Some(Closing::Quit));
+        done.set(true);
+        let output = ctx.run(Default::default(), |ctx| {
+            assert!(arcade.poll_close(ctx));
+        });
+        assert!(output.viewport_output[&egui::ViewportId::ROOT]
+            .commands
+            .iter()
+            .any(|c| matches!(c, egui::ViewportCommand::Close)));
+        assert!(arcade.active.is_none());
+        assert!(arcade.closing.is_none());
+        assert_eq!(
+            &*events.borrow(),
+            &["begin", "save", "game dropped", "lock released"]
+        );
     }
 }
