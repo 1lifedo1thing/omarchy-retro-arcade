@@ -185,3 +185,36 @@ test returns without it), Xvfb/native game switching, Arch packaging and live
 Omarchy desktop acceptance. Full workspace/native/package checks remain CI gates.
 Shutdown wakes playback waiting immediately and joins the worker, but OS syscall
 latency is not hard-bounded. Existing main CI results do not validate this change.
+
+## Pinball shutdown polling — 19 September 2026
+
+Base: `3f3c867ade5bff0aa53719c2085f320d2a082946`. Linux x86_64, Rust 1.98.1.
+Tested runtime source identity:
+
+```text
+0dd707be759f2683bdab1af024c003e5bcc439244762036b76f2886276e4c561  arcade/src/main.rs
+79888c94a987bca1d3917fec2f3e52c5eff98beb6765b51426b9a8c4db068e63  arcade/src/session.rs
+48105d7ced75643bffdf935c64b3c9d81c06ecaa5818840f3b3d890d0ea91312  arcade/src/pinball.rs
+```
+
+Reproduced now (exit 0):
+- `cargo test -p omarchy-retro-arcade --bin omarchy-retro-arcade --locked`: 14 passed, one fixture marked ignored and explicitly executed by its supervising test in five scenarios.
+- `cargo clippy -p omarchy-retro-arcade --all-targets --locked -- -D warnings`.
+- `cargo fmt --all --check`; `git diff --check`.
+
+The subprocess supervisor enforces an eight-second deadline per scenario. Full
+queues, blocked writes and exited children use incremental shutdown polling;
+each poll must return in under 500ms, with frames available while pending. A
+cooperative child exits successfully in under one second without being killed.
+The forced-destructor fallback is exercised separately. Stalled children consume
+the existing two-second grace across polls; pipe reader/writer handles must be
+joined and the child reaped before completion. These are regression thresholds,
+not a hard OS scheduling guarantee or an Omarchy frame-rate measurement.
+
+An egui host test retains the game and lock across pending shutdown, checks a
+quit request cannot be downgraded to home, delays the Close command until ready,
+and verifies exactly-once save/game-drop/lock-release ordering.
+
+Not run locally: actual C++ engine/native switching and WM-close acceptance, Arch
+packaging and live Omarchy desktop testing. Existing CI must cover native Pinball
+controls and render/screenshot exit paths. No physics or save-format changes.

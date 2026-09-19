@@ -68,37 +68,61 @@ fn helper() -> io::Result<PathBuf> {
         )
     })
 }
+#[derive(Default)]
+struct Shutdown {
+    deadline: Option<Instant>,
+    reaped: bool,
+}
 struct Worker {
+    shutdown: Shutdown,
     child: Child,
     input: Option<mpsc::SyncSender<String>>,
     writer: Option<thread::JoinHandle<()>>,
     reader: Option<thread::JoinHandle<()>>,
 }
-impl Drop for Worker {
-    fn drop(&mut self) {
+impl Worker {
+    fn begin_shutdown(&mut self) {
+        if self.shutdown.deadline.is_some() {
+            return;
+        }
+        self.shutdown.deadline = Some(Instant::now() + Duration::from_secs(2));
         if let Some(input) = self.input.take() {
             let _ = input.try_send("quit".into());
-            // Close the channel even when quit could not fit. A drained writer
-            // must not wait for another command while Drop joins it.
-            drop(input);
+            // Disconnect even when the queue is full; the writer must reach EOF.
         }
-        let end = Instant::now() + Duration::from_secs(2);
-        loop {
+    }
+    /// Poll between UI frames. Never wait for the child or a running thread here.
+    fn poll_shutdown(&mut self) -> bool {
+        let Some(deadline) = self.shutdown.deadline else {
+            return false;
+        };
+        if !self.shutdown.reaped {
             match self.child.try_wait() {
-                Ok(Some(_)) => break,
-                _ if Instant::now() < end => thread::sleep(Duration::from_millis(10)),
-                _ => {
+                Ok(Some(_)) => self.shutdown.reaped = true,
+                _ if Instant::now() >= deadline => {
                     let _ = self.child.kill();
-                    let _ = self.child.wait();
-                    break;
                 }
+                _ => {}
             }
         }
-        if let Some(writer) = self.writer.take() {
-            let _ = writer.join();
+        if !self.shutdown.reaped {
+            return false;
         }
-        if let Some(reader) = self.reader.take() {
-            let _ = reader.join();
+        for handle in [&mut self.writer, &mut self.reader] {
+            if handle.as_ref().is_some_and(|h| h.is_finished()) {
+                let _ = handle.take().unwrap().join();
+            }
+        }
+        self.writer.is_none() && self.reader.is_none()
+    }
+}
+impl Drop for Worker {
+    fn drop(&mut self) {
+        // Fallback for forced teardown or construction errors. Normal navigation
+        // and window close finish the same state machine before dropping us.
+        self.begin_shutdown();
+        while !self.poll_shutdown() {
+            thread::sleep(Duration::from_millis(10));
         }
     }
 }
@@ -124,6 +148,13 @@ pub struct Pinball {
     resize_candidate: ([usize; 2], Instant),
 }
 impl Pinball {
+    pub fn begin_shutdown(&mut self) {
+        self.worker.begin_shutdown();
+    }
+    pub fn poll_shutdown(&mut self) -> bool {
+        self.worker.poll_shutdown()
+    }
+
     pub fn ready(&self) -> bool {
         self.texture.is_some() || self.error.is_some()
     }
@@ -196,6 +227,7 @@ impl Pinball {
         });
         Ok(Self {
             worker: Worker {
+                shutdown: Shutdown::default(),
                 child,
                 input: Some(input),
                 writer: Some(writer),
@@ -463,7 +495,7 @@ mod tests {
     }
     #[test]
     fn worker_shutdown_is_bounded() {
-        for scenario in ["full", "blocked-write", "exited"] {
+        for scenario in ["full", "blocked-write", "exited", "graceful", "fallback"] {
             let mut fixture = Command::new(std::env::current_exe().unwrap())
                 .args([
                     "--exact",
@@ -494,13 +526,28 @@ mod tests {
     #[ignore]
     fn worker_shutdown_fixture() {
         let scenario = std::env::var("ARCADE_SHUTDOWN_SCENARIO").unwrap();
-        let mut child = Command::new("sleep")
-            .arg("30")
+        let mut command = if scenario == "graceful" {
+            let mut command = Command::new("sh");
+            command.args([
+                "-c",
+                "while read -r line; do [ \"$line\" = quit ] && exit 0; done; exit 0",
+            ]);
+            command
+        } else {
+            let mut command = Command::new("sleep");
+            command.arg("30");
+            command
+        };
+        let mut child = command
             .stdin(Stdio::piped())
-            .stdout(Stdio::null())
+            .stdout(Stdio::piped())
             .spawn()
             .unwrap();
         let pipe = child.stdin.take().unwrap();
+        let mut output = child.stdout.take().unwrap();
+        let reader = thread::spawn(move || {
+            let _ = output.read_to_end(&mut Vec::new());
+        });
         if scenario == "exited" {
             child.kill().unwrap();
             child.wait().unwrap();
@@ -518,12 +565,51 @@ mod tests {
             thread::sleep(Duration::from_millis(200));
             write_commands(pipe, commands);
         });
-        drop(Worker {
+        let mut worker = Worker {
+            shutdown: Shutdown::default(),
             child,
             input: Some(input),
             writer: Some(writer),
-            reader: None,
-        });
+            reader: Some(reader),
+        };
+        if scenario == "fallback" {
+            drop(worker);
+            return;
+        }
+        let start = Instant::now();
+        worker.begin_shutdown();
+        assert!(start.elapsed() < Duration::from_millis(500));
+        let deadline = worker.shutdown.deadline;
+        worker.begin_shutdown();
+        assert_eq!(
+            worker.shutdown.deadline, deadline,
+            "repeated close must not extend grace"
+        );
+        let mut pending_frames = 0;
+        loop {
+            let frame = Instant::now();
+            let done = worker.poll_shutdown();
+            assert!(
+                frame.elapsed() < Duration::from_millis(500),
+                "poll blocked a frame"
+            );
+            if done {
+                break;
+            }
+            pending_frames += 1;
+            thread::sleep(Duration::from_millis(10));
+        }
+        assert!(
+            pending_frames > 0,
+            "fixture should allow UI frames during cleanup"
+        );
+        let status = worker.child.try_wait().unwrap().unwrap();
+        if scenario == "graceful" {
+            assert!(status.success(), "cooperative child should not be killed");
+            assert!(start.elapsed() < Duration::from_secs(1));
+        }
+        assert!(worker.writer.is_none() && worker.reader.is_none());
+        drop(worker);
     }
 
     #[test]
