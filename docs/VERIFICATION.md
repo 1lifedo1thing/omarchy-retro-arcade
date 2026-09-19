@@ -92,3 +92,39 @@ Environment limitations and checks not run:
   the subsequent ordinary workspace Clippy command above passed.
 - Publication was blocked by automatic approval review pending explicit permission
   to push the branch to the public repository. Remote CI evidence is unavailable.
+
+## Shared platform extraction — 19 September 2026
+
+Source under test: `537f81c3fb8116be3daedd3d08173a883e1e25c7`, on merged
+host refactor `957fc5d4d2f5b24d8139568c5fbf5743deec5fa9`. Linux x86_64,
+Rust 1.98.1. Generic helper bodies and palette behaviour were compared with the
+baseline; only the palette's Color32 import changed from eframe's re-export to
+the same ecolor type. No registry dependency version changed.
+
+Reproduced now:
+
+- `cargo test --workspace --locked --all-targets`: exit 0. Stockfish was not
+  required or available locally; real-engine acceptance remains with CI.
+
+- Workspace fmt, diff whitespace and workspace Clippy (all targets, locked): exit 0.
+- `cargo check --workspace --offline`: exit 0; updates the lockfile for the local crate.
+- `cargo test -p arcade-platform --locked --all-features`: four passed, exit 0.
+- `cargo test -p arcade-platform --locked --no-default-features`: three passed, exit 0.
+- No-default-feature tests for Stack, Snake, FreeSki, Shatter and Tanks: exit 0.
+- Normal dependency trees for those five games and arcade-platform with default
+  features disabled contain no eframe, egui, ecolor or omarchy-chess packages.
+- No game manifest outside Chess references omarchy-chess. The host retains its
+  real Chess game dependency. Existing Chess theme/storage exports still compile.
+
+Historical evidence, not rerun for this extraction:
+
+- PR #46 workflow run 35438448573 passed all three jobs, including Stockfish-required
+  workspace tests, native switching/save/input checks and Arch packaging, for
+  head f3e2c4b348b3b24889edf8eb0d747bbd057b0b5a. #46 was merged after these checks.
+
+Remaining acceptance:
+
+- New-branch native rendering/switching and Arch build/install remain CI gates;
+  the earlier #46 results do not establish this branch's runtime acceptance.
+- Actual Omarchy/Wayland playtesting and a local Stockfish-required run were not
+  performed here. No installed Omarchy revision was tested.

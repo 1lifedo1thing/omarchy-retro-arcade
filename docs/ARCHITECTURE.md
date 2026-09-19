@@ -53,11 +53,13 @@ adapters and native regression evidence.
 
 ## Follow-ups, in priority order
 
-1. **Move genuinely shared desktop utilities out of Chess.** The host and many games
-   import `omarchy_chess::theme`; multiple games import its storage primitives too.
-   Introduce a small shared crate with compatibility re-exports, then migrate callers.
-   Preserve feature boundaries so headless engines do not acquire GUI dependencies.
-   Keep schema validation, recovery policy and save identities within each game.
+1. **Shared desktop utilities extracted.** `shared/platform` now owns palette
+   loading and generic bounded-read/atomic-write helpers. Nine games and the host
+   use it directly; Chess retains compatibility exports. Theme support is optional
+   and uses the small `ecolor` type crate, not a windowing runtime. Existing
+   headless paths remain intact. Save schemas, paths, locks and recovery policy
+   stay with each game. `Theme::square` is retained for source compatibility with
+   Chess's existing palette API; this pass does not redesign its rendering.
 2. **Measure startup and teardown before introducing async construction.** Constructors
    currently run on the UI thread and some require an egui context. Pinball shutdown
    can spend up to its two-second grace period waiting before killing the child, then

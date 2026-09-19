@@ -1,6 +1,6 @@
 //! FreeSki menu components. Presentation only; callers own every action.
+use arcade_platform::theme::Theme;
 use eframe::egui::{self, Color32, RichText, Vec2};
-use omarchy_chess::theme::Theme;
 
 pub fn show(ctx: &egui::Context, id: &str, theme: &Theme, content: impl FnOnce(&mut egui::Ui)) {
     let width = 440_f32.min((ctx.screen_rect().width() - 96.).max(240.));

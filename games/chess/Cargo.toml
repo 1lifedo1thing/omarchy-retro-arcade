@@ -8,6 +8,7 @@ description = "Native offline chess for Omarchy, powered by Stockfish"
 repository = "https://github.com/tcballard/omarchy-chess"
 
 [dependencies]
+arcade-platform = { path = "../../shared/platform", features = ["theme"] }
 arcade-presentation = { path = "../../shared/presentation" }
 eframe = { version = "0.31.1", default-features = false, features = ["default_fonts", "glow", "wayland", "x11", "accesskit"] }
 egui_extras = { version = "0.31.1", default-features = false, features = ["svg"] }
@@ -15,7 +16,6 @@ shakmaty = "0.27.3"
 pgn-reader = "0.26.0"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-toml = "0.8"
 fs2 = "0.4"
 tempfile = "3"
 rfd = { version = "0.15", default-features = false, features = ["xdg-portal", "async-std"] }

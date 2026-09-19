@@ -1,0 +1,15 @@
+[package]
+name = "arcade-platform"
+version.workspace = true
+edition = "2021"
+license = "GPL-3.0-or-later"
+description = "Shared theme and file primitives for Arcade"
+
+[features]
+default = []
+theme = ["dep:ecolor", "dep:toml"]
+
+[dependencies]
+tempfile = "3"
+ecolor = { version = "=0.31.1", default-features = false, optional = true }
+toml = { version = "0.8", optional = true }

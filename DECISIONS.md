@@ -468,3 +468,16 @@ ordering, assets and the one-window/package contract. Generate CLI game help fro
 the existing catalogue. Protect save-before-drop-before-unlock ordering with host
 tests. The audit and staged follow-ups are in docs/ARCHITECTURE.md; a shared game
 framework, global preference migration and engine rewrite are not introduced.
+
+
+## Shared platform utilities (19 September 2026)
+
+After host PR #46, extract Chess's existing palette and generic storage primitives
+into arcade-platform. Nine games and the host import the new crate directly;
+Chess keeps public compatibility exports. Preserve helper implementations, theme
+fallback order, save paths, schemas and recovery behaviour. Theme support is an
+optional feature using ecolor (not eframe), while storage has no GUI dependency.
+Keep current game feature gates and their headless storage implementations intact.
+Retain Theme::square for compatibility with Chess's palette API. Add shared helper
+regressions and CI checks for the six headless dependency graphs. No game engine,
+input, audio, runtime asset, or package-layout change is part of this extraction.

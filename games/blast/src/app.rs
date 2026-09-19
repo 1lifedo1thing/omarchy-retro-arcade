@@ -29,7 +29,7 @@ pub struct App {
     accumulator: f64,
     last: Instant,
     sound: Sound,
-    theme: omarchy_chess::theme::Theme,
+    theme: arcade_platform::theme::Theme,
     themed: Instant,
     recorded: bool,
     pending_bombs: [bool; 4],
@@ -67,7 +67,7 @@ impl App {
             accumulator: 0.,
             last: Instant::now(),
             sound: Sound::default(),
-            theme: omarchy_chess::theme::Theme::load(),
+            theme: arcade_platform::theme::Theme::load(),
             themed: Instant::now(),
             recorded: false,
             pending_bombs: [false; 4],
@@ -665,7 +665,7 @@ impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _: &mut eframe::Frame) {
         arcade_presentation::apply(ctx);
         if self.themed.elapsed() > Duration::from_secs(2) {
-            self.theme = omarchy_chess::theme::Theme::load();
+            self.theme = arcade_platform::theme::Theme::load();
             self.themed = Instant::now();
         }
         let light = self.theme.background.r() as u32

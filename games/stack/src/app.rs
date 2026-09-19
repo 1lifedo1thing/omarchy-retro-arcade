@@ -250,7 +250,7 @@ impl StackApp {
             return;
         }
         self.theme_at = Instant::now();
-        let t = omarchy_chess::theme::Theme::load();
+        let t = arcade_platform::theme::Theme::load();
         let light =
             t.background.r() as u32 + t.background.g() as u32 + t.background.b() as u32 > 400;
         let mut v = if light {

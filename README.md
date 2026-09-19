@@ -93,6 +93,7 @@ See [architecture and lifecycle contracts](docs/ARCHITECTURE.md) for host bounda
 - `games/`: fourteen ordinary game directories, including [FreeSki](games/freeski/README.md), preserving all imported Git history.
 - `packaging/`: one Arch package, icon and desktop entry.
 - `scripts/`: shared build, staging and verification entry points.
+- `shared/platform/`: shared palette loading and file primitives, with optional theme support.
 - `shared/presentation/`: shared cabinet materials, control styling and artwork.
 - `shared/leaderboard/`: optional background HTTP transport.
 - `services/leaderboard/`: separately deployable replay-validation service; no public endpoint is bundled.

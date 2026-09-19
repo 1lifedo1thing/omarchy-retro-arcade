@@ -40,7 +40,7 @@ pub struct BubbleApp {
     intro: bool,
     finished: bool,
     audio: Audio,
-    theme: omarchy_chess::theme::Theme,
+    theme: arcade_platform::theme::Theme,
     themed: Instant,
 }
 impl Default for BubbleApp {
@@ -72,7 +72,7 @@ impl BubbleApp {
             paused: false,
             finished: false,
             audio: Audio::default(),
-            theme: omarchy_chess::theme::Theme::load(),
+            theme: arcade_platform::theme::Theme::load(),
             themed: Instant::now(),
         }
     }
@@ -534,7 +534,7 @@ impl eframe::App for BubbleApp {
     fn update(&mut self, ctx: &egui::Context, _: &mut eframe::Frame) {
         arcade_presentation::apply(ctx);
         if self.themed.elapsed() > Duration::from_secs(2) {
-            self.theme = omarchy_chess::theme::Theme::load();
+            self.theme = arcade_platform::theme::Theme::load();
             self.themed = Instant::now();
         }
         let mut visuals = if self.theme.light() {

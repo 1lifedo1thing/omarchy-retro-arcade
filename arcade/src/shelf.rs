@@ -45,7 +45,7 @@ impl Game {
 impl Arcade {
     pub(super) fn shelf(&mut self, ctx: &egui::Context) {
         if self.themed.elapsed() > std::time::Duration::from_secs(2) {
-            self.theme = omarchy_chess::theme::Theme::load();
+            self.theme = arcade_platform::theme::Theme::load();
             self.themed = std::time::Instant::now();
         }
         let light = self.theme.background.r() as u32

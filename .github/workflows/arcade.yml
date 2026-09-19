@@ -13,6 +13,18 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo fmt --all --check
       - run: cargo test -p omarchy-tanks --locked
+      - name: Shared platform and headless boundaries
+        run: |
+          cargo test -p arcade-platform --locked --all-features
+          cargo test -p arcade-platform --locked --no-default-features
+          for package in arcade-platform omarchy-stack omarchy-snake omarchy-freeski omarchy-shatter omarchy-tanks; do
+            cargo tree -p "$package" --locked --no-default-features --edges normal --prefix none > /tmp/arcade-headless-deps
+            if grep -E '^(eframe|egui|ecolor|omarchy-chess) ' /tmp/arcade-headless-deps; then
+              echo "Unexpected UI or Chess dependency in $package" >&2
+              exit 1
+            fi
+            cargo test -p "$package" --locked --no-default-features
+          done
       - run: cargo clippy -p omarchy-tanks --all-targets --locked -- -D warnings
   native:
     runs-on: ubuntu-latest

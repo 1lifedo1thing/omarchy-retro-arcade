@@ -103,7 +103,7 @@ pub fn write(path: &Path, save: &Save) -> Result<(), String> {
 }
 #[cfg(feature = "desktop")]
 fn atomic_write(path: &Path, bytes: &[u8]) -> Result<(), String> {
-    omarchy_chess::storage::atomic_write(path, bytes)
+    arcade_platform::storage::atomic_write(path, bytes)
 }
 #[cfg(not(feature = "desktop"))]
 fn atomic_write(path: &Path, bytes: &[u8]) -> Result<(), String> {

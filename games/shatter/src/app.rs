@@ -86,7 +86,7 @@ pub struct App {
     clock: Clock,
     last: Instant,
     checkpoint: Instant,
-    theme: omarchy_chess::theme::Theme,
+    theme: arcade_platform::theme::Theme,
     themed: Instant,
     audio: Audio,
     leave: bool,
@@ -129,7 +129,7 @@ impl App {
             clock: Clock::default(),
             last: Instant::now(),
             checkpoint: Instant::now(),
-            theme: omarchy_chess::theme::Theme::load(),
+            theme: arcade_platform::theme::Theme::load(),
             themed: Instant::now(),
             audio: Audio::default(),
             leave: false,
@@ -616,7 +616,7 @@ impl App {
         let elapsed = now.duration_since(self.last).as_secs_f64();
         self.last = now;
         if self.themed.elapsed() > Duration::from_secs(2) {
-            self.theme = omarchy_chess::theme::Theme::load();
+            self.theme = arcade_platform::theme::Theme::load();
             self.themed = now;
         }
         let mut visuals = if (u32::from(self.theme.background.r()) * 299

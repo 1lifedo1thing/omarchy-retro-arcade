@@ -7,7 +7,7 @@ description = "Original downhill skiing inside Omarchy Arcade"
 
 [features]
 default = ["ui"]
-ui = ["dep:eframe", "dep:arcade-presentation", "dep:omarchy-chess"]
+ui = ["dep:eframe", "dep:arcade-presentation", "dep:arcade-platform"]
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }
@@ -15,4 +15,4 @@ serde_json = { version = "1", features = ["float_roundtrip"] }
 tempfile = "3"
 eframe = { version = "=0.31.1", default-features = false, features = ["default_fonts", "glow", "wayland", "x11", "accesskit"], optional = true }
 arcade-presentation = { path = "../../shared/presentation", optional = true }
-omarchy-chess = { path = "../chess", optional = true }
+arcade-platform = { path = "../../shared/platform", features = ["theme"], optional = true }
