@@ -2655,6 +2655,7 @@ dependencies = [
 name = "omarchy-invaders"
 version = "0.3.0"
 dependencies = [
+ "arcade-platform",
  "arcade-presentation",
  "eframe",
  "fs2",
@@ -2709,6 +2710,7 @@ dependencies = [
 name = "omarchy-scram"
 version = "0.3.0"
 dependencies = [
+ "arcade-platform",
  "arcade-presentation",
  "eframe",
  "egui_extras",
