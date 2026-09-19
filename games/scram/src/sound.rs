@@ -1,17 +1,9 @@
 //! Short original synthesized cues. Playback never blocks the simulation.
 use crate::game::Event;
-use std::{
-    io::Write,
-    process::{Command, Stdio},
-    sync::{
-        atomic::{AtomicBool, Ordering},
-        Arc,
-    },
-    time::{Duration, Instant},
-};
+use arcade_platform::audio::Playback;
 #[derive(Default)]
 pub struct Sound {
-    busy: Arc<AtomicBool>,
+    playback: Playback,
 }
 pub fn wave(event: Event) -> Vec<u8> {
     let count = match event {
@@ -52,35 +44,13 @@ pub fn wave(event: Event) -> Vec<u8> {
 }
 impl Sound {
     pub fn available() -> bool {
-        std::env::split_paths(&std::env::var_os("PATH").unwrap_or_default())
-            .any(|p| p.join("paplay").is_file())
+        Playback::available()
     }
     pub fn play(&self, event: Event) {
-        if event == Event::Dot || self.busy.swap(true, Ordering::Relaxed) {
+        if event == Event::Dot {
             return;
         }
-        let busy = self.busy.clone();
-        std::thread::spawn(move || {
-            if let Ok(mut file) = tempfile::NamedTempFile::new() {
-                if file.write_all(&wave(event)).is_ok() {
-                    if let Ok(mut child) = Command::new("paplay")
-                        .arg(file.path())
-                        .stdin(Stdio::null())
-                        .stdout(Stdio::null())
-                        .stderr(Stdio::null())
-                        .spawn()
-                    {
-                        let end = Instant::now() + Duration::from_secs(2);
-                        while Instant::now() < end && matches!(child.try_wait(), Ok(None)) {
-                            std::thread::sleep(Duration::from_millis(20));
-                        }
-                        let _ = child.kill();
-                        let _ = child.wait();
-                    }
-                }
-            }
-            busy.store(false, Ordering::Relaxed);
-        });
+        self.playback.play(move || wave(event));
     }
 }
 #[cfg(test)]

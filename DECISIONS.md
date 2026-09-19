@@ -494,3 +494,15 @@ in docs/LIFECYCLE.md. Detached legacy audio ownership remains a separate follow-
 ## FreeSki resume input observation
 
 Observe neutral steering on the resume frame, including resumes applied by the pause overlay after input sampling. Waiting for a later neutral frame can discard an entire fresh key hold under rendering delays. Preserve release-before-rearm for controls already held when resuming; no simulation tuning or save schema changes.
+
+## Owned legacy sound playback (19 September 2026)
+
+Replace the three detached Chess/Scram/Invaders cue threads with one session-owned
+worker per sound object in arcade-platform. Keep PCM synthesis and event mapping
+in each game. Keep overlap suppression, optional paplay and the two-second child
+limit. Use a bounded channel and cancellation checks before file/process work;
+drop disconnects, wakes, kills/reaps and joins rather than abandoning a thread.
+Do not move file writes or process spawning onto the rendering path. The join
+may still wait for an in-flight OS syscall; native shutdown latency under a
+stalled filesystem remains a limitation, not a claimed hard bound. No save,
+package layout, audio backend or mute-default changes.

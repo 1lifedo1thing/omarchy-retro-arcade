@@ -1,17 +1,8 @@
 //! Original short PCM cues; optional playback through the desktop's paplay.
-use std::{
-    io::Write,
-    process::{Command, Stdio},
-    sync::{
-        atomic::{AtomicBool, Ordering},
-        Arc,
-    },
-    thread,
-    time::{Duration, Instant},
-};
+use arcade_platform::audio::Playback;
 #[derive(Default)]
 pub struct Sound {
-    busy: Arc<AtomicBool>,
+    playback: Playback,
 }
 pub fn cue(finished: bool) -> Vec<u8> {
     let rate = 22050_u32;
@@ -44,35 +35,9 @@ pub fn cue(finished: bool) -> Vec<u8> {
 }
 impl Sound {
     pub fn available() -> bool {
-        std::env::split_paths(&std::env::var_os("PATH").unwrap_or_default())
-            .any(|p| p.join("paplay").is_file())
+        Playback::available()
     }
     pub fn play(&self, finished: bool) {
-        if self.busy.swap(true, Ordering::Relaxed) {
-            return;
-        }
-        let busy = self.busy.clone();
-        thread::spawn(move || {
-            // File input avoids a blocked pipe if the sound server stalls.
-            if let Ok(mut file) = tempfile::NamedTempFile::new() {
-                if file.write_all(&cue(finished)).is_ok() {
-                    if let Ok(mut child) = Command::new("paplay")
-                        .arg(file.path())
-                        .stdin(Stdio::null())
-                        .stdout(Stdio::null())
-                        .stderr(Stdio::null())
-                        .spawn()
-                    {
-                        let end = Instant::now() + Duration::from_secs(2);
-                        while Instant::now() < end && matches!(child.try_wait(), Ok(None)) {
-                            thread::sleep(Duration::from_millis(20));
-                        }
-                        let _ = child.kill();
-                        let _ = child.wait();
-                    }
-                }
-            }
-            busy.store(false, Ordering::Relaxed);
-        });
+        self.playback.play(move || cue(finished));
     }
 }

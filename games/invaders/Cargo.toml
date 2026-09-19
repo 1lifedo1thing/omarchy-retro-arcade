@@ -5,6 +5,7 @@ edition = "2021"
 license = "GPL-3.0-or-later"
 
 [dependencies]
+arcade-platform = { path = "../../shared/platform" }
 arcade-presentation = { path = "../../shared/presentation" }
 image = { version = "0.25.10", default-features = false, features = ["png"] }
 eframe = { version = "0.31.1", default-features = false, features = ["default_fonts", "glow", "wayland", "x11", "accesskit"] }
