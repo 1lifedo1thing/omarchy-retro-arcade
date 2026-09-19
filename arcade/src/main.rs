@@ -1,235 +1,17 @@
+mod catalog;
+mod desktop;
 mod pinball;
+mod session;
 mod shelf;
+use catalog::Game;
 use eframe::egui::{self, Key};
-use fs2::FileExt;
+use session::Active;
 use std::{
-    fs::{File, OpenOptions},
+    fs::File,
     path::PathBuf,
     time::{Duration, Instant},
 };
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum Game {
-    Chess,
-    Solitaire,
-    Scram,
-    Invaders,
-    Pinball,
-    Stack,
-    Snake,
-    Bubble,
-    Blast,
-    TwentyFortyEight,
-    FreeSki,
-    Shatter,
-    Tanks,
-    Minesweeper,
-}
-impl Game {
-    const ALL: [Self; 14] = [
-        Self::Pinball,
-        Self::Solitaire,
-        Self::Scram,
-        Self::Invaders,
-        Self::Chess,
-        Self::Stack,
-        Self::Snake,
-        Self::Bubble,
-        Self::Blast,
-        Self::TwentyFortyEight,
-        Self::Shatter,
-        Self::Tanks,
-        Self::Minesweeper,
-        Self::FreeSki,
-    ];
-    fn id(self) -> &'static str {
-        match self {
-            Self::Stack => "stack",
-            Self::Chess => "chess",
-            Self::Solitaire => "solitaire",
-            Self::Scram => "scram",
-            Self::Invaders => "invaders",
-            Self::Pinball => "pinball",
-            Self::Snake => "snake",
-            Self::Bubble => "bubble",
-            Self::Blast => "blast",
-            Self::TwentyFortyEight => "2048",
-            Self::FreeSki => "freeski",
-            Self::Tanks => "tanks",
-            Self::Minesweeper => "minesweeper",
-            Self::Shatter => "shatter",
-        }
-    }
-    fn name(self) -> &'static str {
-        match self {
-            Self::Stack => "Stack",
-            Self::Chess => "Chess",
-            Self::Solitaire => "Solitaire",
-            Self::Scram => "Scram",
-            Self::Invaders => "Invaders",
-            Self::Pinball => "Circuit Pinball",
-            Self::Snake => "Snake",
-            Self::Bubble => "Bubble",
-            Self::Blast => "Blast",
-            Self::TwentyFortyEight => "2048",
-            Self::FreeSki => "FreeSki",
-            Self::Tanks => "Tanks",
-            Self::Minesweeper => "Minesweeper",
-            Self::Shatter => "Shatter",
-        }
-    }
-    fn line(self) -> &'static str {
-        match self {
-            Self::Stack => "Make room. Go again.",
-            Self::Chess => "Take your time. Make your move.",
-            Self::Solitaire => "A quiet hand of Klondike.",
-            Self::Scram => "Keep moving. They are behind you.",
-            Self::Invaders => "Hold the line. Clear the sky.",
-            Self::Pinball => "One more ball. One more high score.",
-            Self::Snake => "Eat. Grow. Leave yourself a way out.",
-            Self::Bubble => "Make three. Clear your head.",
-            Self::Blast => "Make room. Leave an exit.",
-            Self::TwentyFortyEight => "Slide together. Make something bigger.",
-            Self::FreeSki => "Find your edges. Leave fresh tracks.",
-            Self::Tanks => "Read the wind. Change the landscape.",
-            Self::Minesweeper => "Read the field. Trust your next move.",
-            Self::Shatter => "Find your angle. Break through.",
-        }
-    }
-    fn image(self) -> egui::ImageSource<'static> {
-        match self {
-            Self::Stack => egui::include_image!("../../games/stack/docs/stack-game.png"),
-            Self::Snake => egui::include_image!("../../games/snake/docs/shelf.svg"),
-            Self::Bubble => egui::include_image!("../../games/bubble/docs/game.png"),
-            Self::Blast => egui::include_image!("../../games/blast/docs/game.png"),
-            Self::Minesweeper => egui::include_image!("../../games/minesweeper/docs/shelf.svg"),
-            Self::Tanks => egui::include_image!("../../games/tanks/shelf.svg"),
-            Self::Shatter => egui::include_image!("../../games/shatter/docs/shelf.svg"),
-            Self::TwentyFortyEight => egui::include_image!("../../games/2048/docs/shelf.svg"),
-            Self::FreeSki => egui::include_image!("../../games/freeski/assets/shelf.png"),
-            Self::Chess => egui::include_image!("../../games/chess/docs/preview.png"),
-            Self::Solitaire => {
-                egui::include_image!("../../games/solitaire/docs/screenshots/table.png")
-            }
-            Self::Scram => egui::include_image!("../../games/scram/docs/screenshots/charcoal.png"),
-            Self::Invaders => egui::include_image!("../../games/invaders/docs/orbit-opening.png"),
-            Self::Pinball => egui::include_image!("../../games/pinball/docs/upstream-circuit.png"),
-        }
-    }
-}
-trait ArcadeGame: eframe::App {
-    fn prepare_style(&mut self, _: &egui::Context) {}
-    fn ready(&self) -> bool {
-        true
-    }
-    fn suspend(&mut self) {}
-    fn set_input_enabled(&mut self, _: bool) {}
-    fn finished(&mut self) -> bool {
-        false
-    }
-}
-impl ArcadeGame for omarchy_stack::app::StackApp {
-    fn suspend(&mut self) {
-        self.suspend();
-    }
-    fn finished(&mut self) -> bool {
-        omarchy_stack::app::StackApp::finished(self)
-    }
-}
-impl ArcadeGame for omarchy_bubble::app::BubbleApp {
-    fn suspend(&mut self) {
-        self.suspend();
-    }
-    fn finished(&mut self) -> bool {
-        omarchy_bubble::app::BubbleApp::finished(self)
-    }
-}
-impl ArcadeGame for omarchy_blast::app::App {
-    fn suspend(&mut self) {
-        self.suspend();
-    }
-    fn finished(&mut self) -> bool {
-        omarchy_blast::app::App::finished(self)
-    }
-}
-impl ArcadeGame for omarchy_freeski::app::App {
-    fn suspend(&mut self) {
-        self.suspend();
-    }
-    fn finished(&mut self) -> bool {
-        self.finished()
-    }
-}
-impl ArcadeGame for omarchy_shatter::app::App {
-    fn suspend(&mut self) {
-        self.suspend();
-    }
-    fn set_input_enabled(&mut self, enabled: bool) {
-        self.set_input_enabled(enabled);
-    }
-    fn finished(&mut self) -> bool {
-        omarchy_shatter::app::App::finished(self)
-    }
-}
-impl ArcadeGame for omarchy_tanks::app::App {
-    fn suspend(&mut self) {
-        self.suspend();
-    }
-    fn set_input_enabled(&mut self, enabled: bool) {
-        self.set_input_enabled(enabled);
-    }
-    fn finished(&mut self) -> bool {
-        omarchy_tanks::app::App::finished(self)
-    }
-}
-impl ArcadeGame for omarchy_minesweeper::app::App {
-    fn prepare_style(&mut self, ctx: &egui::Context) {
-        self.prepare_style(ctx);
-    }
-    fn suspend(&mut self) {
-        self.suspend();
-    }
-    fn set_input_enabled(&mut self, enabled: bool) {
-        self.set_input_enabled(enabled);
-    }
-}
-impl ArcadeGame for omarchy_2048::app::App {}
-impl ArcadeGame for omarchy_chess::ui::ChessApp {}
-impl ArcadeGame for omarchy_solitaire::app::SolitaireApp {}
-impl ArcadeGame for omarchy_scram::app::ScramApp {}
-impl ArcadeGame for omarchy_invaders::App {}
-impl ArcadeGame for pinball::Pinball {
-    fn set_input_enabled(&mut self, enabled: bool) {
-        self.set_input_enabled(enabled);
-    }
-    fn ready(&self) -> bool {
-        self.ready()
-    }
-    fn finished(&mut self) -> bool {
-        self.finished()
-    }
-    fn suspend(&mut self) {
-        self.pause();
-    }
-}
-impl ArcadeGame for omarchy_snake::app::SnakeApp {
-    fn finished(&mut self) -> bool {
-        omarchy_snake::app::SnakeApp::finished(self)
-    }
-    fn suspend(&mut self) {
-        omarchy_snake::app::SnakeApp::suspend(self);
-    }
-}
-struct Active {
-    game: Game,
-    app: Box<dyn ArcadeGame>,
-    _lock: Option<Box<dyn std::any::Any>>,
-}
-impl Drop for Active {
-    fn drop(&mut self) {
-        self.app.on_exit(None);
-    }
-}
 struct Arcade {
     active: Option<Active>,
     selected: usize,
@@ -245,51 +27,7 @@ struct Arcade {
 }
 impl Arcade {
     fn open(&mut self, game: Game, ctx: &egui::Context) {
-        let result = (|| -> Result<Active, String> {
-            let mut lock: Option<Box<dyn std::any::Any>> = None;
-            let app: Box<dyn ArcadeGame> = match game {
-                Game::Stack => Box::new(omarchy_stack::app::StackApp::new()),
-                Game::Snake => Box::new(omarchy_snake::app::SnakeApp::new()),
-                Game::Bubble => Box::new(omarchy_bubble::app::BubbleApp::new()),
-                Game::Blast => Box::new(omarchy_blast::app::App::new()),
-                Game::Minesweeper => Box::new(omarchy_minesweeper::app::App::new()?),
-                Game::Tanks => Box::new(omarchy_tanks::app::App::new()),
-                Game::Shatter => Box::new(omarchy_shatter::app::App::new()),
-                Game::TwentyFortyEight => Box::new(omarchy_2048::app::App::new()?),
-                Game::FreeSki => Box::new(omarchy_freeski::app::App::new()?),
-                Game::Chess => {
-                    let dir = omarchy_chess::storage::state_dir();
-                    lock = Some(Box::new(omarchy_chess::storage::SessionLock::acquire(
-                        &dir,
-                    )?));
-                    Box::new(omarchy_chess::ui::ChessApp::new(dir))
-                }
-                Game::Solitaire => {
-                    let dir = omarchy_solitaire::storage::state_dir();
-                    lock = Some(Box::new(omarchy_solitaire::storage::SessionLock::acquire(
-                        &dir,
-                    )?));
-                    Box::new(omarchy_solitaire::app::SolitaireApp::new(ctx, dir, None))
-                }
-                Game::Scram => {
-                    let dir = omarchy_scram::storage::state_dir();
-                    lock = Some(Box::new(
-                        omarchy_scram::storage::SessionLock::acquire(&dir)
-                            .map_err(|e| e.to_string())?,
-                    ));
-                    Box::new(omarchy_scram::app::ScramApp::new(ctx, dir, None))
-                }
-                Game::Invaders => Box::new(omarchy_invaders::App::new(
-                    omarchy_invaders::storage::Store::open().map_err(|e| e.to_string())?,
-                )),
-                Game::Pinball => Box::new(pinball::Pinball::new(ctx).map_err(|e| e.to_string())?),
-            };
-            Ok(Active {
-                game,
-                app,
-                _lock: lock,
-            })
-        })();
+        let result = Active::open(game, ctx);
         match result {
             Ok(active) => {
                 ctx.send_viewport_cmd(egui::ViewportCommand::Title(format!(
@@ -476,7 +214,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 return Ok(());
             }
             "--help" | "-h" => {
-                println!("Omarchy Arcade\n--game chess|solitaire|scram|invaders|pinball|stack|snake|bubble|blast|2048|shatter|tanks|minesweeper|freeski\n--screenshot PATH\n--compact\n--version\nCtrl+H: return to Arcade. Ctrl+Q: quit.");
+                let games = Game::ALL.map(Game::id).join("|");
+                println!("Omarchy Arcade\n--game {games}\n--screenshot PATH\n--compact\n--version\nCtrl+H: return to Arcade. Ctrl+Q: quit.");
                 return Ok(());
             }
             "--game" => {
@@ -495,37 +234,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             _ => return Err(format!("Unknown argument: {arg}").into()),
         }
     }
-    let state = std::env::var_os("XDG_STATE_HOME")
-        .map(PathBuf::from)
-        .or_else(|| std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".local/state")))
-        .ok_or("No state directory")?
-        .join("omarchy-retro-arcade");
-    std::fs::create_dir_all(&state)?;
-    let lock = OpenOptions::new()
-        .create(true)
-        .truncate(false)
-        .read(true)
-        .write(true)
-        .open(state.join("session.lock"))?;
-    lock.try_lock_exclusive()
-        .map_err(|_| "Omarchy Arcade is already running")?;
-    let image = egui_extras::image::load_svg_bytes_with_size(
-        include_bytes!("../../packaging/omarchy-retro-arcade.svg"),
-        Some(egui::load::SizeHint::Size(128, 128)),
-    )?;
-    let icon = egui::IconData {
-        rgba: image.pixels.iter().flat_map(|p| p.to_array()).collect(),
-        width: 128,
-        height: 128,
-    };
-    let options = eframe::NativeOptions {
-        viewport: egui::ViewportBuilder::default()
-            .with_inner_size(size)
-            .with_min_inner_size([900., 760.])
-            .with_app_id("io.github.tcballard.omarchy-retro-arcade")
-            .with_icon(icon),
-        ..Default::default()
-    };
+    let lock = desktop::acquire_session_lock()?;
+    let options = desktop::native_options(size)?;
     eframe::run_native(
         "Omarchy Arcade",
         options,

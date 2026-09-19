@@ -458,3 +458,13 @@ FreeSki after Minesweeper. Update switching, mouse selection, renders, CLI help
 and source documentation for fourteen games. Preserve each game's runtime,
 save identity, approved artwork and player-package manifest entries. Historical
 verification remains scoped to its original revision; combined CI must pass.
+
+## Host architecture boundaries (19 September 2026)
+
+Use OmaCut's separation and ownership principles without adopting its language or
+UI toolkit. Extract host catalogue, session adapters/factory and desktop startup
+from main.rs into ordinary modules. Preserve lifecycle calls, save locks, game
+ordering, assets and the one-window/package contract. Generate CLI game help from
+the existing catalogue. Protect save-before-drop-before-unlock ordering with host
+tests. The audit and staged follow-ups are in docs/ARCHITECTURE.md; a shared game
+framework, global preference migration and engine rewrite are not introduced.
