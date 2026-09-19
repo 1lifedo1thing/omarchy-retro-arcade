@@ -47,12 +47,23 @@ releasing its save lock. It does not force every game through suspend on exit:
 several suspend methods save already, and each on_exit owns its final save contract.
 Turn-based games and games that deliberately restart attempts retain their policies.
 
+## Owned sound playback
+
+Chess, Scram and Invaders now own a shared `Playback` worker through their game
+object. It accepts one cue while idle and drops overlaps. The worker owns its
+short-lived file and `paplay` child, applies the existing two-second playback
+limit, and kills/reaps the child before removing the file. Dropping the game
+signals cancellation, wakes the worker and joins it before returning; queued
+work checks cancellation before starting playback. No sound worker survives
+normal game destruction. Idle workers wait on a channel rather than polling.
+
+File writes and process creation stay off the frame path. Shutdown interrupts
+playback waiting immediately, rather than waiting for the two-second timeout.
+The final join still waits for any in-progress OS file/process syscall; this is
+not a hard real-time shutdown guarantee on a stalled filesystem/kernel.
+
 ## Remaining work
 
-Chess, Scram and Invaders use detached short-cue playback threads that can survive
-the game object until their existing two-second timeout. They do not expose a
-host-owned stop/join operation. Consolidating that playback ownership is the next
-separate refactor; this input change does not claim to fix audio cleanup everywhere.
 Pinball teardown may still spend its grace period on the UI thread. Measuring and
 changing shutdown scheduling requires keeping save locks and worker ownership intact.
 

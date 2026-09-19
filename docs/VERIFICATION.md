@@ -153,3 +153,35 @@ An initial default-profile build exhausted local storage during linking; cleaned
 Run 35445431862 failed at native-freeski.py's exact quarter-turn assertion; the same head passed PR run 35445434538. This is later than the previously fixed handover race. The failed assertion did not include saved state, so its precise runtime cause is not established.
 
 The native quarter-turn check now begins on fresh snow and waits up to 12 seconds for the public periodic save to show the exact heading, instead of assuming a 1.1-second key hold supplies sufficient simulation time. Unexpected pauses fail immediately; the key is released in finally. Exact heading and released-heading/position assertions remain. Capture happens after pause to avoid screenshot latency affecting the running simulation. Python syntax and diff checks passed locally; native execution remains CI evidence for this revision.
+
+## Owned sound workers — 19 September 2026
+
+Base: `3f3c867ade5bff0aa53719c2085f320d2a082946`. Reproduced on Linux x86_64,
+Rust 1.98.1. Tested changed source identity (SHA-256):
+
+```text
+6efe1ec4494fa843092d753b0be686a87ed3000c22c39bf4bfcd900cdda7819b  shared/platform/src/audio.rs
+f77010595da041178b7275f6e6e41aed0a57786769de46883545daeab0fba4a0  shared/platform/src/lib.rs
+9fa55757887d125d0f5e7b01200683b566763b5a0de517f3e3298c6c140474ae  games/chess/src/sound.rs
+f1667f9329b4b3e25c68b7e8e23f66ce61e55dd676a7354a6b52cb3afddcff5b  games/scram/src/sound.rs
+9fa55757887d125d0f5e7b01200683b566763b5a0de517f3e3298c6c140474ae  games/invaders/src/sound.rs
+6e8ad2a88967c1f5e5d2ee0d3de0de4a89bba105cfee4fa24491482667169c0f  games/scram/Cargo.toml
+47d5dc4e350c66aefe349ef3c901fd260043fe93b97a48e25f813629043a2088  games/invaders/Cargo.toml
+e80dfd5ae298b22fdf8f4ff3b3b984128378401310142e25024bbaebaacc1ee4  Cargo.lock
+```
+
+Reproduced now, exit 0:
+- `cargo fmt --all --check` and `git diff --check`.
+- `cargo test -p arcade-platform -p omarchy-chess -p omarchy-scram -p omarchy-invaders --all-targets --locked`.
+- `cargo clippy -p arcade-platform -p omarchy-chess -p omarchy-scram -p omarchy-invaders --all-targets --locked -- -D warnings`.
+
+New Linux subprocess regressions cover active cancellation/reaping/file removal,
+close immediately after enqueue, idle shutdown, missing-player recovery, overlap
+suppression, two-second timeout and subsequent playback. They use a temporary
+player executable with a real stalled process, not an audio server.
+
+Not run here: actual paplay/PulseAudio output, real Stockfish (the optional local
+test returns without it), Xvfb/native game switching, Arch packaging and live
+Omarchy desktop acceptance. Full workspace/native/package checks remain CI gates.
+Shutdown wakes playback waiting immediately and joins the worker, but OS syscall
+latency is not hard-bounded. Existing main CI results do not validate this change.
