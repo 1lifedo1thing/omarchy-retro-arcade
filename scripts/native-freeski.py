@@ -64,7 +64,9 @@ with tempfile.TemporaryDirectory(prefix='arcade-freeski-') as tmp:
         width=900 if variant in ['compact','200'] else 1280
         move(width/2-100,450);time.sleep(.25);key(0xff1b)
         assert read()['run']['heading']<0
-        key(0xff0d);key(ord('d'),hold=1.1);key(0xff1b);assert read()['run']['heading']>0
+        key(0xff0d);key(ord('d'),hold=1.1);key(0xff1b)
+        handover=read()
+        assert handover['run']['heading']>0, ('keyboard handover', variant, handover['run'])
         key(0xff0d);key(0xffbe);help_save=read();capture('help');key(ord('d'));assert read()==help_save
         key(0xff1b);assert read()==help_save
         # Same window and exact suspended attempt survive shelf exit and normal close/reopen.

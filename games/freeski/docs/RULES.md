@@ -163,3 +163,7 @@ and inconsistent outcomes. A failed load preserves the original and offers eithe
 unsaved play or an explicit archive/reset. Archives never overwrite existing
 archives. A failed write pauses play and offers retry; the previous file survives.
 Other games' saves, preferences and data paths are unchanged.
+
+On resume, steering held through the pause still requires release. If controls
+are neutral on the resume frame, a fresh press on the next frame steers immediately;
+an additional neutral rendering frame is not required. Physics tuning is unchanged.

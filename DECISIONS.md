@@ -490,3 +490,7 @@ held controls across blur until release and a fresh press, preventing same-frame
 pause shortcuts from undoing focus-loss pause. Preserve each game's pause/save
 policy and Pinball's existing host-modal gate. Document all fourteen game contracts
 in docs/LIFECYCLE.md. Detached legacy audio ownership remains a separate follow-up.
+
+## FreeSki resume input observation
+
+Observe neutral steering on the resume frame, including resumes applied by the pause overlay after input sampling. Waiting for a later neutral frame can discard an entire fresh key hold under rendering delays. Preserve release-before-rearm for controls already held when resuming; no simulation tuning or save schema changes.

@@ -141,3 +141,9 @@ Source under test: `2cd4447b6d213c3b3aae11aae5cbfebd45443b8f`, based on merged P
 - Native Stack focus/held-key script was extended; native execution, Stockfish-required checks and Arch packaging remain CI gates for this branch.
 - No actual Omarchy/Wayland session or installed Omarchy revision was tested locally.
 - Detached audio-cue ownership and Pinball teardown scheduling remain follow-up work; see LIFECYCLE.md.
+
+## FreeSki resume race — 19 September 2026
+
+Source: `1c27d769c0e3105ca3e8386c5aa5c2d27f383851`. The first-frame steering regression fails before the fix and passes after it. All 22 FreeSki library tests pass, including held-key suppression across focus loss and overlays. FreeSki all-target Clippy with warnings denied passed; workspace fmt and native script syntax checks passed. Linux headless egui tests, Rust 1.98.1, debug info and incremental builds disabled.
+
+An initial default-profile build exhausted local storage during linking; cleaned Cargo development outputs and reran the library tests successfully. Native X11 execution and full workspace/package checks await this revision's CI. No live Omarchy/Wayland acceptance is claimed. The native assertion now reports variant and saved run state; the previous CI logs alone cannot prove this was the only cause of the intermittent failure.

@@ -16,6 +16,23 @@ impl Controls {
     pub fn clear(&mut self) {
         *self = Self::default();
     }
+    /// Observe neutral controls on the resume frame itself. A fresh press on
+    /// the next frame must not be mistaken for a key held through the pause.
+    pub fn prepare_resume(&mut self, input: &egui::InputState) {
+        self.clear();
+        self.armed = ![
+            Key::A,
+            Key::D,
+            Key::ArrowLeft,
+            Key::ArrowRight,
+            Key::S,
+            Key::ArrowDown,
+        ]
+        .iter()
+        .any(|key| input.key_down(*key))
+            && !input.pointer.any_down();
+        self.pointer = input.pointer.latest_pos();
+    }
     /// Re-evaluate a released keyboard heading for each simulation tick. A crash
     /// may reset heading between two ticks rendered in the same frame.
     pub fn for_tick(&self, mut input: Input, current_heading: f64) -> Input {
